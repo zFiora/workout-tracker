@@ -1,8 +1,24 @@
 import 'package:flutter/material.dart';
+import 'package:hive/hive.dart';
+import 'package:hive_flutter/adapters.dart';
+import 'package:provider/provider.dart';
 import 'package:workout_tracker/common/splash/splashLoading.dart';
+import 'package:workout_tracker/home/exercises/exerciesesList.dart';
+import 'package:workout_tracker/home/templates/templatesViewModel.dart';
 
-void main() {
-  runApp(const MyApp());
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Hive.initFlutter(); // Initialize Hive for Flutter
+  await Hive.openBox('myBox'); 
+  runApp(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => ExercisesViewModel()),
+        ChangeNotifierProvider(create: (_) => TemplatesViewModel()),
+      ],
+      child: const MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {
@@ -15,7 +31,12 @@ class MyApp extends StatelessWidget {
       title: 'Workout Tracker',
       theme: ThemeData(
         useMaterial3: false, // keep Material 2 look (smaller appBar etc.)
-        primarySwatch: Colors.teal, // main color palette
+        primarySwatch: Colors.teal,
+        textTheme: Theme.of(context).textTheme.copyWith(
+          bodyLarge: TextStyle(color: Colors.teal, fontWeight: FontWeight.bold),
+          bodyMedium: TextStyle(color: Colors.grey[700]),
+          headlineSmall: TextStyle(fontSize: 24, fontWeight: FontWeight.w600),
+        ), // main color palette
         appBarTheme: const AppBarTheme(
           backgroundColor: Colors.teal,
           foregroundColor: Colors.white, // text/icon color

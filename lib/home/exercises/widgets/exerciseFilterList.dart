@@ -1,3 +1,5 @@
+// ignore_for_file: file_names
+
 import 'package:flutter/material.dart';
 import 'package:workout_tracker/home/exercises/models/exerciseModel.dart';
 import 'package:workout_tracker/home/exercises/models/categoryModel.dart';
@@ -5,8 +7,14 @@ import 'package:workout_tracker/home/exercises/widgets/exerciseTile.dart';
 
 class ExerciseFilterList extends StatefulWidget {
   final List<ExerciseModel> exercises;
-
-  const ExerciseFilterList({super.key, required this.exercises});
+  final Set<ExerciseModel>? selectedExercises;
+  final Function(ExerciseModel)? onExerciseTap;
+  const ExerciseFilterList({
+    super.key,
+    required this.exercises,
+    this.selectedExercises,
+    this.onExerciseTap,
+  });
 
   @override
   State<ExerciseFilterList> createState() => _ExerciseFilterListState();
@@ -99,7 +107,11 @@ class _ExerciseFilterListState extends State<ExerciseFilterList> {
               if (iconAsset != null)
                 Image.asset(iconAsset, width: 32, height: 32)
               else if (icon != null)
-                Icon(icon, size: 32, color: isSelected ? Colors.white : Colors.black54),
+                Icon(
+                  icon,
+                  size: 32,
+                  color: isSelected ? Colors.white : Colors.black54,
+                ),
               const SizedBox(height: 6),
               Text(
                 label,
@@ -122,7 +134,11 @@ class _ExerciseFilterListState extends State<ExerciseFilterList> {
       itemCount: filteredExercises.length,
       itemBuilder: (context, index) {
         final ex = filteredExercises[index];
-        return ExerciseTile(exercise: ex);
+        return ExerciseTile(
+          exercise: ex,
+          isSelected: widget.selectedExercises?.contains(ex) ?? false,
+          onSelected: widget.onExerciseTap,
+        );
       },
     );
   }
@@ -139,8 +155,7 @@ class _ExerciseFilterListState extends State<ExerciseFilterList> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Padding(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               child: Text(
                 entry.key.displayName,
                 style: const TextStyle(
@@ -150,7 +165,13 @@ class _ExerciseFilterListState extends State<ExerciseFilterList> {
                 ),
               ),
             ),
-            ...entry.value.map((ex) => ExerciseTile(exercise: ex)).toList(),
+            ...entry.value.map(
+              (ex) => ExerciseTile(
+                exercise: ex,
+                isSelected: widget.selectedExercises?.contains(ex) ?? false,
+                onSelected: widget.onExerciseTap,
+              ),
+            ),
           ],
         );
       }).toList(),

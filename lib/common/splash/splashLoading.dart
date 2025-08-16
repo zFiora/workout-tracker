@@ -19,7 +19,7 @@ class _SplashScreenState extends State<SplashScreen> {
 
   Future<void> _initApp() async {
     // Simulate loading tasks: DB init, reading settings, etc.
-    await Future.delayed(const Duration(seconds: 2));
+    await Future.delayed(const Duration(seconds: 3));
 
     if (!mounted) return;
     Navigator.pushReplacement(
@@ -37,7 +37,7 @@ class _SplashScreenState extends State<SplashScreen> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             // Your logo or animation
-            Image.asset('assets/logo/splash_loading_logo.png', height: 120),
+            Image.asset('assets/logo/splash_loading_logo.png', height: 320),
             const SizedBox(height: 20),
             const CircularProgressIndicator(color: Colors.white),
           ],
