@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:workout_tracker/home/exercises/exerciesesList.dart';
 import 'package:workout_tracker/home/exercises/widgets/exerciseTile.dart';
 import 'package:workout_tracker/home/templates/models/workoutTemplateModel.dart';
+import 'package:workout_tracker/home/exercises/models/exerciseModel.dart';
+
 
 class ViewTemplatePage extends StatelessWidget {
   final WorkoutTemplateModel template;
@@ -23,6 +27,7 @@ class ViewTemplatePage extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 12),
+
           // Template name
           Text(
             template.name,
@@ -32,23 +37,52 @@ class ViewTemplatePage extends StatelessWidget {
               color: Colors.teal,
             ),
           ),
+
           const SizedBox(height: 8),
+
+          // Count from IDs (not objects)
           Text(
-            '${template.exercises.length} exercises',
+            '${template.exerciseIds.length} exercises',
             style: const TextStyle(color: Colors.black54),
           ),
+
           const SizedBox(height: 16),
           const Divider(),
-          // Exercises list
+
+          // Exercises list resolved from IDs via Consumer
           Expanded(
-            child: ListView.builder(
-              itemCount: template.exercises.length,
-              itemBuilder: (context, index) {
-                final ex = template.exercises[index];
-                return ExerciseTile(
-                  exercise: ex,
-                  isSelected: false, // read-only
-                  onTap: () {}, // do nothing on tap
+            child: Consumer<ExercisesViewModel>(
+              builder: (context, exVm, _) {
+                // master list
+                final List<ExerciseModel> all = exVm.exercises;
+
+                // map for quick id -> model
+                final mapById = {
+                  for (final e in all) e.id: e,
+                };
+
+                // resolve ids to models (skip missing)
+                final resolved = <ExerciseModel>[
+                  for (final id in template.exerciseIds)
+                    if (mapById[id] != null) mapById[id]!,
+                ];
+
+                if (resolved.isEmpty) {
+                  return const Center(
+                    child: Text('Exercises not found for this template'),
+                  );
+                }
+
+                return ListView.builder(
+                  itemCount: resolved.length,
+                  itemBuilder: (context, index) {
+                    final ex = resolved[index];
+                    return ExerciseTile(
+                      exercise: ex,
+                      isSelected: false, // read-only here
+                      onTap: () {}, // no-op for now
+                    );
+                  },
                 );
               },
             ),

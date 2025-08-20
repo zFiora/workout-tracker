@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:hive/hive.dart';
+import 'package:hive_flutter/hive_flutter.dart';
+import 'home/templates/models/workoutTemplateModel.dart';
 import 'package:hive_flutter/adapters.dart';
 import 'package:provider/provider.dart';
 import 'package:workout_tracker/common/splash/splashLoading.dart';
@@ -8,8 +9,12 @@ import 'package:workout_tracker/home/templates/templatesViewModel.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Hive.initFlutter(); // Initialize Hive for Flutter
-  await Hive.openBox('myBox'); 
+
+  await Hive.initFlutter();
+  Hive.registerAdapter(WorkoutTemplateModelAdapter());
+
+  
+  await Hive.openBox<WorkoutTemplateModel>('templatesBox');
   runApp(
     MultiProvider(
       providers: [

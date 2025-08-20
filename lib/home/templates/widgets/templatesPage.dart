@@ -5,7 +5,7 @@ import 'package:workout_tracker/common/widgets/myCustomeScaffoldView.dart';
 import 'package:workout_tracker/home/exercises/exerciesesList.dart';
 import 'package:workout_tracker/home/templates/templatesViewModel.dart';
 import 'package:workout_tracker/home/templates/widgets/createTemplatePage.dart';
-import 'package:workout_tracker/home/templates/widgets/viewTemplatePage.dart'; // create this page to show template
+import 'package:workout_tracker/home/templates/widgets/viewTemplatePage.dart';
 
 class TemplatesPage extends StatelessWidget {
   const TemplatesPage({super.key});
@@ -22,15 +22,14 @@ class TemplatesPage extends StatelessWidget {
           const SizedBox(height: 12),
           MyCustomButton(
             onPressed: () async {
-              final result = await Navigator.push(
+              // We no longer expect a returned template; CreateTemplatePage writes to Hive.
+              await Navigator.push(
                 context,
                 MaterialPageRoute(
                   builder: (_) => CreateTemplatePage(exercises: exercises),
                 ),
               );
-              if (result != null) {
-                templatesVM.addTemplate(result);
-              }
+              // No need to call templatesVM.addTemplate(...); Hive + ViewModel already updated.
             },
             label: 'Add new Template',
             icon: Icons.add,
@@ -41,14 +40,49 @@ class TemplatesPage extends StatelessWidget {
             child: GridView.builder(
               padding: const EdgeInsets.all(16),
               gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2, // two boxes per row
+                crossAxisCount: 2,
                 crossAxisSpacing: 12,
                 mainAxisSpacing: 12,
-                childAspectRatio: 1, // square boxes
+                childAspectRatio: 1,
               ),
               itemCount: templatesVM.templates.length,
               itemBuilder: (context, index) {
                 final template = templatesVM.templates[index];
+
+                Future<void> _confirmDelete() async {
+                  final ok = await showDialog<bool>(
+                    context: context,
+                    builder: (_) => AlertDialog(
+                      title: const Text('Delete template?'),
+                      content: Text(
+                        '“${template.name}” will be removed. This cannot be undone.',
+                      ),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(context, false),
+                          child: const Text('Cancel'),
+                        ),
+                        TextButton(
+                          onPressed: () => Navigator.pop(context, true),
+                          style: TextButton.styleFrom(
+                            foregroundColor: Colors.red,
+                          ),
+                          child: const Text('Delete'),
+                        ),
+                      ],
+                    ),
+                  );
+                  if (ok == true) {
+                    await templatesVM.deleteTemplate(template);
+                    // Optional: toast/snackbar
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Template deleted')),
+                      );
+                    }
+                  }
+                }
+
                 return GestureDetector(
                   onTap: () {
                     Navigator.push(
@@ -58,6 +92,7 @@ class TemplatesPage extends StatelessWidget {
                       ),
                     );
                   },
+                  onLongPress: _confirmDelete, // <— long-press to delete
                   child: Container(
                     decoration: BoxDecoration(
                       color: Colors.teal.shade100,
@@ -86,7 +121,7 @@ class TemplatesPage extends StatelessWidget {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          '${template.exercises.length} exercises',
+                          '${template.exerciseIds.length} exercises', // updated already
                           style: const TextStyle(
                             color: Colors.black54,
                             fontSize: 12,

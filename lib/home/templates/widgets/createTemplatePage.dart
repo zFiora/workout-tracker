@@ -5,6 +5,8 @@ import 'package:workout_tracker/home/exercises/models/exerciseModel.dart';
 import 'package:workout_tracker/home/exercises/widgets/exerciseFilterList.dart';
 import 'package:workout_tracker/common/widgets/myCustomeButton.dart';
 import 'package:workout_tracker/home/templates/models/workoutTemplateModel.dart';
+import 'package:workout_tracker/home/templates/templatesViewModel.dart';
+import 'package:provider/provider.dart';
 
 class CreateTemplatePage extends StatefulWidget {
   final List<ExerciseModel> exercises;
@@ -32,16 +34,6 @@ class _CreateTemplatePageState extends State<CreateTemplatePage> {
     super.dispose();
   }
 
-  void _scrollToKey(GlobalKey key) {
-    final context = key.currentContext;
-    if (context != null) {
-      Scrollable.ensureVisible(
-        context,
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeInOut,
-      );
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -74,7 +66,7 @@ class _CreateTemplatePageState extends State<CreateTemplatePage> {
                         ),
                       ),
                       const SizedBox(height: 16),
-          
+
                       // Icon selector
                       Container(
                         key: _iconKey,
@@ -128,7 +120,7 @@ class _CreateTemplatePageState extends State<CreateTemplatePage> {
                         ),
                       ),
                       const SizedBox(height: 16),
-          
+
                       // Search bar
                       MyCustomSearchField(
                         onChanged: (value) {
@@ -136,7 +128,7 @@ class _CreateTemplatePageState extends State<CreateTemplatePage> {
                         },
                       ),
                       const SizedBox(height: 16),
-          
+
                       // Selected exercises
                       if (_selectedExercises.isNotEmpty)
                         Wrap(
@@ -148,7 +140,7 @@ class _CreateTemplatePageState extends State<CreateTemplatePage> {
                         ),
                       if (_selectedExercises.isNotEmpty)
                         const SizedBox(height: 16),
-          
+
                       // Exercise picker
                       SizedBox(
                         height: 500,
@@ -170,29 +162,12 @@ class _CreateTemplatePageState extends State<CreateTemplatePage> {
                   ),
                 ),
               ),
-          
+
               // Save button
               Center(
                 child: MyCustomButton(
                   label: "Save Template",
                   onPressed: () {
-                    if (_nameController.text.isEmpty) {
-                      _scrollToKey(_nameKey);
-                      return;
-                    }
-                    if (_selectedIconPath == null) {
-                      _scrollToKey(_iconKey);
-                      return;
-                    }
-                    if (_selectedExercises.isEmpty) {
-                      _scrollController.animateTo(
-                        _scrollController.position.maxScrollExtent,
-                        duration: const Duration(milliseconds: 300),
-                        curve: Curves.easeInOut,
-                      );
-                      return;
-                    }
-          
                     _saveTemplate();
                   },
                 ),
@@ -219,13 +194,40 @@ class _CreateTemplatePageState extends State<CreateTemplatePage> {
     );
   }
 
-  void _saveTemplate() {
-    final newTemplate = WorkoutTemplateModel(
-      name: _nameController.text,
+  void _saveTemplate() async {
+    final name = _nameController.text.trim();
+    if (name.isEmpty ||
+        _selectedIconPath == null ||
+        _selectedExercises.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Container(
+            decoration: BoxDecoration(color: Colors.red),
+            child: Text(
+              'Please enter a name, pick an icon, and select at least one exercise.',
+            ),
+          ),
+        ),
+      );
+      return;
+    }
+
+    // Build exercise IDs only
+    final List<int> exerciseIds = _selectedExercises
+        .map((ExerciseModel e) => e.id)
+        .toList();
+
+    // Create Hive model
+    final template = WorkoutTemplateModel(
+      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      name: name,
       iconPath: _selectedIconPath!,
-      exercises: _selectedExercises.toList(),
+      exerciseIds: exerciseIds,
     );
 
-    Navigator.pop(context, newTemplate);
+    // Persist via ViewModel (Hive-backed)
+    await context.read<TemplatesViewModel>().addTemplate(template);
+
+    Navigator.pop(context);
   }
 }

@@ -1,28 +1,41 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
+import 'package:hive/hive.dart';
 import 'package:workout_tracker/home/templates/models/workoutTemplateModel.dart';
 
 class TemplatesViewModel extends ChangeNotifier {
-  final List<WorkoutTemplateModel> _templates = [];
+  late final Box<WorkoutTemplateModel> _box;
 
-  List<WorkoutTemplateModel> get templates => List.unmodifiable(_templates);
+  TemplatesViewModel() {
+    _box = Hive.box<WorkoutTemplateModel>('templatesBox');
+  }
 
-  void addTemplate(WorkoutTemplateModel template) {
-    _templates.add(template);
+  List<WorkoutTemplateModel> get templates =>
+      _box.values.toList()
+        ..sort((a, b) => a.createdAt.compareTo(b.createdAt));
+
+  Future<void> addTemplate(WorkoutTemplateModel template) async {
+    await _box.add(template);
     notifyListeners();
   }
 
-  void removeTemplate(WorkoutTemplateModel template) {
-    _templates.remove(template);
+  Future<void> deleteTemplate(WorkoutTemplateModel template) async {
+    await template.delete();
     notifyListeners();
   }
 
-  void updateTemplate(int index, WorkoutTemplateModel template) {
-    _templates[index] = template;
+  Future<void> renameTemplate(WorkoutTemplateModel template, String newName) async {
+    template
+      ..name = newName
+      ..updatedAt = DateTime.now();
+    await template.save();
     notifyListeners();
   }
 
-  void clearTemplates() {
-    _templates.clear();
-    notifyListeners();
+  WorkoutTemplateModel? byId(String id) {
+    try {
+      return _box.values.firstWhere((t) => t.id == id);
+    } catch (_) {
+      return null;
+    }
   }
 }

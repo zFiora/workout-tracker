@@ -83,14 +83,6 @@ class _MyCustomeScaffoldView extends State<MyCustomeScaffoldView> {
                       bottom: Radius.circular(16), // round bottom corners
                     ),
                   ),
-                  actions: [
-                    IconButton(
-                      icon: const Icon(Icons.more_vert),
-                      onPressed: () {
-                        // optional action menu
-                      },
-                    ),
-                  ],
                 ))
           : null,
 
