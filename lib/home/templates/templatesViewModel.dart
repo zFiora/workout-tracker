@@ -10,8 +10,7 @@ class TemplatesViewModel extends ChangeNotifier {
   }
 
   List<WorkoutTemplateModel> get templates =>
-      _box.values.toList()
-        ..sort((a, b) => a.createdAt.compareTo(b.createdAt));
+      _box.values.toList()..sort((a, b) => a.createdAt.compareTo(b.createdAt));
 
   Future<void> addTemplate(WorkoutTemplateModel template) async {
     await _box.add(template);
@@ -23,7 +22,10 @@ class TemplatesViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> renameTemplate(WorkoutTemplateModel template, String newName) async {
+  Future<void> renameTemplate(
+    WorkoutTemplateModel template,
+    String newName,
+  ) async {
     template
       ..name = newName
       ..updatedAt = DateTime.now();
@@ -37,5 +39,16 @@ class TemplatesViewModel extends ChangeNotifier {
     } catch (_) {
       return null;
     }
+  }
+
+  Future<void> changeIconPath(
+    WorkoutTemplateModel template,
+    String newIconPath,
+  ) async {
+    template
+      ..iconPath = newIconPath
+      ..updatedAt = DateTime.now();
+    await template.save();
+    notifyListeners();
   }
 }

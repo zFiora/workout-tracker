@@ -5,6 +5,8 @@ import 'package:workout_tracker/common/widgets/myCustomeScaffoldView.dart';
 import 'package:workout_tracker/home/exercises/exerciesesList.dart';
 import 'package:workout_tracker/home/templates/templatesViewModel.dart';
 import 'package:workout_tracker/home/templates/widgets/createTemplatePage.dart';
+import 'package:workout_tracker/home/templates/widgets/templateActionMenu.dart';
+import 'package:workout_tracker/home/templates/widgets/templateCard.dart';
 import 'package:workout_tracker/home/templates/widgets/viewTemplatePage.dart';
 
 class TemplatesPage extends StatelessWidget {
@@ -22,14 +24,12 @@ class TemplatesPage extends StatelessWidget {
           const SizedBox(height: 12),
           MyCustomButton(
             onPressed: () async {
-              // We no longer expect a returned template; CreateTemplatePage writes to Hive.
               await Navigator.push(
                 context,
                 MaterialPageRoute(
                   builder: (_) => CreateTemplatePage(exercises: exercises),
                 ),
               );
-              // No need to call templatesVM.addTemplate(...); Hive + ViewModel already updated.
             },
             label: 'Add new Template',
             icon: Icons.add,
@@ -49,87 +49,92 @@ class TemplatesPage extends StatelessWidget {
               itemBuilder: (context, index) {
                 final template = templatesVM.templates[index];
 
-                Future<void> _confirmDelete() async {
-                  final ok = await showDialog<bool>(
-                    context: context,
-                    builder: (_) => AlertDialog(
-                      title: const Text('Delete template?'),
-                      content: Text(
-                        '“${template.name}” will be removed. This cannot be undone.',
+                return Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    Positioned.fill(
+                      child: TemplateCard(
+                        template: template,
+                        onOpen: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) =>
+                                  ViewTemplatePage(template: template),
+                            ),
+                          );
+                        },
                       ),
-                      actions: [
-                        TextButton(
-                          onPressed: () => Navigator.pop(context, false),
-                          child: const Text('Cancel'),
-                        ),
-                        TextButton(
-                          onPressed: () => Navigator.pop(context, true),
-                          style: TextButton.styleFrom(
-                            foregroundColor: Colors.red,
-                          ),
-                          child: const Text('Delete'),
-                        ),
-                      ],
                     ),
-                  );
-                  if (ok == true) {
-                    await templatesVM.deleteTemplate(template);
-                    // Optional: toast/snackbar
-                    if (context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Template deleted')),
-                      );
-                    }
-                  }
-                }
 
-                return GestureDetector(
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => ViewTemplatePage(template: template),
+                    Positioned(
+                      top: 8,
+                      right: 8,
+                      child: TemplateActionsMenu(
+                        template: template,
+                        // Provide a picker for "Change icon"
+                        pickIcon: (ctx) async {
+                          // simple bottom sheet that returns the chosen asset path
+                          final icons = const [
+                            "assets/workout_category/chest_emoji.png",
+                            "assets/workout_category/abs_emoji.png",
+                            "assets/workout_category/back_emoji.png",
+                            "assets/workout_category/shoulders_emoji.png",
+                            "assets/workout_category/tricep_emoji.png",
+                            "assets/workout_category/bicep_emoji.png",
+                            "assets/workout_category/cardio_emoji.png",
+                            "assets/workout_category/legs_emoji.png",
+                            "assets/workout_category/forearms_emoji.png",
+                          ];
+
+                          return await showModalBottomSheet<String>(
+                            context: ctx,
+                            showDragHandle: true,
+                            shape: const RoundedRectangleBorder(
+                              borderRadius: BorderRadius.vertical(
+                                top: Radius.circular(16),
+                              ),
+                            ),
+                            builder: (c) {
+                              return Padding(
+                                padding: const EdgeInsets.all(12),
+                                child: GridView.builder(
+                                  itemCount: icons.length,
+                                  gridDelegate:
+                                      const SliverGridDelegateWithFixedCrossAxisCount(
+                                        crossAxisCount: 4,
+                                        mainAxisSpacing: 10,
+                                        crossAxisSpacing: 10,
+                                      ),
+                                  itemBuilder: (_, i) {
+                                    final path = icons[i];
+                                    final selected = path == template.iconPath;
+                                    return GestureDetector(
+                                      onTap: () => Navigator.pop(c, path),
+                                      child: Container(
+                                        padding: const EdgeInsets.all(8),
+                                        decoration: BoxDecoration(
+                                          border: Border.all(
+                                            color: selected
+                                                ? Colors.teal
+                                                : Colors.grey,
+                                          ),
+                                          borderRadius: BorderRadius.circular(
+                                            12,
+                                          ),
+                                        ),
+                                        child: Image.asset(path),
+                                      ),
+                                    );
+                                  },
+                                ),
+                              );
+                            },
+                          );
+                        },
                       ),
-                    );
-                  },
-                  onLongPress: _confirmDelete, // <— long-press to delete
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: Colors.teal.shade100,
-                      borderRadius: BorderRadius.circular(12),
-                      boxShadow: const [
-                        BoxShadow(
-                          color: Colors.black26,
-                          blurRadius: 4,
-                          offset: Offset(0, 2),
-                        ),
-                      ],
                     ),
-                    padding: const EdgeInsets.all(12),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Image.asset(template.iconPath, width: 48, height: 48),
-                        const SizedBox(height: 8),
-                        Text(
-                          template.name,
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            color: Colors.black87,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          '${template.exerciseIds.length} exercises', // updated already
-                          style: const TextStyle(
-                            color: Colors.black54,
-                            fontSize: 12,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
+                  ],
                 );
               },
             ),

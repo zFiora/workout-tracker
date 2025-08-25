@@ -5,7 +5,6 @@ import 'package:workout_tracker/home/exercises/widgets/exerciseTile.dart';
 import 'package:workout_tracker/home/templates/models/workoutTemplateModel.dart';
 import 'package:workout_tracker/home/exercises/models/exerciseModel.dart';
 
-
 class ViewTemplatePage extends StatelessWidget {
   final WorkoutTemplateModel template;
 
@@ -19,13 +18,7 @@ class ViewTemplatePage extends StatelessWidget {
         children: [
           const SizedBox(height: 16),
           // Template icon
-          Center(
-            child: Image.asset(
-              template.iconPath,
-              width: 80,
-              height: 80,
-            ),
-          ),
+          Center(child: Image.asset(template.iconPath, width: 80, height: 80)),
           const SizedBox(height: 12),
 
           // Template name
@@ -40,7 +33,6 @@ class ViewTemplatePage extends StatelessWidget {
 
           const SizedBox(height: 8),
 
-          // Count from IDs (not objects)
           Text(
             '${template.exerciseIds.length} exercises',
             style: const TextStyle(color: Colors.black54),
@@ -49,19 +41,13 @@ class ViewTemplatePage extends StatelessWidget {
           const SizedBox(height: 16),
           const Divider(),
 
-          // Exercises list resolved from IDs via Consumer
           Expanded(
             child: Consumer<ExercisesViewModel>(
               builder: (context, exVm, _) {
-                // master list
                 final List<ExerciseModel> all = exVm.exercises;
 
-                // map for quick id -> model
-                final mapById = {
-                  for (final e in all) e.id: e,
-                };
+                final mapById = {for (final e in all) e.id: e};
 
-                // resolve ids to models (skip missing)
                 final resolved = <ExerciseModel>[
                   for (final id in template.exerciseIds)
                     if (mapById[id] != null) mapById[id]!,
@@ -79,8 +65,8 @@ class ViewTemplatePage extends StatelessWidget {
                     final ex = resolved[index];
                     return ExerciseTile(
                       exercise: ex,
-                      isSelected: false, // read-only here
-                      onTap: () {}, // no-op for now
+                      isSelected: false,
+                      onTap: () {},
                     );
                   },
                 );

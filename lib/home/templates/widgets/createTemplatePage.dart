@@ -34,7 +34,6 @@ class _CreateTemplatePageState extends State<CreateTemplatePage> {
     super.dispose();
   }
 
-
   @override
   Widget build(BuildContext context) {
     final filteredExercises = widget.exercises
