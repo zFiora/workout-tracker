@@ -172,11 +172,11 @@ class _ExerciseTileState extends State<ExerciseTile>
                     color: Colors.teal.withOpacity(0.25),
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: const Icon(
-                    Icons.check_circle,
-                    color: Colors.teal,
-                    size: 32,
-                  ),
+                  // child: const Icon(
+                  //   Icons.check_circle,
+                  //   color: Colors.teal,
+                  //   size: 32,
+                  // ),
                 ),
               ),
           ],
