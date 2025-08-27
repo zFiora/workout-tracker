@@ -3,6 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:workout_tracker/home/exercises/models/exerciseModel.dart';
 import 'package:workout_tracker/home/exercises/models/categoryModel.dart';
+
 class ExerciseTile extends StatefulWidget {
   final ExerciseModel exercise;
   final VoidCallback? onTap;
@@ -156,9 +157,6 @@ class _ExerciseTileState extends State<ExerciseTile>
                         ],
                       ),
                     ),
-
-                    // Trailing arrow
-                    const Icon(Icons.chevron_right, color: Colors.grey),
                   ],
                 ),
               ),

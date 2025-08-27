@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:workout_tracker/common/widgets/myCustomeButton.dart';
 import 'package:workout_tracker/home/exercises/exerciesesList.dart';
 import 'package:workout_tracker/home/exercises/widgets/exerciseTile.dart';
+import 'package:workout_tracker/home/history_page/historyViewModel.dart';
+import 'package:workout_tracker/home/session/sessionViewModel.dart';
+import 'package:workout_tracker/home/session/widgets/startSessionPage.dart';
 import 'package:workout_tracker/home/templates/models/workoutTemplateModel.dart';
 import 'package:workout_tracker/home/exercises/models/exerciseModel.dart';
 
@@ -59,16 +63,58 @@ class ViewTemplatePage extends StatelessWidget {
                   );
                 }
 
-                return ListView.builder(
-                  itemCount: resolved.length,
-                  itemBuilder: (context, index) {
-                    final ex = resolved[index];
-                    return ExerciseTile(
-                      exercise: ex,
-                      isSelected: false,
-                      onTap: () {},
-                    );
-                  },
+                return Column(
+                  children: [
+                    Expanded(
+                      child: ListView.builder(
+                        itemCount: resolved.length,
+                        itemBuilder: (context, index) {
+                          final ex = resolved[index];
+                          return ExerciseTile(
+                            exercise: ex,
+                            isSelected: false,
+                            onTap: () {},
+                          );
+                        },
+                      ),
+                    ),
+                    // in ViewTemplatePage where you already resolve `resolved` exercises
+                    Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: MyCustomButton(
+                        label: 'Start Session',
+                        fullWidth: true,
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => MultiProvider(
+                                providers: [
+                                  ChangeNotifierProvider(
+                                    create: (_) => WorkoutSessionViewModel(
+                                      templateId: template.id,
+                                      templateName: template.name,
+                                      exerciseIds: resolved
+                                          .map((e) => e.id)
+                                          .toList(),
+                                    )..start(),
+                                  ),
+                                  // If HistoryViewModel is NOT already provided above in the app:
+                                  ChangeNotifierProvider.value(
+                                    value: context.read<HistoryViewModel>(),
+                                  ),
+                                ],
+                                child: StartSessionPage(
+                                  templateName: template.name,
+                                  exercises: resolved,
+                                ),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ],
                 );
               },
             ),

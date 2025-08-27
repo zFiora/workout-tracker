@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:workout_tracker/home/history_page/historyViewModel.dart';
 import 'home/templates/models/workoutTemplateModel.dart';
 import 'package:hive_flutter/adapters.dart';
 import 'package:provider/provider.dart';
@@ -13,11 +14,11 @@ void main() async {
   await Hive.initFlutter();
   Hive.registerAdapter(WorkoutTemplateModelAdapter());
 
-  
   await Hive.openBox<WorkoutTemplateModel>('templatesBox');
   runApp(
     MultiProvider(
       providers: [
+        ChangeNotifierProvider(create: (_) => HistoryViewModel()),
         ChangeNotifierProvider(create: (_) => ExercisesViewModel()),
         ChangeNotifierProvider(create: (_) => TemplatesViewModel()),
       ],
