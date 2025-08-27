@@ -70,7 +70,7 @@ class StartSessionPage extends StatelessWidget {
                   ),
                   onPressed: () async {
                     if (session.isRunning) {
-                      // End & save to history
+                      
                       final entry = session.end();
                       await context.read<HistoryViewModel>().save(entry);
 

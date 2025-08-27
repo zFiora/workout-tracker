@@ -92,6 +92,7 @@ class ViewTemplatePage extends StatelessWidget {
                                 providers: [
                                   ChangeNotifierProvider(
                                     create: (_) => WorkoutSessionViewModel(
+                                      templateIcon: template.iconPath,
                                       templateId: template.id,
                                       templateName: template.name,
                                       exerciseIds: resolved

@@ -31,12 +31,14 @@ class ExerciseLog {
 class WorkoutHistoryEntry {
   final String templateId;
   final String templateName;
+  final String templateIcon;
   final DateTime startedAt;
   final DateTime endedAt;
   final Duration duration;
   final List<ExerciseLog> logs;
 
   WorkoutHistoryEntry({
+    required this.templateIcon,
     required this.templateId,
     required this.templateName,
     required this.startedAt,

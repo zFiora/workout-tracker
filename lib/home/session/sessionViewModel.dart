@@ -7,7 +7,7 @@ class WorkoutSessionViewModel extends ChangeNotifier {
   final String templateId;
   final String templateName;
   final List<int> exerciseIds;
-
+  final String templateIcon;
   DateTime? _startedAt;
   DateTime? _endedAt;
   Duration _elapsed = Duration.zero;
@@ -18,6 +18,7 @@ class WorkoutSessionViewModel extends ChangeNotifier {
   WorkoutSessionViewModel({
     required this.templateId,
     required this.templateName,
+    required this.templateIcon,
     required this.exerciseIds,
   }) {
     for (final id in exerciseIds) {
@@ -51,6 +52,7 @@ class WorkoutSessionViewModel extends ChangeNotifier {
     _elapsed = _endedAt!.difference(_startedAt!);
 
     final entry = WorkoutHistoryEntry(
+      templateIcon: templateIcon,
       templateId: templateId,
       templateName: templateName,
       startedAt: _startedAt!,
