@@ -1,12 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:workout_tracker/home/exercises/models/exerciseModel.dart';
+import 'package:workout_tracker/home/history_page/historyViewModel.dart';
 import 'package:workout_tracker/home/session/models/sessionModels.dart';
 import 'package:workout_tracker/home/session/sessionViewModel.dart';
 
 class ExerciseSessionTile extends StatefulWidget {
   final ExerciseModel exercise;
-  const ExerciseSessionTile({super.key, required this.exercise});
+  final String templateId;
+  const ExerciseSessionTile({
+    super.key,
+    required this.exercise,
+    required this.templateId,
+  });
 
   @override
   State<ExerciseSessionTile> createState() => _ExerciseSessionTileState();
@@ -24,6 +30,62 @@ class _ExerciseSessionTileState extends State<ExerciseSessionTile> {
     _weightCtrl.dispose();
     _repsCtrl.dispose();
     super.dispose();
+  }
+
+  ({double? weight, int? reps}) _historyHintForUpcomingSet({
+    required HistoryViewModel historyVM,
+    required String templateId,
+    required int exerciseId,
+    required SetType upcomingType,
+    required int nextWorkIndex,
+  }) {
+    if (historyVM.history.isEmpty) return (weight: null, reps: null);
+
+    final templateEntries = historyVM.history
+        .where((e) => e.templateId == templateId)
+        .toList();
+    if (templateEntries.isEmpty) return (weight: null, reps: null);
+
+    for (final entry in templateEntries.reversed) {
+      final exLogs = entry.logs.where((l) => l.exerciseId == exerciseId);
+      if (exLogs.isEmpty) continue;
+
+      final sets = exLogs.last.sets;
+      if (sets.isEmpty) continue;
+
+      if (upcomingType == SetType.work) {
+        int workCount = 0;
+        for (final s in sets) {
+          if (s.type == SetType.work) {
+            workCount++;
+            if (workCount == nextWorkIndex) {
+              return (weight: s.weight, reps: s.reps);
+            }
+          }
+        }
+
+        for (final s in sets.reversed) {
+          if (s.type == SetType.work) {
+            return (weight: s.weight, reps: s.reps);
+          }
+        }
+      } else {
+        for (final s in sets.reversed) {
+          if (s.type == upcomingType) {
+            return (weight: s.weight, reps: s.reps);
+          }
+        }
+        // Fallback to last work set
+        for (final s in sets.reversed) {
+          if (s.type == SetType.work) {
+            return (weight: s.weight, reps: s.reps);
+          }
+        }
+      }
+    }
+
+    // Nothing matched anywhere
+    return (weight: null, reps: null);
   }
 
   void _cycleType() {
@@ -64,6 +126,7 @@ class _ExerciseSessionTileState extends State<ExerciseSessionTile> {
   Widget build(BuildContext context) {
     final session = context.watch<WorkoutSessionViewModel>();
     final log = session.logs[widget.exercise.id];
+    final historyVM = Provider.of<HistoryViewModel>(context, listen: false);
     int nextIndex = 1;
     for (var oneSet in log?.sets ?? []) {
       if (oneSet.type == SetType.work) {
@@ -74,6 +137,16 @@ class _ExerciseSessionTileState extends State<ExerciseSessionTile> {
         "Set type: ${oneSet.type}, weight: ${oneSet.weight}, reps: ${oneSet.reps}",
       );
     }
+
+    final hint = _historyHintForUpcomingSet(
+      historyVM: historyVM,
+      templateId: widget.templateId,
+      exerciseId: widget.exercise.id,
+      upcomingType: _type,
+      nextWorkIndex: nextIndex,
+    );
+    final double? lastWeight = hint.weight;
+    final int? lastReps = hint.reps;
     int setIndexing = 0;
     return ExpansionTile(
       leading: _ExerciseThumb(ex: widget.exercise),
@@ -161,8 +234,9 @@ class _ExerciseSessionTileState extends State<ExerciseSessionTile> {
                   keyboardType: const TextInputType.numberWithOptions(
                     decimal: true,
                   ),
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     labelText: 'Weight (kg)',
+                    hintText: lastWeight != null ? '$lastWeight' : null,
                     isDense: true,
                   ),
                   validator: (v) {
@@ -179,8 +253,9 @@ class _ExerciseSessionTileState extends State<ExerciseSessionTile> {
                 child: TextFormField(
                   controller: _repsCtrl,
                   keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     labelText: 'Reps',
+                    hintText: lastReps != null ? '$lastReps' : null,
                     isDense: true,
                   ),
                   validator: (v) {
@@ -245,7 +320,6 @@ class _TypeBadge extends StatelessWidget {
     return tooltip == null ? badge : Tooltip(message: tooltip!, child: badge);
   }
 }
-
 
 class _ExerciseThumb extends StatelessWidget {
   final ExerciseModel ex;

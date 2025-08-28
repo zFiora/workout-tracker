@@ -1,20 +1,28 @@
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:workout_tracker/home/history_page/historyViewModel.dart';
-import 'home/templates/models/workoutTemplateModel.dart';
+import 'package:workout_tracker/home/session/models/sessionModels.dart';
 import 'package:hive_flutter/adapters.dart';
 import 'package:provider/provider.dart';
 import 'package:workout_tracker/common/splash/splashLoading.dart';
 import 'package:workout_tracker/home/exercises/exerciesesList.dart';
+import 'package:workout_tracker/home/templates/models/workoutTemplateModel.dart';
 import 'package:workout_tracker/home/templates/templatesViewModel.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   await Hive.initFlutter();
-  Hive.registerAdapter(WorkoutTemplateModelAdapter());
 
+  Hive
+    ..registerAdapter(DurationAdapter())
+    ..registerAdapter(SetTypeAdapter())
+    ..registerAdapter(PerformedSetAdapter())
+    ..registerAdapter(ExerciseLogAdapter())
+    ..registerAdapter(WorkoutHistoryEntryAdapter())
+    ..registerAdapter(WorkoutTemplateModelAdapter());
   await Hive.openBox<WorkoutTemplateModel>('templatesBox');
+  await Hive.openBox<WorkoutHistoryEntry>('historyBox');
   runApp(
     MultiProvider(
       providers: [
@@ -36,7 +44,7 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'Workout Tracker',
       theme: ThemeData(
-        useMaterial3: false, // keep Material 2 look (smaller appBar etc.)
+        useMaterial3: false,
         primarySwatch: Colors.teal,
         textTheme: Theme.of(context).textTheme.copyWith(
           bodyLarge: TextStyle(color: Colors.teal, fontWeight: FontWeight.bold),

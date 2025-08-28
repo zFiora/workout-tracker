@@ -1,17 +1,38 @@
 import 'package:flutter/foundation.dart';
+import 'package:hive/hive.dart';
 import 'package:workout_tracker/home/session/models/sessionModels.dart';
 
 class HistoryViewModel extends ChangeNotifier {
-  final List<WorkoutHistoryEntry> _history = [];
+  // final List<WorkoutHistoryEntry> _history = [];
+  late final Box<WorkoutHistoryEntry> _box;
 
-  List<WorkoutHistoryEntry> get history => List.unmodifiable(
-    _history..sort((a, b) => b.endedAt.compareTo(a.endedAt)),
-  );
+  HistoryViewModel() {
+    _box = Hive.box<WorkoutHistoryEntry>('historyBox');
+  }
+
+  // List<WorkoutHistoryEntry> get history => List.unmodifiable(
+  //   _history..sort((a, b) => b.endedAt.compareTo(a.endedAt)),
+  // );
 
   Future<void> save(WorkoutHistoryEntry entry) async {
-    _history.add(entry);
+    await _box.add(entry);
     notifyListeners();
   }
+
+  Future<void> deleteAt(int index) async {
+    final key = _box.keyAt(index);
+    await _box.delete(key);
+    notifyListeners();
+  }
+
+  Future<void> clear() async {
+    await _box.clear();
+    notifyListeners();
+  }
+
+  // ----- Getters -----
+
+  List<WorkoutHistoryEntry> get history => _box.values.toList(growable: false);
 
   // ----- Helpers -----
   int totalSets(WorkoutHistoryEntry e) =>

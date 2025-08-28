@@ -106,6 +106,7 @@ class ViewTemplatePage extends StatelessWidget {
                                   ),
                                 ],
                                 child: StartSessionPage(
+                                  templateId: template.id,
                                   templateName: template.name,
                                   exercises: resolved,
                                 ),

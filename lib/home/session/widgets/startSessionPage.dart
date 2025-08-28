@@ -8,12 +8,14 @@ import 'package:workout_tracker/home/session/widgets/exerciseSessionTile.dart';
 
 class StartSessionPage extends StatelessWidget {
   final String templateName;
+  final String templateId;
   final List<ExerciseModel> exercises;
 
   const StartSessionPage({
     super.key,
     required this.templateName,
     required this.exercises,
+    required this.templateId,
   });
 
   String _format(Duration d) {
@@ -51,7 +53,10 @@ class StartSessionPage extends StatelessWidget {
               separatorBuilder: (_, __) => const Divider(height: 1),
               itemBuilder: (context, i) {
                 final ex = exercises[i];
-                return ExerciseSessionTile(exercise: ex);
+                return ExerciseSessionTile(
+                  exercise: ex,
+                  templateId: templateId,
+                );
               },
             ),
           ),
@@ -70,7 +75,6 @@ class StartSessionPage extends StatelessWidget {
                   ),
                   onPressed: () async {
                     if (session.isRunning) {
-                      
                       final entry = session.end();
                       await context.read<HistoryViewModel>().save(entry);
 

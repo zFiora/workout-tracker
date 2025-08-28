@@ -82,6 +82,7 @@ flutter:
     - assets/workouts/back/pull_up.png
     - assets/workouts/back/assisted_pullup.png
     - assets/workouts/back/lower_back_exten.png
+    - assets/workouts/back/close_grip_lat_pulldown.png
 
     - assets/workouts/shoulder/face_pull.png
     - assets/workouts/shoulder/lateral_raise_cable.png
@@ -91,6 +92,8 @@ flutter:
     - assets/workouts/shoulder/shoulder_barbell_press.png
     - assets/workouts/shoulder/shoulder_dumbbell_press.png
     - assets/workouts/shoulder/shoulder_machine_press.png
+    - assets/workouts/shoulder/dumbbell_shrug.png
+    - assets/workouts/shoulder/machine_shrug.png
 
     - assets/workouts/tri/assisted_tri_dip.png
     - assets/workouts/tri/machine_dip.png

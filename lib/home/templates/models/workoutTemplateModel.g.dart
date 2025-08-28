@@ -8,7 +8,7 @@ part of 'workoutTemplateModel.dart';
 
 class WorkoutTemplateModelAdapter extends TypeAdapter<WorkoutTemplateModel> {
   @override
-  final int typeId = 1;
+  final int typeId = 101;
 
   @override
   WorkoutTemplateModel read(BinaryReader reader) {

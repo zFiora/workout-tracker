@@ -288,6 +288,24 @@ class ExercisesViewModel extends ChangeNotifier {
       category: WorkoutCategory.legs,
       workoutImage: 'assets/workouts/legs/calf_raises.png',
     ),
+    ExerciseModel(
+      id: 47,
+      name: 'Dumbbell Shrugs',
+      category: WorkoutCategory.shoulders,
+      workoutImage: 'assets/workouts/shoulder/dumbbell_shrug.png',
+    ),
+    ExerciseModel(
+      id: 48,
+      name: 'Machine Shrugs',
+      category: WorkoutCategory.shoulders,
+      workoutImage: 'assets/workouts/shoulder/machine_shrug.png',
+    ),
+    ExerciseModel(
+      id: 49,
+      name: 'Close Grip Lat Pulldown',
+      category: WorkoutCategory.back,
+      workoutImage: 'assets/workouts/back/close_grip_lat_pulldown.png',
+    ),
   ];
 
   List<ExerciseModel> get exercises => List.unmodifiable(_exercises);
