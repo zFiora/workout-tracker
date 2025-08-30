@@ -2,10 +2,10 @@
 
 import 'package:workout_tracker/home/exercises/models/categoryModel.dart';
 import 'package:workout_tracker/home/exercises/models/exerciseModel.dart';
-import 'package:flutter/material.dart';
 
-class ExercisesViewModel extends ChangeNotifier {
-  final List<ExerciseModel> _exercises = [
+class ExercisesViewModel {
+  const ExercisesViewModel();
+  static final List<ExerciseModel> _exercises = [
     ExerciseModel(
       id: 1,
       name: 'Chest Fly (Machine)',
@@ -332,5 +332,5 @@ class ExercisesViewModel extends ChangeNotifier {
     ),
   ];
 
-  List<ExerciseModel> get exercises => List.unmodifiable(_exercises);
+  static List<ExerciseModel> get all => List.unmodifiable(_exercises);
 }

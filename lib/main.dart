@@ -5,7 +5,6 @@ import 'package:workout_tracker/home/session/models/sessionModels.dart';
 import 'package:hive_flutter/adapters.dart';
 import 'package:provider/provider.dart';
 import 'package:workout_tracker/common/splash/splashLoading.dart';
-import 'package:workout_tracker/home/exercises/exerciesesList.dart';
 import 'package:workout_tracker/home/templates/models/workoutTemplateModel.dart';
 import 'package:workout_tracker/home/templates/templatesViewModel.dart';
 
@@ -27,7 +26,6 @@ void main() async {
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => HistoryViewModel()),
-        ChangeNotifierProvider(create: (_) => ExercisesViewModel()),
         ChangeNotifierProvider(create: (_) => TemplatesViewModel()),
       ],
       child: const MyApp(),

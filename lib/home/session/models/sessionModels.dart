@@ -45,10 +45,17 @@ class ExerciseLog {
   final List<PerformedSet> sets;
 
   @HiveField(2)
-  final String exerciseName;
+  String exerciseName;
 
-  ExerciseLog({required this.exerciseId,required this.exerciseName, List<PerformedSet>? sets})
-    : sets = sets ?? [];
+  @HiveField(3)
+  String exerciseIcon;
+
+  ExerciseLog({
+    required this.exerciseId,
+    required this.exerciseIcon,
+    required this.exerciseName,
+    List<PerformedSet>? sets,
+  }) : sets = sets ?? [];
 }
 
 @HiveType(typeId: 4)

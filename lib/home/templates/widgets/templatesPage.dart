@@ -15,7 +15,7 @@ class TemplatesPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final templatesVM = context.watch<TemplatesViewModel>();
-    final exercises = context.read<ExercisesViewModel>().exercises;
+    final exercises = ExercisesViewModel.all;
 
     return MyCustomeScaffoldView(
       title: 'Templates',

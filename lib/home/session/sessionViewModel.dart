@@ -1,12 +1,14 @@
 // viewmodels/workout_session_view_model.dart
 import 'dart:async';
 import 'package:flutter/foundation.dart';
+import 'package:workout_tracker/home/exercises/exerciesesList.dart';
+import 'package:workout_tracker/home/exercises/models/exerciseModel.dart';
 import 'package:workout_tracker/home/session/models/sessionModels.dart';
 
 class WorkoutSessionViewModel extends ChangeNotifier {
   final String templateId;
   final String templateName;
-  final Map<int, String> exercises;
+  final List<int> exerciseIds;
   final String templateIcon;
   DateTime? _startedAt;
   DateTime? _endedAt;
@@ -14,17 +16,19 @@ class WorkoutSessionViewModel extends ChangeNotifier {
   Timer? _ticker;
 
   final Map<int, ExerciseLog> _logs = {};
-
+  final List<ExerciseModel> allExercises = ExercisesViewModel.all;
   WorkoutSessionViewModel({
     required this.templateId,
     required this.templateName,
     required this.templateIcon,
-    required this.exercises,
+    required this.exerciseIds,
   }) {
-    for (final entry in exercises.entries) {
-      _logs[entry.key] = ExerciseLog(
-        exerciseId: entry.key,
-        exerciseName: entry.value,
+    for (final id in exerciseIds) {
+      final ex = allExercises[id - 1];
+      _logs[id] = ExerciseLog(
+        exerciseId: id,
+        exerciseName: ex.name,
+        exerciseIcon: ex.workoutImage,
       );
     }
   }
@@ -66,6 +70,7 @@ class WorkoutSessionViewModel extends ChangeNotifier {
             (e) => ExerciseLog(
               exerciseId: e.exerciseId,
               sets: List.of(e.sets),
+              exerciseIcon: e.exerciseIcon,
               exerciseName: e.exerciseName,
             ),
           )

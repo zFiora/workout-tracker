@@ -3,7 +3,6 @@ import 'package:provider/provider.dart';
 import 'package:workout_tracker/common/widgets/myCustomeButton.dart';
 import 'package:workout_tracker/home/exercises/exerciesesList.dart';
 import 'package:workout_tracker/home/exercises/widgets/exerciseTile.dart';
-import 'package:workout_tracker/home/history_page/historyViewModel.dart';
 import 'package:workout_tracker/home/session/sessionViewModel.dart';
 import 'package:workout_tracker/home/session/widgets/startSessionPage.dart';
 import 'package:workout_tracker/home/templates/models/workoutTemplateModel.dart';
@@ -46,12 +45,11 @@ class ViewTemplatePage extends StatelessWidget {
           const Divider(),
 
           Expanded(
-            child: Consumer<ExercisesViewModel>(
-              builder: (context, exVm, _) {
-                final List<ExerciseModel> all = exVm.exercises;
+            child: Builder(
+              builder: (context) {
+                final all = ExercisesViewModel.all;
 
                 final mapById = {for (final e in all) e.id: e};
-
                 final resolved = <ExerciseModel>[
                   for (final id in template.exerciseIds)
                     if (mapById[id] != null) mapById[id]!,
@@ -78,7 +76,6 @@ class ViewTemplatePage extends StatelessWidget {
                         },
                       ),
                     ),
-                    // in ViewTemplatePage where you already resolve `resolved` exercises
                     Padding(
                       padding: const EdgeInsets.all(8.0),
                       child: MyCustomButton(
@@ -88,23 +85,15 @@ class ViewTemplatePage extends StatelessWidget {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (_) => MultiProvider(
-                                providers: [
-                                  ChangeNotifierProvider(
-                                    create: (_) => WorkoutSessionViewModel(
-                                      templateIcon: template.iconPath,
-                                      templateId: template.id,
-                                      templateName: template.name,
-                                      exercises: {
-                                        for (final e in resolved) e.id: e.name,
-                                      },
-                                    )..start(),
-                                  ),
-                                  // If HistoryViewModel is NOT already provided above in the app:
-                                  ChangeNotifierProvider.value(
-                                    value: context.read<HistoryViewModel>(),
-                                  ),
-                                ],
+                              builder: (_) => ChangeNotifierProvider(
+                                create: (_) => WorkoutSessionViewModel(
+                                  templateIcon: template.iconPath,
+                                  templateId: template.id,
+                                  templateName: template.name,
+                                  exerciseIds: resolved
+                                      .map((e) => e.id)
+                                      .toList(),
+                                )..start(),
                                 child: StartSessionPage(
                                   templateId: template.id,
                                   templateName: template.name,

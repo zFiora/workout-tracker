@@ -60,8 +60,9 @@ class ExerciseLogAdapter extends TypeAdapter<ExerciseLog> {
       for (int i = 0; i < numOfFields; i++) reader.readByte(): reader.read(),
     };
     return ExerciseLog(
-      exerciseName: fields[2] as String,
       exerciseId: fields[0] as int,
+      exerciseIcon: fields[3] as String,
+      exerciseName: fields[2] as String,
       sets: (fields[1] as List?)?.cast<PerformedSet>(),
     );
   }
@@ -69,11 +70,15 @@ class ExerciseLogAdapter extends TypeAdapter<ExerciseLog> {
   @override
   void write(BinaryWriter writer, ExerciseLog obj) {
     writer
-      ..writeByte(2)
+      ..writeByte(4)
       ..writeByte(0)
       ..write(obj.exerciseId)
       ..writeByte(1)
-      ..write(obj.sets);
+      ..write(obj.sets)
+      ..writeByte(2)
+      ..write(obj.exerciseName)
+      ..writeByte(3)
+      ..write(obj.exerciseIcon);
   }
 
   @override

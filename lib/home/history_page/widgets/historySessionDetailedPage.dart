@@ -45,11 +45,15 @@ class HistorySessionDetailPage extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    log.exerciseName,
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
+                  Row(
+                    children: [
+                      Text(
+                        log.exerciseName,
+                        style: Theme.of(context).textTheme.titleMedium
+                            ?.copyWith(fontWeight: FontWeight.w600),
+                      ),
+                      Image.asset(log.exerciseIcon, width: 24, height: 24),
+                    ],
                   ),
                   const SizedBox(height: 6),
                   ...List.generate(log.sets.length, (i) {
