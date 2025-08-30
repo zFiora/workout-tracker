@@ -95,9 +95,9 @@ class ViewTemplatePage extends StatelessWidget {
                                       templateIcon: template.iconPath,
                                       templateId: template.id,
                                       templateName: template.name,
-                                      exerciseIds: resolved
-                                          .map((e) => e.id)
-                                          .toList(),
+                                      exercises: {
+                                        for (final e in resolved) e.id: e.name,
+                                      },
                                     )..start(),
                                   ),
                                   // If HistoryViewModel is NOT already provided above in the app:

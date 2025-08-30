@@ -44,7 +44,10 @@ class ExerciseLog {
   @HiveField(1)
   final List<PerformedSet> sets;
 
-  ExerciseLog({required this.exerciseId, List<PerformedSet>? sets})
+  @HiveField(2)
+  final String exerciseName;
+
+  ExerciseLog({required this.exerciseId,required this.exerciseName, List<PerformedSet>? sets})
     : sets = sets ?? [];
 }
 

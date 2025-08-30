@@ -46,7 +46,7 @@ class HistorySessionDetailPage extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Exercise #${log.exerciseId}',
+                    log.exerciseName,
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.w600,
                     ),

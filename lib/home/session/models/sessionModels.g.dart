@@ -60,6 +60,7 @@ class ExerciseLogAdapter extends TypeAdapter<ExerciseLog> {
       for (int i = 0; i < numOfFields; i++) reader.readByte(): reader.read(),
     };
     return ExerciseLog(
+      exerciseName: fields[2] as String,
       exerciseId: fields[0] as int,
       sets: (fields[1] as List?)?.cast<PerformedSet>(),
     );

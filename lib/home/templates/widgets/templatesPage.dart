@@ -22,19 +22,7 @@ class TemplatesPage extends StatelessWidget {
       body: Column(
         children: [
           const SizedBox(height: 12),
-          MyCustomButton(
-            onPressed: () async {
-              await Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => CreateTemplatePage(exercises: exercises),
-                ),
-              );
-            },
-            label: 'Add new Template',
-            icon: Icons.add,
-            iconPosition: IconPosition.right,
-          ),
+
           const SizedBox(height: 12),
           Expanded(
             child: GridView.builder(
@@ -137,6 +125,23 @@ class TemplatesPage extends StatelessWidget {
                   ],
                 );
               },
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: MyCustomButton(
+              onPressed: () async {
+                await Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => CreateTemplatePage(exercises: exercises),
+                  ),
+                );
+              },
+              fullWidth: true,
+              label: 'Add new Template',
+              icon: Icons.add,
+              iconPosition: IconPosition.right,
             ),
           ),
         ],

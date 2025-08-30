@@ -6,7 +6,7 @@ import 'package:workout_tracker/home/session/models/sessionModels.dart';
 class WorkoutSessionViewModel extends ChangeNotifier {
   final String templateId;
   final String templateName;
-  final List<int> exerciseIds;
+  final Map<int, String> exercises;
   final String templateIcon;
   DateTime? _startedAt;
   DateTime? _endedAt;
@@ -19,10 +19,13 @@ class WorkoutSessionViewModel extends ChangeNotifier {
     required this.templateId,
     required this.templateName,
     required this.templateIcon,
-    required this.exerciseIds,
+    required this.exercises,
   }) {
-    for (final id in exerciseIds) {
-      _logs[id] = ExerciseLog(exerciseId: id);
+    for (final entry in exercises.entries) {
+      _logs[entry.key] = ExerciseLog(
+        exerciseId: entry.key,
+        exerciseName: entry.value,
+      );
     }
   }
 
@@ -60,7 +63,11 @@ class WorkoutSessionViewModel extends ChangeNotifier {
       duration: _elapsed,
       logs: _logs.values
           .map(
-            (e) => ExerciseLog(exerciseId: e.exerciseId, sets: List.of(e.sets)),
+            (e) => ExerciseLog(
+              exerciseId: e.exerciseId,
+              sets: List.of(e.sets),
+              exerciseName: e.exerciseName,
+            ),
           )
           .toList(),
     );
