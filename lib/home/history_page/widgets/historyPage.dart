@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:workout_tracker/common/widgets/myCustomeScaffoldView.dart';
 import 'package:workout_tracker/home/history_page/historyViewModel.dart';
 import 'package:workout_tracker/home/history_page/widgets/historySessionDetailedPage.dart';
 import 'package:workout_tracker/home/session/models/sessionModels.dart';
@@ -31,37 +32,43 @@ class HistoryPage extends StatelessWidget {
       return const Center(child: Text('No old sessions'));
     }
 
-    return ListView.separated(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      itemCount: items.length,
-      separatorBuilder: (_, __) => const Divider(height: 1),
-      itemBuilder: (context, i) {
-        final WorkoutHistoryEntry e = items[i];
-        return ListTile(
-          title: Text(e.templateName),
-          subtitle: Text(
-            '${_formatDate(e.startedAt)} → ${_formatDate(e.endedAt)} • ${_formatDuration(e.duration)}',
-          ),
-          trailing: IconButton(
-            icon: const Icon(Icons.delete_outline),
-            onPressed: () async {
-              await vm.deleteAt(i);
-              if (context.mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Deleted from history')),
-                );
-              }
+    return MyCustomeScaffoldView(
+      title: 'History',
+      body: ListView.separated(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        itemCount: items.length,
+        separatorBuilder: (_, __) => const Divider(height: 1),
+        itemBuilder: (context, i) {
+          final WorkoutHistoryEntry e = items[i];
+          return ListTile(
+            leading: CircleAvatar(
+              child: Image.asset(e.templateIcon, fit: BoxFit.cover),
+            ),
+            title: Text(e.templateName),
+            subtitle: Text(
+              '${_formatDate(e.startedAt)} → ${_formatDate(e.endedAt)} • ${_formatDuration(e.duration)}',
+            ),
+            trailing: IconButton(
+              icon: const Icon(Icons.delete_outline),
+              onPressed: () async {
+                await vm.deleteAt(i);
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Deleted from history')),
+                  );
+                }
+              },
+            ),
+            onTap: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => HistorySessionDetailPage(entry: e),
+                ),
+              );
             },
-          ),
-          onTap: () {
-            Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (_) => HistorySessionDetailPage(entry: e),
-              ),
-            );
-          },
-        );
-      },
+          );
+        },
+      ),
     );
   }
 }
