@@ -73,6 +73,8 @@ flutter:
     - assets/workouts/chest/bench_press_barbell.png
     - assets/workouts/chest/incline_smith_press.png
     - assets/workouts/chest/flat_smith_press.png
+    - assets/workouts/chest/machine_chest_press_flat.png
+    - assets/workouts/chest/cabel_crossover.png
 
     - assets/workouts/back/lat_pulldown.png
     - assets/workouts/back/panta_lat_pulldown.png
@@ -123,6 +125,8 @@ flutter:
     - assets/workouts/legs/deadlift.png
     - assets/workouts/legs/seated_calf_press.png
     - assets/workouts/legs/calf_raises.png
+    - assets/workouts/legs/hip_thrust_barbell.png
+    - assets/workouts/legs/seated_calf_raise.png
 
     - assets/workout_category/chest_emoji.png
     - assets/workout_category/abs_emoji.png
