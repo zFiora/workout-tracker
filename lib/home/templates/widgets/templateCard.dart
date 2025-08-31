@@ -7,14 +7,13 @@ class TemplateCard extends StatelessWidget {
   final WorkoutTemplateModel template;
   final VoidCallback onOpen;
 
-
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onOpen,
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.teal.shade100,
+          color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
           borderRadius: BorderRadius.circular(12),
           boxShadow: const [
             BoxShadow(

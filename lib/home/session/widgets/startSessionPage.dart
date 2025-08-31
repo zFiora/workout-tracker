@@ -70,7 +70,7 @@ class StartSessionPage extends StatelessWidget {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: session.isRunning
                         ? Colors.red
-                        : Colors.teal,
+                        : Theme.of(context).colorScheme.primary,
                     padding: const EdgeInsets.symmetric(vertical: 14),
                   ),
                   onPressed: () async {

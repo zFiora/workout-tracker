@@ -74,7 +74,8 @@ class _MyCustomeScaffoldView extends State<MyCustomeScaffoldView> {
                   ),
                   centerTitle: true, // centers text, looks cleaner
                   backgroundColor:
-                      widget.appBarColor ?? Theme.of(context).primaryColor,
+                      widget.appBarColor ??
+                      Theme.of(context).colorScheme.primary,
                   automaticallyImplyLeading: !widget.isMainPage,
                   elevation: 4, // subtle shadow
                   shadowColor: Colors.black.withOpacity(0.3),

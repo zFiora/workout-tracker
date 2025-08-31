@@ -179,13 +179,15 @@ class _CreateTemplatePageState extends State<CreateTemplatePage> {
   }
 
   Widget _iconTile(String path) {
+    final primary = Theme.of(context).colorScheme.primary;
+    final surfaceVariant = Theme.of(context).colorScheme.surfaceVariant;
     final selected = path == _selectedIconPath;
     return GestureDetector(
       onTap: () => setState(() => _selectedIconPath = path),
       child: Container(
         margin: const EdgeInsets.symmetric(horizontal: 8),
         decoration: BoxDecoration(
-          border: Border.all(color: selected ? Colors.teal : Colors.grey),
+          border: Border.all(color: selected ? primary : surfaceVariant),
           borderRadius: BorderRadius.circular(12),
         ),
         child: Image.asset(path, width: 60, height: 60),

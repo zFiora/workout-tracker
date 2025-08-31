@@ -36,6 +36,10 @@ class TemplatesPage extends StatelessWidget {
               itemCount: templatesVM.templates.length,
               itemBuilder: (context, index) {
                 final template = templatesVM.templates[index];
+                final primary = Theme.of(context).colorScheme.primary;
+                final surfaceVariant = Theme.of(
+                  context,
+                ).colorScheme.surfaceVariant;
 
                 return Stack(
                   fit: StackFit.expand,
@@ -104,8 +108,8 @@ class TemplatesPage extends StatelessWidget {
                                         decoration: BoxDecoration(
                                           border: Border.all(
                                             color: selected
-                                                ? Colors.teal
-                                                : Colors.grey,
+                                                ? primary
+                                                : surfaceVariant,
                                           ),
                                           borderRadius: BorderRadius.circular(
                                             12,

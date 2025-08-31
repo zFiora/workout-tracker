@@ -82,6 +82,10 @@ class _ExerciseFilterListState extends State<ExerciseFilterList> {
     required bool isSelected,
     required VoidCallback onTap,
   }) {
+    final primary = Theme.of(context).colorScheme.primary;
+    final surfaceVariant = Theme.of(
+      context,
+    ).colorScheme.surfaceContainerHighest;
     return Padding(
       padding: const EdgeInsets.only(right: 8),
       child: GestureDetector(
@@ -89,7 +93,7 @@ class _ExerciseFilterListState extends State<ExerciseFilterList> {
         child: Container(
           width: 80,
           decoration: BoxDecoration(
-            color: isSelected ? Colors.teal : Colors.grey[200],
+            color: isSelected ? primary : surfaceVariant,
             borderRadius: BorderRadius.circular(12),
             boxShadow: [
               if (isSelected)
@@ -158,10 +162,10 @@ class _ExerciseFilterListState extends State<ExerciseFilterList> {
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               child: Text(
                 entry.key.displayName,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
-                  color: Colors.teal,
+                  color: Theme.of(context).colorScheme.primary,
                 ),
               ),
             ),

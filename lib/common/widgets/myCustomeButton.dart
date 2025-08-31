@@ -18,6 +18,8 @@ class MyCustomButton extends StatelessWidget {
     this.fullWidth = false,
     this.isLoading = false,
     this.style,
+    this.width,
+    this.height,
   });
 
   final VoidCallback? onPressed;
@@ -28,6 +30,8 @@ class MyCustomButton extends StatelessWidget {
   final IconPosition iconPosition;
   final bool fullWidth;
   final bool isLoading;
+  final double? width;
+  final double? height;
   final ButtonStyle? style;
 
   @override
@@ -94,7 +98,11 @@ class MyCustomButton extends StatelessWidget {
         break;
     }
 
-    return fullWidth ? SizedBox(width: double.infinity, child: button) : button;
+    return SizedBox(
+      width: fullWidth ? double.infinity : width?.toDouble(),
+      height: height?.toDouble(),
+      child: button,
+    );
   }
 
   VoidCallback? get _effectiveOnPressed => isLoading ? null : onPressed;

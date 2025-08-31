@@ -27,10 +27,10 @@ class ViewTemplatePage extends StatelessWidget {
           // Template name
           Text(
             template.name,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 24,
               fontWeight: FontWeight.bold,
-              color: Colors.teal,
+              color: Theme.of(context).colorScheme.primary,
             ),
           ),
 
