@@ -1,10 +1,10 @@
-// lib/auth/login_page.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:workout_tracker/auth/authViewModel.dart';
 import 'package:workout_tracker/common/navigation/mainNavigation.dart';
-import 'package:workout_tracker/common/widgets/myCustomeButton.dart';
+import 'package:workout_tracker/home/login/widgets/gradiantPillButton.dart';
 import 'package:workout_tracker/home/login/widgets/registerPage.dart';
+import 'package:workout_tracker/home/login/widgets/underlineField.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -20,7 +20,7 @@ class _LoginPageState extends State<LoginPage>
     duration: const Duration(milliseconds: 900),
   )..forward();
 
-  // Hero slides in from the left (same feel as Register)
+  // image slide from the left
   late final Animation<Offset> _charSlide =
       Tween<Offset>(begin: const Offset(-0.25, 0), end: Offset.zero).animate(
         CurvedAnimation(
@@ -60,7 +60,7 @@ class _LoginPageState extends State<LoginPage>
 
     return Scaffold(
       body: Stack(
-        clipBehavior: Clip.none, // allow hero to overlap sheet
+        clipBehavior: Clip.none,
         children: [
           // Background gradient
           Container(
@@ -124,9 +124,9 @@ class _LoginPageState extends State<LoginPage>
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            _UnderlineField(
+                            UnderlineField(
                               label: 'Email or Username',
-                              hint: 'your@email.com  or  gym_repear',
+                              hint: 'your@email.com  or  username123',
                               controller: _idCtrl,
                               textInputAction: TextInputAction.next,
                               validator: (v) => (v == null || v.trim().isEmpty)
@@ -134,15 +134,16 @@ class _LoginPageState extends State<LoginPage>
                                   : null,
                             ),
                             const SizedBox(height: 14),
-                            _UnderlineField(
+                            UnderlineField(
                               label: 'Password',
                               controller: _passCtrl,
                               obscure: _obscure,
                               onToggleObscure: () =>
                                   setState(() => _obscure = !_obscure),
                               validator: (v) {
-                                if (v == null || v.isEmpty)
+                                if (v == null || v.isEmpty) {
                                   return 'Password is required';
+                                }
                                 if (v.length < 6) return 'Minimum 6 characters';
                                 return null;
                               },
@@ -150,7 +151,7 @@ class _LoginPageState extends State<LoginPage>
                             const SizedBox(height: 22),
 
                             // Gradient pill SIGN IN
-                            _GradientPillButton(
+                            GradientPillButton(
                               label: 'SIGN IN',
                               loading: vm.busy,
                               onPressed: vm.busy
@@ -241,133 +242,6 @@ class _LoginPageState extends State<LoginPage>
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-/// --- Shared bits (same as in Register) ---
-
-class _UnderlineField extends StatelessWidget {
-  const _UnderlineField({
-    required this.label,
-    this.hint,
-    required this.controller,
-    this.keyboardType,
-    this.textInputAction,
-    this.obscure = false,
-    this.onToggleObscure,
-    this.validator,
-  });
-
-  final String label;
-  final String? hint;
-  final TextEditingController controller;
-  final TextInputType? keyboardType;
-  final TextInputAction? textInputAction;
-  final bool obscure;
-  final VoidCallback? onToggleObscure;
-  final String? Function(String?)? validator;
-
-  @override
-  Widget build(BuildContext context) {
-    final primary = Theme.of(context).colorScheme.primary;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: Theme.of(
-            context,
-          ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
-        ),
-        const SizedBox(height: 6),
-        TextFormField(
-          controller: controller,
-          keyboardType: keyboardType,
-          textInputAction: textInputAction,
-          obscureText: obscure,
-          validator: validator,
-          decoration: InputDecoration(
-            hintText: hint,
-            isDense: true,
-            border: const UnderlineInputBorder(),
-            enabledBorder: const UnderlineInputBorder(
-              borderSide: BorderSide(color: Color(0xFFDDDDDD)),
-            ),
-            focusedBorder: UnderlineInputBorder(
-              borderSide: BorderSide(color: primary, width: 2),
-            ),
-            suffixIcon: onToggleObscure == null
-                ? null
-                : IconButton(
-                    onPressed: onToggleObscure,
-                    icon: Icon(
-                      obscure ? Icons.visibility : Icons.visibility_off,
-                    ),
-                  ),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _GradientPillButton extends StatelessWidget {
-  const _GradientPillButton({
-    required this.label,
-    required this.onPressed,
-    this.loading = false,
-  });
-
-  final String label;
-  final VoidCallback? onPressed;
-  final bool loading;
-
-  @override
-  Widget build(BuildContext context) {
-    final width =
-        MediaQuery.of(context).size.width - 48; // 24 padding each side
-    const height = 56.0;
-    final radius = BorderRadius.circular(28);
-
-    return SizedBox(
-      width: width,
-      height: height,
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          borderRadius: radius,
-          gradient: const LinearGradient(
-            begin: Alignment.centerLeft,
-            end: Alignment.centerRight,
-            colors: [
-              Color(0xFF0B4DD7),
-              Color(0xFF0A2D73),
-            ], // adjust to match Figma
-          ),
-          boxShadow: const [
-            BoxShadow(
-              color: Colors.black26,
-              blurRadius: 8,
-              offset: Offset(0, 4),
-            ),
-          ],
-        ),
-        child: MyCustomButton(
-          type: CustomButtonType.elevated, // white text in your widget
-          label: label,
-          onPressed: onPressed,
-          isLoading: loading,
-          padding: EdgeInsets.zero, // exact height
-          style: ButtonStyle(
-            backgroundColor: WidgetStateProperty.all(Colors.transparent),
-            shadowColor: WidgetStateProperty.all(Colors.transparent),
-            shape: WidgetStateProperty.all(
-              RoundedRectangleBorder(borderRadius: radius),
-            ),
-            fixedSize: WidgetStateProperty.all(const Size.fromHeight(height)),
-          ),
-        ),
       ),
     );
   }

@@ -1,10 +1,11 @@
 // lib/auth/register_page.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:workout_tracker/auth/authViewModel.dart'; // keep same path you used in Splash
+import 'package:workout_tracker/auth/authViewModel.dart';
 import 'package:workout_tracker/common/navigation/mainNavigation.dart';
-import 'package:workout_tracker/common/widgets/myCustomeButton.dart';
+import 'package:workout_tracker/home/login/widgets/gradiantPillButton.dart';
 import 'package:workout_tracker/home/login/widgets/loginPage.dart';
+import 'package:workout_tracker/home/login/widgets/underlineField.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -161,7 +162,7 @@ class _RegisterPageState extends State<RegisterPage>
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            _UnderlineField(
+                            UnderlineField(
                               label: 'Username',
                               hint: 'Gym Repear',
                               controller: _usernameCtrl,
@@ -173,7 +174,7 @@ class _RegisterPageState extends State<RegisterPage>
                                         : null),
                             ),
                             const SizedBox(height: 14),
-                            _UnderlineField(
+                            UnderlineField(
                               label: 'Email',
                               hint: 'john@email.com',
                               controller: _emailCtrl,
@@ -189,7 +190,7 @@ class _RegisterPageState extends State<RegisterPage>
                               },
                             ),
                             const SizedBox(height: 14),
-                            _UnderlineField(
+                            UnderlineField(
                               label: 'Password',
                               controller: _passCtrl,
                               obscure: _obscure1,
@@ -204,7 +205,7 @@ class _RegisterPageState extends State<RegisterPage>
                               },
                             ),
                             const SizedBox(height: 14),
-                            _UnderlineField(
+                            UnderlineField(
                               label: 'Confirm Password',
                               controller: _confirmCtrl,
                               obscure: _obscure2,
@@ -221,7 +222,7 @@ class _RegisterPageState extends State<RegisterPage>
                             const SizedBox(height: 22),
 
                             // Gradient pill "SIGN UP"
-                            _GradientPillButton(
+                            GradientPillButton(
                               label: 'SIGN UP',
                               loading: vm.busy,
                               onPressed: vm.busy
@@ -299,138 +300,6 @@ class _RegisterPageState extends State<RegisterPage>
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-/// Simple underline text field that matches your design.
-class _UnderlineField extends StatelessWidget {
-  const _UnderlineField({
-    required this.label,
-    this.hint,
-    required this.controller,
-    this.keyboardType,
-    this.textInputAction,
-    this.obscure = false,
-    this.onToggleObscure,
-    this.validator,
-  });
-
-  final String label;
-  final String? hint;
-  final TextEditingController controller;
-  final TextInputType? keyboardType;
-  final TextInputAction? textInputAction;
-  final bool obscure;
-  final VoidCallback? onToggleObscure;
-  final String? Function(String?)? validator;
-
-  @override
-  Widget build(BuildContext context) {
-    final primary = Theme.of(context).colorScheme.primary;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: Theme.of(
-            context,
-          ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
-        ),
-        const SizedBox(height: 6),
-        TextFormField(
-          controller: controller,
-          keyboardType: keyboardType,
-          textInputAction: textInputAction,
-          obscureText: obscure,
-          validator: validator,
-          decoration: InputDecoration(
-            hintText: hint,
-            isDense: true,
-            border: const UnderlineInputBorder(),
-            enabledBorder: const UnderlineInputBorder(
-              borderSide: BorderSide(color: Color(0xFFDDDDDD)),
-            ),
-            focusedBorder: UnderlineInputBorder(
-              borderSide: BorderSide(color: primary, width: 2),
-            ),
-            suffixIcon: onToggleObscure == null
-                ? null
-                : IconButton(
-                    onPressed: onToggleObscure,
-                    icon: Icon(
-                      obscure ? Icons.visibility : Icons.visibility_off,
-                    ),
-                  ),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-/// Uses your MyCustomeButton to keep behavior consistent, but wraps it
-/// in a gradient pill container to match the Figma look.
-class _GradientPillButton extends StatelessWidget {
-  const _GradientPillButton({
-    required this.label,
-    required this.onPressed,
-    this.loading = false,
-  });
-
-  final String label;
-  final VoidCallback? onPressed;
-  final bool loading;
-
-  @override
-  Widget build(BuildContext context) {
-    final width =
-        MediaQuery.of(context).size.width - 48; // 24 padding each side
-    const height = 56.0;
-    final radius = BorderRadius.circular(28);
-
-    return SizedBox(
-      width: width,
-      height: height,
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          borderRadius: radius,
-          gradient: const LinearGradient(
-            begin: Alignment.centerLeft,
-            end: Alignment.centerRight,
-            colors: [
-              Color(0xFF0B4DD7),
-              Color(0xFF0A2D73),
-            ], // tweak to your exact hexes
-          ),
-          boxShadow: const [
-            BoxShadow(
-              color: Colors.black26,
-              blurRadius: 8,
-              offset: Offset(0, 4),
-            ),
-          ],
-        ),
-        child: MyCustomButton(
-          // Your button picks text color based on type; elevated => white text.
-          type: CustomButtonType.elevated,
-          label: label,
-          onPressed: onPressed,
-          isLoading: loading,
-          padding: EdgeInsets.zero, // keep exact height
-          style: ButtonStyle(
-            backgroundColor: WidgetStateProperty.all(Colors.transparent),
-            shadowColor: WidgetStateProperty.all(Colors.transparent),
-            shape: WidgetStateProperty.all(
-              RoundedRectangleBorder(borderRadius: radius),
-            ),
-            fixedSize: WidgetStateProperty.all(const Size.fromHeight(height)),
-          ),
-          // If your class has width/height properties now, you can pass them too.
-          // width: width,
-          // height: height,
-        ),
       ),
     );
   }
