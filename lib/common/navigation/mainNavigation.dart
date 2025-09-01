@@ -1,8 +1,9 @@
 // ignore_for_file: file_names
 
 import 'package:flutter/material.dart';
+import 'package:workout_tracker/home/account/widgets/accountPage.dart';
 import 'package:workout_tracker/home/exercises/widgets/exercisesPage.dart';
-import 'package:workout_tracker/home/history_page/widgets/historyPage.dart';
+import 'package:workout_tracker/home/history/widgets/historyPage.dart';
 import 'package:workout_tracker/home/measure/widgets/measuresPage.dart';
 import 'package:workout_tracker/home/templates/widgets/templatesPage.dart';
 
@@ -19,6 +20,7 @@ class _MainNavigationState extends State<MainNavigation> {
   final List<Widget> _pages = const [
     TemplatesPage(),
     ExercisesPage(),
+    AccountPage(),
     HistoryPage(),
     MeasuresPage(),
   ];
@@ -41,6 +43,7 @@ class _MainNavigationState extends State<MainNavigation> {
             label: "Workout",
           ),
           BottomNavigationBarItem(icon: Icon(Icons.list), label: "Exercises"),
+          BottomNavigationBarItem(icon: Icon(Icons.person), label: "Account"),
           BottomNavigationBarItem(icon: Icon(Icons.history), label: "History"),
           BottomNavigationBarItem(
             icon: Icon(Icons.monitor_weight),

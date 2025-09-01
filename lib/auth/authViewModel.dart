@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/foundation.dart';
 import 'package:pocketbase/pocketbase.dart';
 import 'package:workout_tracker/auth/authService.dart';
@@ -37,7 +39,8 @@ class AuthViewModel extends ChangeNotifier {
     required String email,
     required String username,
     required String password,
-    String? name,
+    required String displayName,
+    File? avatarFile,
   }) async {
     _busy = true;
     _error = null;
@@ -47,7 +50,8 @@ class AuthViewModel extends ChangeNotifier {
         email: email,
         username: username,
         password: password,
-        name: name,
+        displayName: displayName,
+        avatarFile: avatarFile,
       );
       return true; // auto-logged in if verification not enforced
     } on ClientException catch (e) {

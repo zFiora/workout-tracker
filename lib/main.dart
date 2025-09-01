@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:workout_tracker/auth/authService.dart';
 import 'package:workout_tracker/auth/authViewModel.dart';
-import 'package:workout_tracker/home/history_page/historyViewModel.dart';
+import 'package:workout_tracker/home/history/historyViewModel.dart';
 import 'package:workout_tracker/home/session/models/sessionModels.dart';
 import 'package:hive_flutter/adapters.dart';
 import 'package:provider/provider.dart';

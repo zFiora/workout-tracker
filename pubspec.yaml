@@ -40,6 +40,8 @@ dependencies:
   flutter_launcher_icons: ^0.14.4
   pocketbase: ^0.23.0+1
   flutter_secure_storage: ^9.2.2
+  image_picker: ^1.0.7
+  http: ^1.2.1
 
 dev_dependencies:
   flutter_test:
@@ -70,6 +72,7 @@ flutter:
   assets:
     - assets/logo/splash_loading_logo.png
     - assets/logo/login_image.png
+    - assets/logo/default_avatar.png
 
     - assets/workouts/chest/chest_fly_(machine).png
     - assets/workouts/chest/incline_dumbbell_press.png

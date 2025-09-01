@@ -56,9 +56,10 @@ class _LoginPageState extends State<LoginPage>
   Widget build(BuildContext context) {
     final vm = context.watch<AuthViewModel>();
     final size = MediaQuery.of(context).size;
-    final viewInsets = MediaQuery.of(context).viewInsets.bottom; // keyboard
+    final viewInsets = MediaQuery.of(context).viewInsets.bottom; 
 
     return Scaffold(
+      resizeToAvoidBottomInset: false,
       body: Stack(
         clipBehavior: Clip.none,
         children: [
@@ -94,132 +95,126 @@ class _LoginPageState extends State<LoginPage>
             alignment: Alignment.bottomCenter,
             child: SlideTransition(
               position: _sheetSlide,
-              child: AnimatedPadding(
-                duration: const Duration(milliseconds: 200),
-                curve: Curves.easeOut,
-                padding: EdgeInsets.only(bottom: viewInsets),
-                child: Container(
-                  width: double.infinity,
-                  constraints: BoxConstraints(minHeight: size.height * 0.58),
-                  decoration: const BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.only(
-                      topLeft: Radius.circular(40),
-                      topRight: Radius.circular(40),
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black26,
-                        blurRadius: 16,
-                        offset: Offset(0, -6),
-                      ),
-                    ],
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 250),
+                curve: Curves.easeOutCubic,
+                height: (viewInsets > 0) ? size.height : (size.height * 0.58),
+                width: double.infinity,
+                decoration: const BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.only(
+                    topLeft: Radius.circular(40),
+                    topRight: Radius.circular(40),
                   ),
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(24, 28, 24, 20),
-                    child: Form(
-                      key: _formKey,
-                      child: SingleChildScrollView(
-                        physics: const BouncingScrollPhysics(),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            UnderlineField(
-                              label: 'Email or Username',
-                              hint: 'your@email.com  or  username123',
-                              controller: _idCtrl,
-                              textInputAction: TextInputAction.next,
-                              validator: (v) => (v == null || v.trim().isEmpty)
-                                  ? 'Required'
-                                  : null,
-                            ),
-                            const SizedBox(height: 14),
-                            UnderlineField(
-                              label: 'Password',
-                              controller: _passCtrl,
-                              obscure: _obscure,
-                              onToggleObscure: () =>
-                                  setState(() => _obscure = !_obscure),
-                              validator: (v) {
-                                if (v == null || v.isEmpty) {
-                                  return 'Password is required';
-                                }
-                                if (v.length < 6) return 'Minimum 6 characters';
-                                return null;
-                              },
-                            ),
-                            const SizedBox(height: 22),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black26,
+                      blurRadius: 16,
+                      offset: Offset(0, -6),
+                    ),
+                  ],
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(24, 28, 24, 20),
+                  child: Form(
+                    key: _formKey,
+                    child: SingleChildScrollView(
+                      physics: const BouncingScrollPhysics(),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          UnderlineField(
+                            label: 'Email or Username',
+                            hint: 'your@email.com',
+                            controller: _idCtrl,
+                            textInputAction: TextInputAction.next,
+                            validator: (v) => (v == null || v.trim().isEmpty)
+                                ? 'Required'
+                                : null,
+                          ),
+                          const SizedBox(height: 14),
+                          UnderlineField(
+                            label: 'Password',
+                            hint: '*****************',
+                            controller: _passCtrl,
+                            obscure: _obscure,
+                            onToggleObscure: () =>
+                                setState(() => _obscure = !_obscure),
+                            validator: (v) {
+                              if (v == null || v.isEmpty) {
+                                return 'Password is required';
+                              }
+                              if (v.length < 6) return 'Minimum 6 characters';
+                              return null;
+                            },
+                          ),
+                          const SizedBox(height: 22),
 
-                            // Gradient pill SIGN IN
-                            GradientPillButton(
-                              label: 'SIGN IN',
-                              loading: vm.busy,
-                              onPressed: vm.busy
-                                  ? null
-                                  : () async {
-                                      if (!_formKey.currentState!.validate())
-                                        return;
-                                      final ok = await context
-                                          .read<AuthViewModel>()
-                                          .login(
-                                            _idCtrl.text.trim(),
-                                            _passCtrl.text,
-                                          );
-                                      if (!mounted) return;
-                                      if (ok) {
-                                        Navigator.pushReplacement(
-                                          context,
-                                          MaterialPageRoute(
-                                            builder: (_) =>
-                                                const MainNavigation(),
-                                          ),
+                          // Gradient pill SIGN IN
+                          GradientPillButton(
+                            label: 'SIGN IN',
+                            loading: vm.busy,
+                            onPressed: vm.busy
+                                ? null
+                                : () async {
+                                    if (!_formKey.currentState!.validate())
+                                      return;
+                                    final ok = await context
+                                        .read<AuthViewModel>()
+                                        .login(
+                                          _idCtrl.text.trim(),
+                                          _passCtrl.text,
                                         );
-                                      } else {
-                                        final msg =
-                                            context
-                                                .read<AuthViewModel>()
-                                                .error ??
-                                            'Login failed';
-                                        ScaffoldMessenger.of(
-                                          context,
-                                        ).showSnackBar(
-                                          SnackBar(content: Text(msg)),
-                                        );
-                                      }
-                                    },
-                            ),
-
-                            const SizedBox(height: 16),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.end,
-                              children: [
-                                Text(
-                                  "Don't have an account? ",
-                                  style: Theme.of(context).textTheme.bodyMedium
-                                      ?.copyWith(color: Colors.black54),
-                                ),
-                                GestureDetector(
-                                  onTap: () => Navigator.pushReplacement(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (_) => const RegisterPage(),
-                                    ),
-                                  ),
-                                  child: Text(
-                                    'Sign Up',
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .bodyMedium
-                                        ?.copyWith(
-                                          fontWeight: FontWeight.w700,
-                                          color: Colors.black87,
+                                    if (!mounted) return;
+                                    if (ok) {
+                                      Navigator.pushReplacement(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (_) =>
+                                              const MainNavigation(),
                                         ),
+                                      );
+                                    } else {
+                                      final msg =
+                                          context.read<AuthViewModel>().error ??
+                                          'Login failed';
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
+                                        SnackBar(content: Text(msg)),
+                                      );
+                                    }
+                                  },
+                          ),
+
+                          const SizedBox(height: 16),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.end,
+                            children: [
+                              Text(
+                                "Don't have an account? ",
+                                style: Theme.of(context).textTheme.bodyMedium
+                                    ?.copyWith(color: Colors.black54),
+                              ),
+                              GestureDetector(
+                                onTap: () => Navigator.pushReplacement(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => const RegisterPage(),
                                   ),
                                 ),
-                              ],
-                            ),
-                          ],
-                        ),
+                                child: Text(
+                                  'Sign Up',
+                                  style: Theme.of(context).textTheme.bodyMedium
+                                      ?.copyWith(
+                                        fontWeight: FontWeight.w700,
+                                        color: Colors.black87,
+                                      ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
                       ),
                     ),
                   ),

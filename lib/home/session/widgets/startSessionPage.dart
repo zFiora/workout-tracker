@@ -2,7 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:workout_tracker/home/exercises/models/exerciseModel.dart';
-import 'package:workout_tracker/home/history_page/historyViewModel.dart';
+import 'package:workout_tracker/home/history/historyViewModel.dart';
 import 'package:workout_tracker/home/session/sessionViewModel.dart';
 import 'package:workout_tracker/home/session/widgets/exerciseSessionTile.dart';
 
