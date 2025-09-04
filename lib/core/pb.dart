@@ -5,29 +5,33 @@ class PB {
   PB._();
   static final PB I = PB._();
 
+  
   static const String baseUrl = "http://10.0.2.2:8090";
 
   final FlutterSecureStorage _storage = const FlutterSecureStorage();
+
+  
   late final PocketBase pb = PocketBase(baseUrl);
 
-  /// Restore session on app start
+  
   Future<void> bootstrapAuth() async {
     final token = await _storage.read(key: 'pb_token');
     if (token == null) return;
 
-    // Load token first; we’ll refresh to get the user model.
+    
     pb.authStore.save(token, null);
     try {
-      // Default auth collection is 'users'
       await pb.collection('users').authRefresh();
     } catch (_) {
       await clearAuthEverywhere();
     }
   }
 
-  /// Persist current auth session (token only – robust)
+  
   Future<void> persistAuth() async {
     if (pb.authStore.isValid && pb.authStore.token.isNotEmpty) {
+      // keep store in sync
+      pb.authStore.save(pb.authStore.token, pb.authStore.record);
       await _storage.write(key: 'pb_token', value: pb.authStore.token);
     }
   }

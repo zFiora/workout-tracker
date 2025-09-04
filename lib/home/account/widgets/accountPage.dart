@@ -1,36 +1,74 @@
 import 'package:flutter/material.dart';
-// If you have this scaffold, use it (uncomment next line and swap Scaffold below).
-// import 'package:workout_tracker/common/widgets/myCustomeScaffoldView.dart';
+import 'package:provider/provider.dart';
+import 'package:workout_tracker/home/account/accountViewModel.dart'; 
+import 'package:workout_tracker/auth/authViewModel.dart';
+import 'package:workout_tracker/home/login/widgets/loginPage.dart';
 
-/// Your brand blues
+/// Brand blues
 const kPrimaryBlue = Color(0xFF0B4DD7);
 const kDeepBlue = Color(0xFF0A2D73);
 
 class AccountPage extends StatelessWidget {
-  const AccountPage({
-    super.key,
-    this.name = 'Haidar AlDahan',
-    this.email = 'haidar@example.com',
-    this.streakDays = 5,
-  });
-
-  final String name;
-  final String email;
-  final int streakDays;
+  const AccountPage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
+    final vm = context.watch<AccountViewModel>();
 
-    // If you prefer your custom scaffold:
-    // return MyCustomeScaffoldView(
-    //   title: 'Account',
-    //   body: _Body(name: name, email: email, streakDays: streakDays),
-    // );
+    
+    if (vm.account == null && !vm.loading && vm.error == null) {
+      Future.microtask(() => context.read<AccountViewModel>().load());
+    }
+
+    // Loading / first paint
+    if (vm.loading && vm.account == null) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+
+    // Error state
+    if (vm.error != null) {
+      return Scaffold(
+        body: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(vm.error!, style: const TextStyle(color: Colors.red)),
+              const SizedBox(height: 8),
+              FilledButton(onPressed: vm.refresh, child: const Text('Retry')),
+            ],
+          ),
+        ),
+      );
+    }
+
+    final a = vm.account!;
+
+    
+    final int streakDays = 0;
 
     return Scaffold(
-      backgroundColor: scheme.surface,
-      body: _Body(name: name, email: email, streakDays: streakDays),
+      backgroundColor: Theme.of(context).colorScheme.surface,
+      body: RefreshIndicator(
+        onRefresh: vm.refresh,
+        child: _Body(
+          name: a.displayName,
+          email: a.email,
+          streakDays: streakDays,
+          avatarUrl: a.avatarUrl,
+          onEditProfile: () {
+            // TODO: open edit bottom sheet / page, then call:
+            // context.read<AccountViewModel>().update(displayName: ..., username: ..., avatarFile: ...);
+          },
+          onSignOut: () async {
+            await context.read<AuthViewModel>().logout();
+            if (!context.mounted) return;
+            Navigator.of(context).pushAndRemoveUntil(
+              MaterialPageRoute(builder: (_) => const LoginPage()),
+              (_) => false,
+            );
+          },
+        ),
+      ),
     );
   }
 }
@@ -40,11 +78,17 @@ class _Body extends StatelessWidget {
     required this.name,
     required this.email,
     required this.streakDays,
+    required this.avatarUrl,
+    required this.onEditProfile,
+    required this.onSignOut,
   });
 
   final String name;
   final String email;
   final int streakDays;
+  final String? avatarUrl;
+  final VoidCallback onEditProfile;
+  final VoidCallback onSignOut;
 
   @override
   Widget build(BuildContext context) {
@@ -55,13 +99,11 @@ class _Body extends StatelessWidget {
             name: name,
             email: email,
             streakDays: streakDays,
-            onEditProfile: () {
-              // TODO: push to Edit Profile screen
-              // Navigator.push(context, MaterialPageRoute(builder: (_) => const EditProfilePage()));
-            },
+            avatarUrl: avatarUrl,
+            onEditProfile: onEditProfile,
           ),
         ),
-        SliverToBoxAdapter(child: const SizedBox(height: 60)),
+        const SliverToBoxAdapter(child: SizedBox(height: 60)),
 
         // Friends section
         SliverToBoxAdapter(
@@ -73,33 +115,25 @@ class _Body extends StatelessWidget {
                 iconColor: Colors.orangeAccent,
                 title: 'Streak',
                 value: '$streakDays days',
-                onTap: () {
-                  // TODO: open streak details
-                },
+                onTap: () {},
               ),
               _Tile(
                 icon: Icons.group_outlined,
                 title: 'Friends',
                 subtitle: 'Your friends & activity',
-                onTap: () {
-                  // TODO: open friends list
-                },
+                onTap: () {},
               ),
               _Tile(
                 icon: Icons.person_add_alt_1_outlined,
                 title: 'Add Friends',
                 subtitle: 'Search by username or QR',
-                onTap: () {
-                  // TODO: add friend flow
-                },
+                onTap: () {},
               ),
               _Tile(
                 icon: Icons.manage_accounts_outlined,
                 title: 'Manage Friends',
                 subtitle: 'Requests • Blocks • Visibility',
-                onTap: () {
-                  // TODO: manage friends
-                },
+                onTap: () {},
               ),
             ],
           ),
@@ -114,16 +148,12 @@ class _Body extends StatelessWidget {
                 icon: Icons.person_outline,
                 title: 'Edit Account',
                 subtitle: 'Name, photo, email',
-                onTap: () {
-                  // TODO: edit account
-                },
+                onTap: onEditProfile,
               ),
               _Tile(
                 icon: Icons.lock_outline,
                 title: 'Change Password',
-                onTap: () {
-                  // TODO: password flow
-                },
+                onTap: () {},
               ),
             ],
           ),
@@ -138,31 +168,23 @@ class _Body extends StatelessWidget {
                 icon: Icons.notifications_active_outlined,
                 title: 'Notifications',
                 subtitle: 'Reminders & workout alerts',
-                onTap: () {
-                  // TODO: open notifications settings
-                },
+                onTap: () {},
               ),
               _SwitchTile(
                 icon: Icons.dark_mode_outlined,
                 title: 'Dark Mode',
                 initialValue: Theme.of(context).brightness == Brightness.dark,
-                onChanged: (v) {
-                  // TODO: hook into your theme/provider
-                },
+                onChanged: (v) {},
               ),
               _Tile(
                 icon: Icons.verified_user_outlined,
                 title: 'Privacy & Data',
-                onTap: () {
-                  // TODO: privacy screen
-                },
+                onTap: () {},
               ),
               _Tile(
                 icon: Icons.cloud_download_outlined,
                 title: 'Export Data',
-                onTap: () {
-                  // TODO: export user data
-                },
+                onTap: () {},
               ),
             ],
           ),
@@ -180,16 +202,12 @@ class _Body extends StatelessWidget {
                     _Tile(
                       icon: Icons.help_outline,
                       title: 'FAQ & Support',
-                      onTap: () {
-                        // TODO: help
-                      },
+                      onTap: () {},
                     ),
                     _Tile(
                       icon: Icons.star_border_rounded,
                       title: 'Rate the App',
-                      onTap: () {
-                        // TODO: open store listing
-                      },
+                      onTap: () {},
                     ),
                   ],
                 ),
@@ -197,9 +215,7 @@ class _Body extends StatelessWidget {
                 _DangerTile(
                   icon: Icons.logout_rounded,
                   title: 'Sign out',
-                  onTap: () async {
-                    // TODO: sign out, clear tokens, navigate to login
-                  },
+                  onTap: onSignOut,
                 ),
                 const SizedBox(height: 24),
                 Text(
@@ -223,18 +239,25 @@ class _Header extends StatelessWidget {
     required this.name,
     required this.email,
     required this.streakDays,
+    required this.avatarUrl,
     required this.onEditProfile,
   });
 
   final String name;
   final String email;
   final int streakDays;
+  final String? avatarUrl;
   final VoidCallback onEditProfile;
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final text = Theme.of(context).textTheme;
+
+    final ImageProvider avatarProvider =
+        (avatarUrl != null && avatarUrl!.isNotEmpty)
+        ? NetworkImage(avatarUrl!)
+        : const AssetImage('assets/logo/default_avatar.png');
 
     return Stack(
       clipBehavior: Clip.none,
@@ -269,10 +292,7 @@ class _Header extends StatelessWidget {
                       CircleAvatar(
                         radius: 28,
                         backgroundColor: scheme.primary.withOpacity(.1),
-                        backgroundImage: const AssetImage(
-                          // TODO: replace with user photo, or NetworkImage
-                          'assets/logo/default_avatar.png',
-                        ),
+                        backgroundImage: avatarProvider,
                         child: const Icon(
                           Icons.person,
                           color: Colors.white,
@@ -369,9 +389,7 @@ class _Header extends StatelessWidget {
                 ),
                 const Spacer(),
                 IconButton(
-                  onPressed: () {
-                    // Optional settings overflow
-                  },
+                  onPressed: () {},
                   icon: const Icon(
                     Icons.settings_outlined,
                     color: Colors.white,
