@@ -1,10 +1,11 @@
-// lib/auth/splash_page.dart
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import 'package:workout_tracker/auth/authViewModel.dart';
+import 'package:workout_tracker/common/navigation/mainNavigation.dart';
 import 'package:workout_tracker/common/widgets/myCustomeButton.dart';
+import 'package:workout_tracker/core/pb.dart';
+import 'package:workout_tracker/home/login/widgets/gradiantPillButton.dart';
 import 'package:workout_tracker/home/login/widgets/loginPage.dart';
 import 'package:workout_tracker/home/login/widgets/registerPage.dart';
+import 'package:workout_tracker/main.dart';
 
 class SplashPage extends StatefulWidget {
   const SplashPage({super.key});
@@ -38,18 +39,14 @@ class _SplashPageState extends State<SplashPage>
     curve: const Interval(0.45, 1.0, curve: Curves.easeOut),
   );
 
+  bool _checking = true; // while deciding
+  bool _navigated = false;
+
   @override
   void initState() {
     super.initState();
-    // If already logged in, hop to home after a brief beat.
-    Future<void>(() async {
-      await Future.delayed(const Duration(milliseconds: 900));
-      if (!mounted) return;
-      final isLoggedIn = context.read<AuthViewModel>().isLoggedIn;
-      if (isLoggedIn) {
-        Navigator.of(context).pushReplacementNamed('/home');
-      }
-    });
+    // Run auth check in the background; keep splash visible.
+    WidgetsBinding.instance.addPostFrameCallback((_) => _decide());
   }
 
   @override
@@ -58,9 +55,45 @@ class _SplashPageState extends State<SplashPage>
     super.dispose();
   }
 
+  Future<void> _decide() async {
+    if (_navigated) return;
+
+    final pb = PB.I.pb;
+
+    // If we have a token but record is empty, try a refresh once.
+    if (!pb.authStore.isValid && pb.authStore.token.isNotEmpty) {
+      try {
+        await pb.collection('users').authRefresh();
+      } catch (e) {
+        // ignore; we'll fall back to unauth flow below
+      }
+    }
+
+    final authed = pb.authStore.isValid && pb.authStore.record != null;
+
+    // Small delay so the animation is visible (tweak as you like)
+    await Future.delayed(const Duration(milliseconds: 1200));
+
+    if (!mounted) return;
+
+    if (authed) {
+      // Logged in → go straight to main
+      _navigated = true;
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (_) => const MainNavigation()),
+      );
+    } else {
+      // Not authed → stay on splash and show buttons
+      setState(() => _checking = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
+
+    final buttonWidth = size.width - 48; // 24px side padding x2
+    const buttonHeight = 56.0;
 
     return Scaffold(
       body: Container(
@@ -70,7 +103,6 @@ class _SplashPageState extends State<SplashPage>
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            // tweak to your exact Figma hexes
             colors: [Color(0xFF0D2B66), Color(0xFF0F172A)],
           ),
         ),
@@ -89,10 +121,7 @@ class _SplashPageState extends State<SplashPage>
                     letterSpacing: 0.5,
                   ),
                 ),
-
                 const Spacer(),
-
-                // Character image from your OLD splash path
                 FadeTransition(
                   opacity: _heroOpacity,
                   child: SlideTransition(
@@ -100,102 +129,45 @@ class _SplashPageState extends State<SplashPage>
                     child: Image.asset(
                       'assets/logo/splash_loading_logo.png',
                       fit: BoxFit.contain,
-                      height: size.height * 0.42, // adjust to match Figma
+                      height: size.height * 0.42,
                     ),
                   ),
                 ),
-
                 const Spacer(),
-
-                // Buttons
-                // Buttons
                 FadeTransition(
                   opacity: _buttonsOpacity,
-                  child: Builder(
-                    builder: (context) {
-                      // consistent sizing for both buttons
-                      final double buttonWidth =
-                          MediaQuery.of(context).size.width -
-                          48; // 24px horizontal padding on both sides
-                      const double buttonHeight = 56;
-                      final BorderRadius pill = BorderRadius.circular(28);
-
-                      return Column(
-                        children: [
-                          // SIGN IN — transparent bg, white border, white text
-                          MyCustomButton(
-                            label: 'SIGN IN',
-                            onPressed: () => Navigator.pushReplacement(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => const LoginPage(),
-                              ),
-                            ),
-                            type: CustomButtonType
-                                .elevated, // your widget renders white text for elevated
-                            width: buttonWidth,
-                            height: buttonHeight,
-                            padding: EdgeInsets
-                                .zero, // avoid double height from internal padding
-                            style: ButtonStyle(
-                              elevation: WidgetStateProperty.all(0),
-                              backgroundColor: WidgetStateProperty.all(
-                                Colors.transparent,
-                              ),
-                              side: WidgetStateProperty.all(
-                                const BorderSide(
-                                  color: Colors.white,
-                                  width: 1.6,
+                  child: _checking
+                      ? const Padding(
+                          padding: EdgeInsets.only(bottom: 28),
+                          child: CircularProgressIndicator(color: Colors.blue),
+                        )
+                      : Column(
+                          children: [
+                            GradientPillButton(
+                              whiteColor: true,
+                              labelColor: brandEnd,
+                              label: 'SIGN IN',
+                              onPressed: () => Navigator.pushReplacement(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => const LoginPage(),
                                 ),
                               ),
-                              shape: WidgetStateProperty.all(
-                                RoundedRectangleBorder(borderRadius: pill),
-                              ),
-                              // If your button looks a bit tight, you can add minimumSize too:
-                              fixedSize: WidgetStateProperty.all(
-                                Size(buttonWidth, buttonHeight),
+                            ),
+                            const SizedBox(height: 14),
+                            GradientPillButton(
+                              label: 'SIGN UP',
+                              onPressed: () => Navigator.pushReplacement(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => const RegisterPage(),
+                                ),
                               ),
                             ),
-                          ),
-                          const SizedBox(height: 14),
-
-                          // SIGN UP — white bg, primary text
-                          MyCustomButton(
-                            label: 'SIGN UP',
-                            onPressed: () => Navigator.pushReplacement(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => const RegisterPage(),
-                              ),
-                            ),
-                            type: CustomButtonType
-                                .outlined, // your widget uses primary text for outlined
-                            width: buttonWidth,
-                            height: buttonHeight,
-                            padding: EdgeInsets.zero,
-                            style: ButtonStyle(
-                              elevation: WidgetStateProperty.all(0),
-                              backgroundColor: WidgetStateProperty.all(
-                                Colors.white,
-                              ),
-                              side: WidgetStateProperty.all(
-                                const BorderSide(color: Colors.white, width: 0),
-                              ),
-                              shape: WidgetStateProperty.all(
-                                RoundedRectangleBorder(borderRadius: pill),
-                              ),
-                              fixedSize: WidgetStateProperty.all(
-                                Size(buttonWidth, buttonHeight),
-                              ),
-                            ),
-                          ),
-                        ],
-                      );
-                    },
-                  ),
+                            const SizedBox(height: 28),
+                          ],
+                        ),
                 ),
-
-                const SizedBox(height: 28),
               ],
             ),
           ),

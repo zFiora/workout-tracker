@@ -20,6 +20,7 @@ class MyCustomButton extends StatelessWidget {
     this.style,
     this.width,
     this.height,
+    this.labelColor,
   });
 
   final VoidCallback? onPressed;
@@ -33,6 +34,7 @@ class MyCustomButton extends StatelessWidget {
   final double? width;
   final double? height;
   final ButtonStyle? style;
+  final Color? labelColor;
 
   @override
   Widget build(BuildContext context) {
@@ -62,7 +64,7 @@ class MyCustomButton extends StatelessWidget {
                   label,
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
-                    color: textColor,
+                    color: labelColor ?? textColor,
                   ),
                 ),
                 if (icon != null && iconPosition == IconPosition.right) ...[

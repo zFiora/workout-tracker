@@ -9,23 +9,35 @@ import 'package:workout_tracker/home/login/widgets/loginPage.dart';
 const kPrimaryBlue = Color(0xFF0B4DD7);
 const kDeepBlue = Color(0xFF0A2D73);
 
-class AccountPage extends StatelessWidget {
+class AccountPage extends StatefulWidget {
   const AccountPage({super.key});
+  @override
+  State<AccountPage> createState() => _AccountPageState();
+}
+
+class _AccountPageState extends State<AccountPage> {
+  @override
+  void initState() {
+    super.initState();
+    // run after the first frame so we don’t trigger setState during build
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final vm = context.read<AccountViewModel>();
+      if (vm.account == null && !vm.loading) {
+        vm.load();
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     final vm = context.watch<AccountViewModel>();
 
-    if (vm.account == null && !vm.loading && vm.error == null) {
-      Future.microtask(() => context.read<AccountViewModel>().load());
-    }
-
-    // Loading / first paint
+    // Initial loader
     if (vm.loading && vm.account == null) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
-    // Error state
+    // Error UI
     if (vm.error != null) {
       return Scaffold(
         body: Center(
@@ -42,8 +54,7 @@ class AccountPage extends StatelessWidget {
     }
 
     final a = vm.account!;
-
-    final int streakDays = 0;
+    const streakDays = 0;
 
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.surface,
@@ -55,8 +66,7 @@ class AccountPage extends StatelessWidget {
           streakDays: streakDays,
           avatarUrl: a.avatarUrl,
           onEditProfile: () {
-            // TODO: open edit bottom sheet / page, then call:
-            // context.read<AccountViewModel>().update(displayName: ..., username: ..., avatarFile: ...);
+            /* open editor and call vm.update(...) */
           },
           onSignOut: () async {
             await context.read<AuthViewModel>().logout();

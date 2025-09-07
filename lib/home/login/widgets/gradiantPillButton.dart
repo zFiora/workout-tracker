@@ -6,11 +6,15 @@ class GradientPillButton extends StatelessWidget {
     required this.label,
     required this.onPressed,
     this.loading = false,
+    this.whiteColor = false,
+    this.labelColor,
   });
 
   final String label;
   final VoidCallback? onPressed;
   final bool loading;
+  final bool whiteColor;
+  final Color? labelColor;
 
   @override
   Widget build(BuildContext context) {
@@ -25,13 +29,18 @@ class GradientPillButton extends StatelessWidget {
       child: DecoratedBox(
         decoration: BoxDecoration(
           borderRadius: radius,
-          gradient: const LinearGradient(
+          gradient: LinearGradient(
             begin: Alignment.centerLeft,
             end: Alignment.centerRight,
-            colors: [
-              Color(0xFF0B4DD7),
-              Color(0xFF0A2D73),
-            ], // adjust to match Figma
+            colors: whiteColor
+                ? [
+                    Color.fromARGB(255, 255, 255, 255),
+                    Color.fromARGB(172, 172, 170, 170),
+                  ]
+                : [
+                    Color(0xFF0B4DD7),
+                    Color(0xFF0A2D73),
+                  ], // adjust to match Figma
           ),
           boxShadow: const [
             BoxShadow(
@@ -42,6 +51,7 @@ class GradientPillButton extends StatelessWidget {
           ],
         ),
         child: MyCustomButton(
+          labelColor: labelColor,
           type: CustomButtonType.elevated, // white text in your widget
           label: label,
           onPressed: onPressed,
