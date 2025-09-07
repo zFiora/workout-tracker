@@ -3,6 +3,7 @@ import 'package:workout_tracker/common/widgets/myCustomeButton.dart';
 
 class GradientPillButton extends StatelessWidget {
   const GradientPillButton({
+    super.key,
     required this.label,
     required this.onPressed,
     this.loading = false,

@@ -5,6 +5,9 @@ import 'package:workout_tracker/home/account/widgets/accountPageSection.dart';
 import 'package:workout_tracker/home/account/widgets/accountPageSwitchTile.dart';
 import 'package:workout_tracker/home/account/widgets/accountPageTile.dart';
 import 'package:workout_tracker/home/account/widgets/accountPageVaultTile.dart';
+import 'package:workout_tracker/home/friends/widgets/addFriendPage.dart';
+import 'package:workout_tracker/home/friends/widgets/friendsListPage.dart';
+import 'package:workout_tracker/home/friends/widgets/manageFriendsPage.dart';
 
 class AccountPageBody extends StatelessWidget {
   const AccountPageBody({
@@ -54,19 +57,25 @@ class AccountPageBody extends StatelessWidget {
                 icon: Icons.group_outlined,
                 title: 'Friends',
                 subtitle: 'Your friends & activity',
-                onTap: () {},
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const FriendsListPage()),
+                ),
               ),
               AccountPageTile(
                 icon: Icons.person_add_alt_1_outlined,
                 title: 'Add Friends',
                 subtitle: 'Search by username or QR',
-                onTap: () {},
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const AddFriendPage()),
+                ),
               ),
               AccountPageTile(
                 icon: Icons.manage_accounts_outlined,
                 title: 'Manage Friends',
                 subtitle: 'Requests • Blocks • Visibility',
-                onTap: () {},
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const ManageFriendsPage()),
+                ),
               ),
             ],
           ),

@@ -34,9 +34,10 @@ class AccountRepository {
     // If profile exists, get expanded user from it; otherwise fetch user directly
     RecordModel userRec;
     if (profile != null) {
-      final expanded = profile.expand['user'];
-      if (expanded != null && expanded.isNotEmpty) {
-        userRec = expanded.first;
+      // Try to read the expanded relation directly
+      final expanded = profile.get<RecordModel?>('expand.user');
+      if (expanded != null) {
+        userRec = expanded;
       } else {
         // rare: expansion failed; fetch directly
         userRec = await pb.collection('users').getOne(user.id);
@@ -45,7 +46,6 @@ class AccountRepository {
       userRec = await pb.collection('users').getOne(user.id);
     }
 
-    
     final email = userRec.getStringValue('email');
 
     // name/displayName
@@ -64,8 +64,7 @@ class AccountRepository {
         ? profileUsername
         : userUsername;
 
-    
-    final userAvatar = userRec.getStringValue('avatar'); 
+    final userAvatar = userRec.getStringValue('avatar');
     final String? avatarUrl = userAvatar.isNotEmpty
         ? pb.files
               .getUrl(userRec, userAvatar, query: {'thumb': '112x112'})
@@ -82,7 +81,6 @@ class AccountRepository {
     );
   }
 
- 
   Future<AccountModel> updateMe({
     String? displayName,
     String? username,
@@ -91,20 +89,14 @@ class AccountRepository {
     final user = pb.authStore.record;
     if (user == null) throw Exception('Not authenticated');
 
-    
     final userBody = <String, dynamic>{};
-    if (displayName != null) userBody['name'] = displayName; 
+    if (displayName != null) userBody['name'] = displayName;
     if (username != null) userBody['username'] = username;
 
     RecordModel updatedUser = await pb
         .collection('users')
-        .update(
-          user.id,
-          body: userBody,
-          files: files, 
-        );
+        .update(user.id, body: userBody, files: files);
 
-    
     try {
       final profile = await pb
           .collection('profiles')
@@ -115,11 +107,8 @@ class AccountRepository {
       if (profileBody.isNotEmpty) {
         await pb.collection('profiles').update(profile.id, body: profileBody);
       }
-    } catch (e) {
-      
-    }
+    } catch (e) {}
 
-    
     final email = updatedUser.getStringValue('email');
     final display = displayName ?? updatedUser.getStringValue('name');
     final userUsername = username ?? updatedUser.getStringValue('username');

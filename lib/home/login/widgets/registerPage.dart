@@ -162,7 +162,7 @@ class _RegisterPageState extends State<RegisterPage>
                               child: AvatarPicker(
                                 size: 96,
                                 placeholderAsset:
-                                    'assets/images/default_avatar.png',
+                                    'assets/logo/default_avatar.png',
                                 onChanged: (f) => _avatarFile = f,
                               ),
                             ),
@@ -256,6 +256,7 @@ class _RegisterPageState extends State<RegisterPage>
                                           displayName: _displayNameCtrl.text
                                               .trim(),
                                           avatarFile: _avatarFile,
+                                          
                                         );
                                     if (!mounted) return;
                                     if (ok) {

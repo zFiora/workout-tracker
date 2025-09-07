@@ -1,4 +1,3 @@
-// lib/auth/auth_service.dart
 import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:pocketbase/pocketbase.dart';
@@ -9,7 +8,7 @@ class AuthService {
 
   final PocketBase _pb;
 
-  bool get isLoggedIn => _pb.authStore.isValid && _pb.authStore.model != null;
+  bool get isLoggedIn => _pb.authStore.isValid && _pb.authStore.record != null;
   String? get userId => _pb.authStore.record?.id;
 
   /// Email/Username + password login
@@ -37,9 +36,10 @@ class AuthService {
         .create(
           body: {
             'email': email,
-            'username': username,
+            'name': username,
             'password': password,
             'passwordConfirm': password,
+            'emailVisibility': true, 
           },
         );
 

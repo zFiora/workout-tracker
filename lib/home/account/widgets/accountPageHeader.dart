@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 class AccountPageHeader extends StatelessWidget {
   const AccountPageHeader({
+    super.key,
     required this.name,
     required this.email,
     required this.streakDays,

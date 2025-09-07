@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 class AccountPageTile extends StatelessWidget {
   const AccountPageTile({
+    super.key,
     required this.icon,
     required this.title,
     this.subtitle,

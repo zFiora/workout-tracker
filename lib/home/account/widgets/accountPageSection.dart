@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
 
 class AccountPageSection extends StatelessWidget {
-  const AccountPageSection({required this.title, required this.children});
+  const AccountPageSection({
+    super.key,
+    required this.title,
+    required this.children,
+  });
 
   final String title;
   final List<Widget> children;

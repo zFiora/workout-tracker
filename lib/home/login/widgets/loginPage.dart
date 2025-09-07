@@ -56,7 +56,7 @@ class _LoginPageState extends State<LoginPage>
   Widget build(BuildContext context) {
     final vm = context.watch<AuthViewModel>();
     final size = MediaQuery.of(context).size;
-    final viewInsets = MediaQuery.of(context).viewInsets.bottom; 
+    final viewInsets = MediaQuery.of(context).viewInsets.bottom;
 
     return Scaffold(
       resizeToAvoidBottomInset: false,
@@ -157,8 +157,9 @@ class _LoginPageState extends State<LoginPage>
                             onPressed: vm.busy
                                 ? null
                                 : () async {
-                                    if (!_formKey.currentState!.validate())
+                                    if (!_formKey.currentState!.validate()) {
                                       return;
+                                    }
                                     final ok = await context
                                         .read<AuthViewModel>()
                                         .login(

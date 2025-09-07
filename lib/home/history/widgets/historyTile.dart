@@ -77,7 +77,7 @@ class HistoryTile extends StatelessWidget {
                   child: Image.asset(
                     entry.templateIcon,
                     fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) => Icon(
+                    errorBuilder: (_, _, _) => Icon(
                       Icons.fitness_center,
                       color: colorScheme.onSecondaryContainer.withOpacity(0.8),
                     ),

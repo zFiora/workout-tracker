@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:workout_tracker/common/widgets/myCustomSearchField.dart';
 import 'package:workout_tracker/common/widgets/myCustomTextField.dart';
+import 'package:workout_tracker/common/widgets/myCustomeScaffoldView.dart';
 import 'package:workout_tracker/home/exercises/models/exerciseModel.dart';
 import 'package:workout_tracker/home/exercises/widgets/exerciseFilterList.dart';
 import 'package:workout_tracker/common/widgets/myCustomeButton.dart';
@@ -42,8 +43,8 @@ class _CreateTemplatePageState extends State<CreateTemplatePage> {
         )
         .toList();
 
-    return Scaffold(
-      appBar: AppBar(title: const Text("New Template")),
+    return MyCustomeScaffoldView(
+      title: 'Create Template',
       body: Padding(
         padding: const EdgeInsets.all(12),
         child: SafeArea(
@@ -130,13 +131,20 @@ class _CreateTemplatePageState extends State<CreateTemplatePage> {
 
                       // Selected exercises
                       if (_selectedExercises.isNotEmpty)
-                        Wrap(
-                          spacing: 6,
-                          runSpacing: 6,
-                          children: _selectedExercises
-                              .map((ex) => Chip(label: Text(ex.name)))
-                              .toList(),
+                        SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          child: Row(
+                            children: _selectedExercises
+                                .map(
+                                  (ex) => Padding(
+                                    padding: const EdgeInsets.only(right: 6),
+                                    child: Chip(label: Text(ex.name)),
+                                  ),
+                                )
+                                .toList(),
+                          ),
                         ),
+
                       if (_selectedExercises.isNotEmpty)
                         const SizedBox(height: 16),
 

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 class AccountPageDangerTile extends StatelessWidget {
   const AccountPageDangerTile({
+    super.key,
     required this.icon,
     required this.title,
     required this.onTap,

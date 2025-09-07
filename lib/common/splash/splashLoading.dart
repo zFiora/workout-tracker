@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:workout_tracker/common/navigation/mainNavigation.dart';
-import 'package:workout_tracker/common/widgets/myCustomeButton.dart';
 import 'package:workout_tracker/core/pb.dart';
 import 'package:workout_tracker/home/login/widgets/gradiantPillButton.dart';
 import 'package:workout_tracker/home/login/widgets/loginPage.dart';
@@ -91,9 +90,6 @@ class _SplashPageState extends State<SplashPage>
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
-
-    final buttonWidth = size.width - 48; // 24px side padding x2
-    const buttonHeight = 56.0;
 
     return Scaffold(
       body: Container(

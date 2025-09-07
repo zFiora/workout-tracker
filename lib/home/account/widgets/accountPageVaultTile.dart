@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 class AccountPageVaultTile extends StatelessWidget {
   const AccountPageVaultTile({
+    super.key,
     required this.icon,
     required this.title,
     required this.value,

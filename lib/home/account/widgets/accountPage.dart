@@ -19,7 +19,7 @@ class _AccountPageState extends State<AccountPage> {
   @override
   void initState() {
     super.initState();
-    // run after the first frame so we don’t trigger setState during build
+    // Trigger load after first frame
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final vm = context.read<AccountViewModel>();
       if (vm.account == null && !vm.loading) {
@@ -32,27 +32,27 @@ class _AccountPageState extends State<AccountPage> {
   Widget build(BuildContext context) {
     final vm = context.watch<AccountViewModel>();
 
-    // Initial loader
-    if (vm.loading && vm.account == null) {
+    // 1) If we have no account yet, show loader or error
+    if (vm.account == null) {
+      if (vm.error != null) {
+        return Scaffold(
+          body: Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(vm.error!, style: const TextStyle(color: Colors.red)),
+                const SizedBox(height: 8),
+                FilledButton(onPressed: vm.refresh, child: const Text('Retry')),
+              ],
+            ),
+          ),
+        );
+      }
+      // initial frame OR loading → show spinner
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
-    // Error UI
-    if (vm.error != null) {
-      return Scaffold(
-        body: Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(vm.error!, style: const TextStyle(color: Colors.red)),
-              const SizedBox(height: 8),
-              FilledButton(onPressed: vm.refresh, child: const Text('Retry')),
-            ],
-          ),
-        ),
-      );
-    }
-
+    // 2) We have data; render page
     final a = vm.account!;
     const streakDays = 0;
 
@@ -66,7 +66,7 @@ class _AccountPageState extends State<AccountPage> {
           streakDays: streakDays,
           avatarUrl: a.avatarUrl,
           onEditProfile: () {
-            /* open editor and call vm.update(...) */
+            // open editor and call vm.update(...)
           },
           onSignOut: () async {
             await context.read<AuthViewModel>().logout();

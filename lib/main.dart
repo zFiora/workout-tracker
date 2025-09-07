@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:pocketbase/pocketbase.dart';
 import 'package:provider/provider.dart';
 
 import 'package:workout_tracker/core/pb.dart'; // <-- our single PB instance
@@ -8,6 +9,8 @@ import 'package:workout_tracker/auth/authViewModel.dart';
 
 import 'package:workout_tracker/home/account/accountReposirtry.dart'; // fix typo if needed
 import 'package:workout_tracker/home/account/accountViewModel.dart';
+import 'package:workout_tracker/home/friends/friendsService.dart';
+import 'package:workout_tracker/home/friends/friendsViewModel.dart';
 
 import 'package:workout_tracker/home/session/models/sessionModels.dart';
 import 'package:workout_tracker/home/history/historyViewModel.dart';
@@ -49,6 +52,14 @@ Future<void> main() async {
         Provider(create: (_) => AccountRepository(PB.I.pb)),
         ChangeNotifierProvider(
           create: (ctx) => AccountViewModel(ctx.read<AccountRepository>()),
+        ),
+
+        // Friends
+        ProxyProvider<PocketBase, FriendService>(
+          update: (_, pb, _) => FriendService(pb),
+        ),
+        ChangeNotifierProvider(
+          create: (ctx) => FriendsViewModel(ctx.read<FriendService>()),
         ),
 
         // Other VMs
