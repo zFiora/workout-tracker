@@ -9,6 +9,7 @@ import 'package:workout_tracker/auth/authViewModel.dart';
 
 import 'package:workout_tracker/home/account/accountReposirtry.dart'; // fix typo if needed
 import 'package:workout_tracker/home/account/accountViewModel.dart';
+import 'package:workout_tracker/home/account/model/streakSyncService.dart';
 import 'package:workout_tracker/home/friends/friendsService.dart';
 import 'package:workout_tracker/home/friends/friendsViewModel.dart';
 
@@ -40,30 +41,49 @@ Future<void> main() async {
   runApp(
     MultiProvider(
       providers: [
-        // Provide the SINGLE PocketBase instance everywhere
-        Provider.value(value: PB.I.pb),
+        // ----- Core singletons -----
+        Provider<PocketBase>.value(value: PB.I.pb),
 
-        // Auth uses the same PB instance
+        // Auth (uses the same PB instance)
         ChangeNotifierProvider(
-          create: (_) => AuthViewModel(AuthService(PB.I.pb)),
+          create: (ctx) => AuthViewModel(AuthService(ctx.read<PocketBase>())),
         ),
 
-        // Account repository / VM use the same PB instance (through repo)
-        Provider(create: (_) => AccountRepository(PB.I.pb)),
+        // Account repo + VM (fix file name: accountRepository.dart)
+        Provider(create: (ctx) => AccountRepository(ctx.read<PocketBase>())),
         ChangeNotifierProvider(
           create: (ctx) => AccountViewModel(ctx.read<AccountRepository>()),
         ),
 
         // Friends
         ProxyProvider<PocketBase, FriendService>(
-          update: (_, pb, _) => FriendService(pb),
+          update: (_, pb, __) => FriendService(pb),
         ),
         ChangeNotifierProvider(
           create: (ctx) => FriendsViewModel(ctx.read<FriendService>()),
         ),
 
-        // Other VMs
-        ChangeNotifierProvider(create: (_) => HistoryViewModel()),
+        // ----- Streak sync wiring -----
+        // Build StreakSyncService when we know the profileId from AccountViewModel
+        ProxyProvider2<PocketBase, AccountViewModel, StreakSyncService?>(
+          update: (_, pb, accountVM, __) {
+            final profileId = accountVM.account?.id; // null until loaded
+            if (profileId == null) return null;
+            return StreakSyncService(pb: pb, profileId: profileId, userId: '');
+          },
+        ),
+
+        // HistoryViewModel created once; keep its sync up-to-date
+        ChangeNotifierProxyProvider<StreakSyncService?, HistoryViewModel>(
+          create: (_) => HistoryViewModel(),
+          update: (_, sync, vm) {
+            vm ??= HistoryViewModel();
+            vm.setSync(sync); // inject (or clear) when account changes
+            return vm;
+          },
+        ),
+
+        // Templates VM (independent)
         ChangeNotifierProvider(create: (_) => TemplatesViewModel()),
       ],
       child: const MyApp(),

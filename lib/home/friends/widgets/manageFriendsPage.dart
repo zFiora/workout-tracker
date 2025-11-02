@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:pocketbase/pocketbase.dart';
+import 'package:workout_tracker/common/widgets/myCustomeScaffoldView.dart';
 import 'package:workout_tracker/home/friends/friendsViewModel.dart';
 
 class ManageFriendsPage extends StatefulWidget {
@@ -22,8 +23,8 @@ class _ManageFriendsPageState extends State<ManageFriendsPage> {
   @override
   Widget build(BuildContext context) {
     final vm = context.watch<FriendsViewModel>();
-    return Scaffold(
-      appBar: AppBar(title: const Text('Manage Friends')),
+    return MyCustomeScaffoldView(
+      title: 'Manage Friends',
       body: RefreshIndicator(
         onRefresh: vm.refresh,
         child: ListView(

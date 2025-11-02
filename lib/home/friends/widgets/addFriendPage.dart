@@ -61,7 +61,7 @@ class _AddFriendPageState extends State<AddFriendPage> {
                       const SnackBar(content: Text('Request sent')),
                     );
                   }
-                },
+                }, 
                 child: const Text('Add'),
               ),
             ),

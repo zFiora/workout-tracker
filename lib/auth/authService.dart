@@ -39,7 +39,7 @@ class AuthService {
             'name': username,
             'password': password,
             'passwordConfirm': password,
-            'emailVisibility': true, 
+            'emailVisibility': true,
           },
         );
 

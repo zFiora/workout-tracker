@@ -120,7 +120,7 @@ class FriendService {
     } on ClientException catch (e) {
       debugPrint(
         '[FriendService.searchUsers] ClientException '
-        'status=${e.statusCode}, msg=${e.response?['message']} filter=$filter',
+        'status=${e.statusCode}, msg=${e.response['message']} filter=$filter',
       );
       // 400 here usually means filter invalid or rules deny.
       rethrow; // let UI show a SnackBar

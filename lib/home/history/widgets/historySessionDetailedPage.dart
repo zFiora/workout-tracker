@@ -1,5 +1,6 @@
 // home/history/history_session_detail_page.dart
 import 'package:flutter/material.dart';
+import 'package:workout_tracker/common/widgets/myCustomeScaffoldView.dart';
 import 'package:workout_tracker/home/session/models/sessionModels.dart';
 
 class HistorySessionDetailPage extends StatelessWidget {
@@ -21,8 +22,8 @@ class HistorySessionDetailPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text(entry.templateName)),
+    return MyCustomeScaffoldView(
+      title: entry.templateName,
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
         children: [

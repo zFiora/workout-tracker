@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:workout_tracker/home/account/accountViewModel.dart';
 import 'package:workout_tracker/auth/authViewModel.dart';
 import 'package:workout_tracker/home/account/widgets/accountPageBody.dart';
+import 'package:workout_tracker/home/history/historyViewModel.dart';
 import 'package:workout_tracker/home/login/widgets/loginPage.dart';
 
 /// Brand blues
@@ -54,7 +55,9 @@ class _AccountPageState extends State<AccountPage> {
 
     // 2) We have data; render page
     final a = vm.account!;
-    const streakDays = 0;
+    final streakDays = context.select<HistoryViewModel, int>(
+      (vm) => vm.streak.current,
+    );
 
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.surface,

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:pocketbase/pocketbase.dart';
+import 'package:workout_tracker/common/widgets/myCustomeScaffoldView.dart';
 import 'package:workout_tracker/home/friends/friendsViewModel.dart';
 
 class FriendsListPage extends StatefulWidget {
@@ -21,8 +22,8 @@ class _FriendsListPageState extends State<FriendsListPage> {
   @override
   Widget build(BuildContext context) {
     final vm = context.watch<FriendsViewModel>();
-    return Scaffold(
-      appBar: AppBar(title: const Text('Friends')),
+    return MyCustomeScaffoldView(
+      title: 'Friends',
       body: RefreshIndicator(
         onRefresh: vm.refresh,
         child: ListView(
@@ -57,12 +58,40 @@ class _FriendTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final username = user.getStringValue('username');
-    final email = user.getStringValue('email');
+    final username = user.getStringValue('name');
+    final currentStreak = user.getIntValue('currentStreak');
+    final image = user.get('avatar');
+    print(image);
     return ListTile(
-      leading: const CircleAvatar(child: Icon(Icons.person)),
+      leading: CircleAvatar(backgroundImage: NetworkImage(image)),
+      trailing: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        decoration: BoxDecoration(
+          color: Colors.orangeAccent,
+          borderRadius: BorderRadius.circular(999),
+          boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 4)],
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            const Icon(
+              Icons.local_fire_department,
+              size: 16,
+              color: Colors.white,
+            ),
+            const SizedBox(width: 4),
+            Text(
+              '$currentStreak',
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
+        ),
+      ),
       title: Text(username),
-      subtitle: Text(email),
       onTap: () {}, // TODO: open friend profile/activity
     );
   }

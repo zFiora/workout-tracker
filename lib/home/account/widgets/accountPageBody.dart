@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:workout_tracker/home/account/widgets/accountPageDangerTile.dart';
 import 'package:workout_tracker/home/account/widgets/accountPageHeader.dart';
 import 'package:workout_tracker/home/account/widgets/accountPageSection.dart';
@@ -8,6 +9,7 @@ import 'package:workout_tracker/home/account/widgets/accountPageVaultTile.dart';
 import 'package:workout_tracker/home/friends/widgets/addFriendPage.dart';
 import 'package:workout_tracker/home/friends/widgets/friendsListPage.dart';
 import 'package:workout_tracker/home/friends/widgets/manageFriendsPage.dart';
+import 'package:workout_tracker/home/history/historyViewModel.dart';
 
 class AccountPageBody extends StatelessWidget {
   const AccountPageBody({

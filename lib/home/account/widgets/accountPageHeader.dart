@@ -18,6 +18,7 @@ class AccountPageHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+        
     const kPrimaryBlue = Color(0xFF0B4DD7);
     const kDeepBlue = Color(0xFF0A2D73);
     final scheme = Theme.of(context).colorScheme;

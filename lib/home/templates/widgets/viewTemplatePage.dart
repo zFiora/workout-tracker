@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:workout_tracker/common/widgets/myCustomeButton.dart';
+import 'package:workout_tracker/common/widgets/myCustomeScaffoldView.dart';
 import 'package:workout_tracker/home/exercises/exerciesesList.dart';
 import 'package:workout_tracker/home/exercises/widgets/exerciseTile.dart';
 import 'package:workout_tracker/home/session/sessionViewModel.dart';
@@ -15,8 +16,8 @@ class ViewTemplatePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text(template.name)),
+    return MyCustomeScaffoldView(
+      title: template.name,
       body: Column(
         children: [
           const SizedBox(height: 16),

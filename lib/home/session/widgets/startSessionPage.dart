@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:workout_tracker/home/exercises/models/exerciseModel.dart';
 import 'package:workout_tracker/home/history/historyViewModel.dart';
+import 'package:workout_tracker/home/history/widgets/historyPage.dart';
 import 'package:workout_tracker/home/session/sessionViewModel.dart';
 import 'package:workout_tracker/home/session/widgets/exerciseSessionTile.dart';
 
@@ -79,7 +80,12 @@ class StartSessionPage extends StatelessWidget {
                       await context.read<HistoryViewModel>().save(entry);
 
                       if (context.mounted) {
-                        Navigator.pop(context); // back to template view
+                        Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const HistoryPage(),
+                          ),
+                        ); // back to template view
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
                             content: Text('Workout saved to history'),
