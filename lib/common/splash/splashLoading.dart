@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:workout_tracker/common/AppManager.dart';
 import 'package:workout_tracker/common/navigation/mainNavigation.dart';
 import 'package:workout_tracker/core/pb.dart';
 import 'package:workout_tracker/home/login/widgets/gradiantPillButton.dart';
@@ -38,13 +40,12 @@ class _SplashPageState extends State<SplashPage>
     curve: const Interval(0.45, 1.0, curve: Curves.easeOut),
   );
 
-  bool _checking = true; // while deciding
+  bool _checking = true;
   bool _navigated = false;
 
   @override
   void initState() {
     super.initState();
-    // Run auth check in the background; keep splash visible.
     WidgetsBinding.instance.addPostFrameCallback((_) => _decide());
   }
 
@@ -54,37 +55,52 @@ class _SplashPageState extends State<SplashPage>
     super.dispose();
   }
 
+  Future<void> _goMain() async {
+    if (_navigated || !mounted) return;
+    _navigated = true;
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute(builder: (_) => const MainNavigation()),
+    );
+  }
+
   Future<void> _decide() async {
     if (_navigated) return;
 
     final pb = PB.I.pb;
 
-    // If we have a token but record is empty, try a refresh once.
+    // Try refresh once if token exists but not valid
     if (!pb.authStore.isValid && pb.authStore.token.isNotEmpty) {
       try {
         await pb.collection('users').authRefresh();
-      } catch (e) {
-        // ignore; we'll fall back to unauth flow below
-      }
+      } catch (_) {}
     }
 
     final authed = pb.authStore.isValid && pb.authStore.record != null;
 
-    // Small delay so the animation is visible (tweak as you like)
     await Future.delayed(const Duration(milliseconds: 1200));
-
     if (!mounted) return;
 
     if (authed) {
-      // Logged in → go straight to main
-      _navigated = true;
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (_) => const MainNavigation()),
-      );
+      // Online session
+      context.read<AppManager>().setOnline();
+      await _goMain();
     } else {
-      // Not authed → stay on splash and show buttons
+      // Show buttons every time (Option B)
       setState(() => _checking = false);
     }
+  }
+
+  Future<void> _continueOffline() async {
+    // In-memory only (Option B)
+    context.read<AppManager>().setOffline();
+
+    // Optional: clear PB state to avoid confusion
+    try {
+      PB.I.pb.authStore.clear();
+    } catch (_) {}
+
+    if (!mounted) return;
+    await _goMain();
   }
 
   @override
@@ -112,10 +128,10 @@ class _SplashPageState extends State<SplashPage>
                   'Gym Tracker',
                   textAlign: TextAlign.center,
                   style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 0.5,
-                  ),
+                        color: Colors.white,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.5,
+                      ),
                 ),
                 const Spacer(),
                 FadeTransition(
@@ -157,6 +173,18 @@ class _SplashPageState extends State<SplashPage>
                                 context,
                                 MaterialPageRoute(
                                   builder: (_) => const RegisterPage(),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 14),
+                            TextButton(
+                              onPressed: _continueOffline,
+                              child: const Text(
+                                'CONTINUE OFFLINE',
+                                style: TextStyle(
+                                  color: Colors.white70,
+                                  fontWeight: FontWeight.w600,
+                                  letterSpacing: 0.6,
                                 ),
                               ),
                             ),

@@ -12,7 +12,7 @@ import 'package:workout_tracker/home/account/accountViewModel.dart';
 import 'package:workout_tracker/home/account/model/streakSyncService.dart';
 import 'package:workout_tracker/home/friends/friendsService.dart';
 import 'package:workout_tracker/home/friends/friendsViewModel.dart';
-
+import 'package:workout_tracker/common/AppManager.dart';
 import 'package:workout_tracker/home/session/models/sessionModels.dart';
 import 'package:workout_tracker/home/history/historyViewModel.dart';
 import 'package:workout_tracker/home/templates/models/workoutTemplateModel.dart';
@@ -41,6 +41,7 @@ Future<void> main() async {
   runApp(
     MultiProvider(
       providers: [
+        ChangeNotifierProvider(create: (_) => AppManager()),
         // ----- Core singletons -----
         Provider<PocketBase>.value(value: PB.I.pb),
 
