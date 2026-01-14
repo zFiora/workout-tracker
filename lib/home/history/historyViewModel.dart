@@ -16,6 +16,7 @@ import 'package:workout_tracker/home/session/models/sessionModels.dart';
 /// after save/delete/clear.
 class HistoryViewModel extends ChangeNotifier {
   late final Box<WorkoutHistoryEntry> _box;
+  // ignore: unused_field
   StreakSyncService? _sync;
 
   StreamSubscription<BoxEvent>? _boxSub;
@@ -104,6 +105,7 @@ class HistoryViewModel extends ChangeNotifier {
     // }
 
     @override
+    // ignore: unused_element
     void dispose() {
       _boxSub?.cancel();
       super.dispose();

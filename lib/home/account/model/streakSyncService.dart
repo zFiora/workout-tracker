@@ -97,7 +97,7 @@ class StreakSyncService {
       'currentStreak': newCurrent,
       'bestStreak': newBest,
       'lastWorkoutDate': today.toIso8601String(),
-      'streakRunStartedOn': (runStart ?? today).toIso8601String(),
+      'streakRunStartedOn': (runStart).toIso8601String(),
     });
 
     if (kDebugMode) {

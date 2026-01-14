@@ -13,6 +13,9 @@ import 'package:workout_tracker/home/account/model/streakSyncService.dart';
 import 'package:workout_tracker/home/friends/friendsService.dart';
 import 'package:workout_tracker/home/friends/friendsViewModel.dart';
 import 'package:workout_tracker/common/AppManager.dart';
+import 'package:workout_tracker/home/measure/models/macro_profile.dart';
+import 'package:workout_tracker/home/measure/models/measurement_entry.dart';
+import 'package:workout_tracker/home/session/models/measure_profile.dart';
 import 'package:workout_tracker/home/session/models/sessionModels.dart';
 import 'package:workout_tracker/home/history/historyViewModel.dart';
 import 'package:workout_tracker/home/templates/models/workoutTemplateModel.dart';
@@ -31,9 +34,16 @@ Future<void> main() async {
     ..registerAdapter(PerformedSetAdapter())
     ..registerAdapter(ExerciseLogAdapter())
     ..registerAdapter(WorkoutHistoryEntryAdapter())
-    ..registerAdapter(WorkoutTemplateModelAdapter());
+    ..registerAdapter(WorkoutTemplateModelAdapter())
+    ..registerAdapter(MeasurementEntryAdapter())
+    ..registerAdapter(MeasureProfileAdapter())
+    ..registerAdapter(MacroProfileAdapter());
+
   await Hive.openBox<WorkoutTemplateModel>('templatesBox');
   await Hive.openBox<WorkoutHistoryEntry>('historyBox');
+  await Hive.openBox<MeasurementEntry>('measurementsBox');
+  await Hive.openBox<MeasureProfile>('measureProfileBox');
+  await Hive.openBox<MacroProfile>('macrosProfileBox');
 
   // ----- PocketBase: restore token from secure storage -----
   await PB.I.bootstrapAuth(); // restores token & tries authRefresh()
