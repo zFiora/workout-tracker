@@ -9,11 +9,17 @@ class ExerciseFilterList extends StatefulWidget {
   final List<ExerciseModel> exercises;
   final Set<ExerciseModel>? selectedExercises;
   final Function(ExerciseModel)? onExerciseTap;
+
+  /// Extra space at the bottom of the scroll list so the last item isn't hidden
+  /// behind any fixed UI (e.g., Save button / bottom bar).
+  final double bottomPadding;
+
   const ExerciseFilterList({
     super.key,
     required this.exercises,
     this.selectedExercises,
     this.onExerciseTap,
+    this.bottomPadding = 0,
   });
 
   @override
@@ -83,9 +89,8 @@ class _ExerciseFilterListState extends State<ExerciseFilterList> {
     required VoidCallback onTap,
   }) {
     final primary = Theme.of(context).colorScheme.primary;
-    final surfaceVariant = Theme.of(
-      context,
-    ).colorScheme.surfaceContainerHighest;
+    final surfaceVariant = Theme.of(context).colorScheme.surfaceContainerHighest;
+
     return Padding(
       padding: const EdgeInsets.only(right: 8),
       child: GestureDetector(
@@ -135,6 +140,7 @@ class _ExerciseFilterListState extends State<ExerciseFilterList> {
 
   Widget _buildFilteredList() {
     return ListView.builder(
+      padding: EdgeInsets.only(bottom: widget.bottomPadding),
       itemCount: filteredExercises.length,
       itemBuilder: (context, index) {
         final ex = filteredExercises[index];
@@ -154,6 +160,7 @@ class _ExerciseFilterListState extends State<ExerciseFilterList> {
     }
 
     return ListView(
+      padding: EdgeInsets.only(bottom: widget.bottomPadding),
       children: grouped.entries.map((entry) {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,

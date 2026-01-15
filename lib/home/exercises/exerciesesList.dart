@@ -86,6 +86,24 @@ class ExercisesViewModel {
       category: WorkoutCategory.back,
       workoutImage: 'assets/workouts/back/lower_back_exten.png',
     ),
+    ExerciseModel(
+      id: 101,
+      name: 'Dumbbell Back Row',
+      category: WorkoutCategory.back,
+      workoutImage: 'assets/workouts/back/dumbbell_back_row.png',
+    ),
+    ExerciseModel(
+      id: 102,
+      name: 'Linear Back Row Machine',
+      category: WorkoutCategory.back,
+      workoutImage: 'assets/workouts/back/linear_back_row.png',
+    ),
+    ExerciseModel(
+      id: 103,
+      name: 'Barbell Back Row',
+      category: WorkoutCategory.back,
+      workoutImage: 'assets/workouts/back/bar_back_row.png',
+    ),
 
     ExerciseModel(
       id: 14,
@@ -147,6 +165,12 @@ class ExercisesViewModel {
       name: 'Seated Incline Curl',
       category: WorkoutCategory.bicepes,
       workoutImage: 'assets/workouts/bicep/seated_incline_curl.png',
+    ),
+    ExerciseModel(
+      id: 104,
+      name: 'Dumbbell Hammer Curls',
+      category: WorkoutCategory.bicepes,
+      workoutImage: 'assets/workouts/bicep/dummble_hammer_curls.png',
     ),
     ExerciseModel(
       id: 24,
@@ -220,6 +244,12 @@ class ExercisesViewModel {
       name: 'Machine Abs Crunch',
       category: WorkoutCategory.abs,
       workoutImage: 'assets/workouts/abs/machine_abs_crunch.png',
+    ),
+    ExerciseModel(
+      id: 100,
+      name: 'Dragon flag',
+      category: WorkoutCategory.abs,
+      workoutImage: 'assets/workouts/abs/dragon_flag.png',
     ),
 
     ExerciseModel(
@@ -317,6 +347,24 @@ class ExercisesViewModel {
       name: 'Cable Crossover',
       category: WorkoutCategory.chest,
       workoutImage: 'assets/workouts/chest/cabel_crossover.png',
+    ),
+    ExerciseModel(
+      id: 105,
+      name: 'Cable Crossover',
+      category: WorkoutCategory.chest,
+      workoutImage: 'assets/workouts/chest/dummbble_flat_press.png',
+    ),
+    ExerciseModel(
+      id: 106,
+      name: 'Incline Bench Press',
+      category: WorkoutCategory.chest,
+      workoutImage: 'assets/workouts/chest/incline_bench_press.png',
+    ),
+    ExerciseModel(
+      id: 107,
+      name: 'Incline Chest Press ( Machine )',
+      category: WorkoutCategory.chest,
+      workoutImage: 'assets/workouts/chest/incline_machine_press.png',
     ),
     ExerciseModel(
       id: 52,

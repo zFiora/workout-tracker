@@ -85,6 +85,9 @@ flutter:
     - assets/workouts/chest/flat_smith_press.png
     - assets/workouts/chest/machine_chest_press_flat.png
     - assets/workouts/chest/cabel_crossover.png
+    - assets/workouts/chest/dummbble_flat_press.png
+    - assets/workouts/chest/incline_bench_press.png
+    - assets/workouts/chest/incline_machine_press.png
 
     - assets/workouts/back/lat_pulldown.png
     - assets/workouts/back/panta_lat_pulldown.png
@@ -95,6 +98,9 @@ flutter:
     - assets/workouts/back/assisted_pullup.png
     - assets/workouts/back/lower_back_exten.png
     - assets/workouts/back/close_grip_lat_pulldown.png
+    - assets/workouts/back/dumbbell_back_row.png
+    - assets/workouts/back/linear_back_row.png
+    - assets/workouts/back/bar_back_row.png
 
     - assets/workouts/shoulder/face_pull.png
     - assets/workouts/shoulder/lateral_raise_cable.png
@@ -118,11 +124,13 @@ flutter:
     - assets/workouts/bicep/hammer_curl_cable.png
     - assets/workouts/bicep/preacher_curl.png
     - assets/workouts/bicep/seated_incline_curl.png
+    - assets/workouts/bicep/dummble_hammer_curls.png
 
     - assets/workouts/abs/abs_twist.png
     - assets/workouts/abs/decline_setup.png
     - assets/workouts/abs/leg_raises.png
     - assets/workouts/abs/machine_abs_crunch.png
+    - assets/workouts/abs/dragon_flag.png
 
     - assets/workouts/legs/bulgarian_split_squat.png
     - assets/workouts/legs/squat.png

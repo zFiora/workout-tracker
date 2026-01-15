@@ -4,8 +4,6 @@ import 'package:workout_tracker/common/AppManager.dart';
 import 'package:workout_tracker/common/navigation/mainNavigation.dart';
 import 'package:workout_tracker/core/pb.dart';
 import 'package:workout_tracker/home/login/widgets/gradiantPillButton.dart';
-import 'package:workout_tracker/home/login/widgets/loginPage.dart';
-import 'package:workout_tracker/home/login/widgets/registerPage.dart';
 import 'package:workout_tracker/main.dart';
 
 class SplashPage extends StatefulWidget {
@@ -53,6 +51,77 @@ class _SplashPageState extends State<SplashPage>
   void dispose() {
     _ac.dispose();
     super.dispose();
+  }
+
+  void _showOnlineComingSoon(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isDismissible: true,
+      builder: (_) {
+        return Container(
+          margin: const EdgeInsets.all(16),
+          padding: const EdgeInsets.fromLTRB(20, 20, 20, 28),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(24),
+            gradient: const LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [Color(0xFF111827), Color(0xFF020617)],
+            ),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(
+                Icons.cloud_off_rounded,
+                size: 42,
+                color: Colors.white,
+              ),
+              const SizedBox(height: 14),
+              const Text(
+                'Online Mode Coming Soon',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.white,
+                ),
+              ),
+              const SizedBox(height: 10),
+              const Text(
+                'We’re still working on the online experience.\n'
+                'For now, you can use the app offline without any limits.',
+                textAlign: TextAlign.center,
+                style: TextStyle(color: Colors.white70, height: 1.4),
+              ),
+              const SizedBox(height: 22),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.white,
+                    foregroundColor: Colors.black,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                  ),
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text(
+                    'OK, GOT IT',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0.6,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
   }
 
   Future<void> _goMain() async {
@@ -128,10 +197,10 @@ class _SplashPageState extends State<SplashPage>
                   'Gym Tracker',
                   textAlign: TextAlign.center,
                   style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: 0.5,
-                      ),
+                    color: Colors.white,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 0.5,
+                  ),
                 ),
                 const Spacer(),
                 FadeTransition(
@@ -159,22 +228,12 @@ class _SplashPageState extends State<SplashPage>
                               whiteColor: true,
                               labelColor: brandEnd,
                               label: 'SIGN IN',
-                              onPressed: () => Navigator.pushReplacement(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => const LoginPage(),
-                                ),
-                              ),
+                              onPressed: () => _showOnlineComingSoon(context),
                             ),
                             const SizedBox(height: 14),
                             GradientPillButton(
                               label: 'SIGN UP',
-                              onPressed: () => Navigator.pushReplacement(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => const RegisterPage(),
-                                ),
-                              ),
+                              onPressed: () => _showOnlineComingSoon(context),
                             ),
                             const SizedBox(height: 14),
                             TextButton(
