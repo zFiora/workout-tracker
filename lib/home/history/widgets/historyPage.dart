@@ -11,7 +11,7 @@ class HistoryPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final vm = context.watch<HistoryViewModel>();
-    final items = vm.history;
+    final items = vm.historyItems; // ✅ sorted newest-first + has Hive key
 
     if (items.isEmpty) {
       return const Center(child: Text('No old sessions'));
@@ -22,26 +22,66 @@ class HistoryPage extends StatelessWidget {
       body: ListView.separated(
         padding: const EdgeInsets.symmetric(vertical: 8),
         itemCount: items.length,
-        separatorBuilder: (_, _) => const Divider(height: 1),
+        separatorBuilder: (_, _) => const SizedBox(height: 0),
         itemBuilder: (context, i) {
-          final e = items[i];
-          return HistoryTile(
-            entry: e,
-            onTap: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) => HistorySessionDetailPage(entry: e),
+          final item = items[i];
+          final entry = item.entry;
+
+          Future<void> deleteWithUndo() async {
+            final deletedEntry = entry;
+
+            await vm.deleteByKey(item.key);
+
+            if (!context.mounted) return;
+
+            ScaffoldMessenger.of(context)
+              ..clearSnackBars()
+              ..showSnackBar(
+                SnackBar(
+                  content: const Text('Deleted from history'),
+                  action: SnackBarAction(
+                    label: 'UNDO',
+                    onPressed: () async {
+                      await vm.save(deletedEntry);
+                    },
+                  ),
                 ),
               );
+          }
+
+          return Dismissible(
+            key: ValueKey(item.key),
+            direction: DismissDirection.endToStart,
+            confirmDismiss: (_) async {
+              // Optional: prevent accidental deletes by requiring a swipe + release.
+              // Returning true allows dismiss.
+              return true;
             },
-            onDelete: () async {
-              await vm.deleteAt(i);
-              if (context.mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Deleted from history')),
+            background: Container(
+              margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              padding: const EdgeInsets.only(right: 18),
+              alignment: Alignment.centerRight,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(16),
+                color: Theme.of(context).colorScheme.errorContainer,
+              ),
+              child: Icon(
+                Icons.delete_outline,
+                color: Theme.of(context).colorScheme.onErrorContainer,
+              ),
+            ),
+            onDismissed: (_) => deleteWithUndo(),
+            child: HistoryTile(
+              entry: entry,
+              onTap: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => HistorySessionDetailPage(entry: entry),
+                  ),
                 );
-              }
-            },
+              },
+              onDelete: deleteWithUndo, // menu delete fallback
+            ),
           );
         },
       ),
