@@ -36,6 +36,29 @@ class PerformedSet {
   get setType => type;
 }
 
+/// A planned row shown to the user (editable) before they mark it Done.
+@HiveType(typeId: 5)
+class PlannedSet {
+  @HiveField(0)
+  SetType type;
+
+  @HiveField(1)
+  double? weight;
+
+  @HiveField(2)
+  int? reps;
+
+  @HiveField(3)
+  bool done;
+
+  PlannedSet({
+    required this.type,
+    this.weight,
+    this.reps,
+    this.done = false,
+  });
+}
+
 @HiveType(typeId: 3)
 class ExerciseLog {
   @HiveField(0)
@@ -50,12 +73,18 @@ class ExerciseLog {
   @HiveField(3)
   String exerciseIcon;
 
+  // New: checklist rows prefilled from last workout
+  @HiveField(4)
+  final List<PlannedSet> plannedSets;
+
   ExerciseLog({
     required this.exerciseId,
     required this.exerciseIcon,
     required this.exerciseName,
     List<PerformedSet>? sets,
-  }) : sets = sets ?? [];
+    List<PlannedSet>? plannedSets,
+  })  : sets = sets ?? [],
+        plannedSets = plannedSets ?? [];
 }
 
 @HiveType(typeId: 4)

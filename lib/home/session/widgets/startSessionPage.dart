@@ -26,84 +26,202 @@ class StartSessionPage extends StatelessWidget {
     return '$h:$m:$s';
   }
 
+  Future<bool> _confirmEndSession(BuildContext context) async {
+    return (await showDialog<bool>(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            title: const Text('End session?'),
+            content: const Text('This will save your workout to history.'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, false),
+                child: const Text('Cancel'),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.pop(ctx, true),
+                child: const Text('End & Save'),
+              ),
+            ],
+          ),
+        )) ??
+        false;
+  }
+
   @override
   Widget build(BuildContext context) {
     final session = context.watch<WorkoutSessionViewModel>();
+    final cs = Theme.of(context).colorScheme;
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(templateName),
+        title: Text(
+          templateName,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
         actions: [
-          Center(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              child: Text(
-                _format(session.elapsed),
-                style: const TextStyle(fontWeight: FontWeight.bold),
-              ),
-            ),
-          ),
-        ],
-      ),
-      body: Column(
-        children: [
-          const SizedBox(height: 8),
-          Expanded(
-            child: ListView.separated(
-              itemCount: exercises.length,
-              separatorBuilder: (_, __) => const Divider(height: 1),
-              itemBuilder: (context, i) {
-                final ex = exercises[i];
-                return ExerciseSessionTile(
-                  exercise: ex,
-                  templateId: templateId,
-                );
-              },
-            ),
-          ),
-          SafeArea(
-            top: false,
-            child: Padding(
-              padding: const EdgeInsets.all(12),
-              child: SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: session.isRunning
-                        ? Colors.red
-                        : Theme.of(context).colorScheme.primary,
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                  ),
-                  onPressed: () async {
-                    if (session.isRunning) {
-                      final entry = session.end();
-                      await context.read<HistoryViewModel>().save(entry);
-
-                      if (context.mounted) {
-                        Navigator.pushReplacement(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => const HistoryPage(),
-                          ),
-                        ); // back to template view
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Workout saved to history'),
-                          ),
-                        );
-                      }
-                    } else {
-                      session.start();
-                    }
-                  },
-                  child: Text(
-                    session.isRunning ? 'End Session' : 'Start Session',
-                  ),
+          Padding(
+            padding: const EdgeInsets.only(right: 12),
+            child: Center(
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                decoration: BoxDecoration(
+                  color: cs.surfaceContainerHighest.withOpacity(0.6),
+                  borderRadius: BorderRadius.circular(999),
+                  border: Border.all(color: cs.outlineVariant.withOpacity(0.6)),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.timer_outlined, size: 16, color: cs.onSurfaceVariant),
+                    const SizedBox(width: 6),
+                    Text(
+                      _format(session.elapsed),
+                      style: TextStyle(
+                        fontWeight: FontWeight.w800,
+                        color: cs.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
           ),
         ],
+      ),
+
+      body: exercises.isEmpty
+          ? _EmptyExercisesState(
+              templateName: templateName,
+              isRunning: session.isRunning,
+            )
+          : ListView.builder(
+              padding: const EdgeInsets.fromLTRB(12, 12, 12, 110),
+              itemCount: exercises.length,
+              itemBuilder: (context, i) {
+                final ex = exercises[i];
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 10),
+                  child: ExerciseSessionTile(
+                    exercise: ex,
+                    templateId: templateId,
+                  ),
+                );
+              },
+            ),
+
+      bottomNavigationBar: SafeArea(
+        top: false,
+        child: Container(
+          padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
+          decoration: BoxDecoration(
+            color: Theme.of(context).scaffoldBackgroundColor,
+            border: Border(
+              top: BorderSide(color: cs.outlineVariant.withOpacity(0.6)),
+            ),
+          ),
+          child: Row(
+            children: [
+              // Secondary action (optional but makes UI feel complete)
+              IconButton(
+                tooltip: 'History',
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const HistoryPage()),
+                  );
+                },
+                icon: const Icon(Icons.history),
+              ),
+              const SizedBox(width: 8),
+
+              Expanded(
+                child: SizedBox(
+                  height: 48,
+                  child: FilledButton(
+                    style: FilledButton.styleFrom(
+                      backgroundColor: session.isRunning ? Colors.red : null,
+                    ),
+                    onPressed: () async {
+                      if (!session.isRunning) {
+                        session.start();
+                        return;
+                      }
+
+                      // confirm before ending
+                      final ok = await _confirmEndSession(context);
+                      if (!ok) return;
+
+                      final entry = session.end();
+                      await context.read<HistoryViewModel>().save(entry);
+
+                      if (!context.mounted) return;
+
+                      Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(builder: (_) => const HistoryPage()),
+                      );
+
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Workout saved to history')),
+                      );
+                    },
+                    child: Text(session.isRunning ? 'End & Save' : 'Start Session'),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _EmptyExercisesState extends StatelessWidget {
+  final String templateName;
+  final bool isRunning;
+
+  const _EmptyExercisesState({
+    required this.templateName,
+    required this.isRunning,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.playlist_add, size: 44, color: cs.onSurfaceVariant),
+            const SizedBox(height: 12),
+            Text(
+              'No exercises in this template',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w800,
+                color: cs.onSurface,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              'Add exercises to "$templateName" to start a session.',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: cs.onSurfaceVariant),
+            ),
+            const SizedBox(height: 12),
+            if (isRunning)
+              Text(
+                'Note: you currently have an active session running.',
+                textAlign: TextAlign.center,
+                style: TextStyle(color: cs.onSurfaceVariant),
+              ),
+          ],
+        ),
       ),
     );
   }

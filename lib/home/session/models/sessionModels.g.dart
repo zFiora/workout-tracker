@@ -49,6 +49,49 @@ class PerformedSetAdapter extends TypeAdapter<PerformedSet> {
           typeId == other.typeId;
 }
 
+class PlannedSetAdapter extends TypeAdapter<PlannedSet> {
+  @override
+  final int typeId = 5;
+
+  @override
+  PlannedSet read(BinaryReader reader) {
+    final numOfFields = reader.readByte();
+    final fields = <int, dynamic>{
+      for (int i = 0; i < numOfFields; i++) reader.readByte(): reader.read(),
+    };
+    return PlannedSet(
+      type: fields[0] as SetType,
+      weight: fields[1] as double?,
+      reps: fields[2] as int?,
+      done: fields[3] as bool,
+    );
+  }
+
+  @override
+  void write(BinaryWriter writer, PlannedSet obj) {
+    writer
+      ..writeByte(4)
+      ..writeByte(0)
+      ..write(obj.type)
+      ..writeByte(1)
+      ..write(obj.weight)
+      ..writeByte(2)
+      ..write(obj.reps)
+      ..writeByte(3)
+      ..write(obj.done);
+  }
+
+  @override
+  int get hashCode => typeId.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is PlannedSetAdapter &&
+          runtimeType == other.runtimeType &&
+          typeId == other.typeId;
+}
+
 class ExerciseLogAdapter extends TypeAdapter<ExerciseLog> {
   @override
   final int typeId = 3;
@@ -64,13 +107,14 @@ class ExerciseLogAdapter extends TypeAdapter<ExerciseLog> {
       exerciseIcon: fields[3] as String,
       exerciseName: fields[2] as String,
       sets: (fields[1] as List?)?.cast<PerformedSet>(),
+      plannedSets: (fields[4] as List?)?.cast<PlannedSet>(),
     );
   }
 
   @override
   void write(BinaryWriter writer, ExerciseLog obj) {
     writer
-      ..writeByte(4)
+      ..writeByte(5)
       ..writeByte(0)
       ..write(obj.exerciseId)
       ..writeByte(1)
@@ -78,7 +122,9 @@ class ExerciseLogAdapter extends TypeAdapter<ExerciseLog> {
       ..writeByte(2)
       ..write(obj.exerciseName)
       ..writeByte(3)
-      ..write(obj.exerciseIcon);
+      ..write(obj.exerciseIcon)
+      ..writeByte(4)
+      ..write(obj.plannedSets);
   }
 
   @override

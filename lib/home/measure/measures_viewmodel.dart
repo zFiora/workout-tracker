@@ -6,7 +6,7 @@ import 'package:workout_tracker/home/measure/repositeries/macros_profile_reposit
 
 // ⚠️ Keep your current import path if that's where your MeasureProfile is.
 // If you actually created it under home/measure/models, then change this import.
-import 'package:workout_tracker/home/session/models/measure_profile.dart';
+import 'package:workout_tracker/home/measure/models/measure_profile.dart';
 
 import 'models/measurement_entry.dart';
 import 'repositeries/measures_repository.dart';

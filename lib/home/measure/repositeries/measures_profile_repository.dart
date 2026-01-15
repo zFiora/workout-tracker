@@ -1,5 +1,5 @@
 import 'package:hive/hive.dart';
-import 'package:workout_tracker/home/session/models/measure_profile.dart';
+import 'package:workout_tracker/home/measure/models/measure_profile.dart';
 
 
 class MeasuresProfileRepository {

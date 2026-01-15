@@ -103,11 +103,15 @@ class _MeasuresViewState extends State<_MeasuresView> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text('Current weight',
-                          style: TextStyle(fontSize: 13)),
+                      const Text(
+                        'Current weight',
+                        style: TextStyle(fontSize: 13),
+                      ),
                       const SizedBox(height: 6),
                       Text(
-                        latest == null ? '—' : '${latest.toStringAsFixed(1)} kg',
+                        latest == null
+                            ? '—'
+                            : '${latest.toStringAsFixed(1)} kg',
                         style: const TextStyle(
                           fontSize: 28,
                           fontWeight: FontWeight.w800,
@@ -221,16 +225,17 @@ class _MeasuresViewState extends State<_MeasuresView> {
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(14),
-        child: SizedBox(
-          height: 220,
-          child: WeightLineChart(entries: entries, minY: minY, maxY: maxY),
-        ),
+        child: SizedBox(height: 220, child: WeightLineChart(entries: entries)),
       ),
     );
   }
 
   // ===== Add Entry =====
-  Widget _addEntryCard(BuildContext context, DateFormat df, MeasuresViewModel vm) {
+  Widget _addEntryCard(
+    BuildContext context,
+    DateFormat df,
+    MeasuresViewModel vm,
+  ) {
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(14),
@@ -244,8 +249,9 @@ class _MeasuresViewState extends State<_MeasuresView> {
             const SizedBox(height: 10),
             TextField(
               controller: _weightController,
-              keyboardType:
-                  const TextInputType.numberWithOptions(decimal: true),
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
               decoration: const InputDecoration(
                 labelText: 'Weight (kg)',
                 border: OutlineInputBorder(),
@@ -329,7 +335,7 @@ class _MeasuresViewState extends State<_MeasuresView> {
                 TextButton(
                   onPressed: () => _showMacrosSettings(context, vm),
                   child: const Text('Edit'),
-                )
+                ),
               ],
             ),
             const SizedBox(height: 6),
@@ -339,7 +345,9 @@ class _MeasuresViewState extends State<_MeasuresView> {
             ),
             const SizedBox(height: 12),
             if (pack == null)
-              const Text('Set height and add a weight entry to calculate macros.')
+              const Text(
+                'Set height and add a weight entry to calculate macros.',
+              )
             else ...[
               _macroRow('Maintenance', pack.maintenance),
               const Divider(),
@@ -413,7 +421,10 @@ class _MeasuresViewState extends State<_MeasuresView> {
                           ),
                           items: const [
                             DropdownMenuItem(value: true, child: Text('Male')),
-                            DropdownMenuItem(value: false, child: Text('Female')),
+                            DropdownMenuItem(
+                              value: false,
+                              child: Text('Female'),
+                            ),
                           ],
                           onChanged: (v) => setLocal(() => isMale = v ?? true),
                         ),
@@ -443,10 +454,10 @@ class _MeasuresViewState extends State<_MeasuresView> {
                       border: OutlineInputBorder(),
                     ),
                     items: activities
-                        .map((a) => DropdownMenuItem(
-                              value: a.$2,
-                              child: Text(a.$1),
-                            ))
+                        .map(
+                          (a) =>
+                              DropdownMenuItem(value: a.$2, child: Text(a.$1)),
+                        )
                         .toList(),
                     onChanged: (v) => setLocal(() => activity = v ?? 1.375),
                   ),
@@ -489,7 +500,10 @@ class _MeasuresViewState extends State<_MeasuresView> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const Text('History', style: TextStyle(fontWeight: FontWeight.w700)),
+            const Text(
+              'History',
+              style: TextStyle(fontWeight: FontWeight.w700),
+            ),
             const SizedBox(height: 10),
             if (entries.isEmpty)
               const Text('No entries yet. Add your weight above.')
@@ -511,3 +525,5 @@ class _MeasuresViewState extends State<_MeasuresView> {
     );
   }
 }
+
+

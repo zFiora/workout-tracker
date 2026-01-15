@@ -1,17 +1,15 @@
+import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import '../models/measurement_entry.dart';
+import 'package:intl/intl.dart';
 
 class WeightLineChart extends StatelessWidget {
   const WeightLineChart({
     super.key,
     required this.entries,
-    required this.minY,
-    required this.maxY,
   });
 
   final List<MeasurementEntry> entries;
-  final double minY;
-  final double maxY;
 
   @override
   Widget build(BuildContext context) {
@@ -21,108 +19,116 @@ class WeightLineChart extends StatelessWidget {
       );
     }
 
-    return LayoutBuilder(
-      builder: (context, c) {
-        return CustomPaint(
-          size: Size(double.infinity, c.maxHeight),
-          painter: _LinePainter(
-            entries: entries,
-            minY: minY,
-            maxY: maxY,
-            lineColor: Theme.of(context).colorScheme.primary,
-            gridColor: Theme.of(context).dividerColor,
-            textStyle: Theme.of(context).textTheme.bodySmall!,
-          ),
-        );
-      },
-    );
-  }
-}
-
-class _LinePainter extends CustomPainter {
-  _LinePainter({
-    required this.entries,
-    required this.minY,
-    required this.maxY,
-    required this.lineColor,
-    required this.gridColor,
-    required this.textStyle,
-  });
-
-  final List<MeasurementEntry> entries;
-  final double minY;
-  final double maxY;
-  final Color lineColor;
-  final Color gridColor;
-  final TextStyle textStyle;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final padding = const EdgeInsets.fromLTRB(12, 12, 12, 24);
-    final w = size.width - padding.left - padding.right;
-    final h = size.height - padding.top - padding.bottom;
-
-    final rect = Rect.fromLTWH(padding.left, padding.top, w, h);
-
-    // Grid (3 horizontal lines)
-    final gridPaint = Paint()
-      ..color = gridColor.withOpacity(0.4)
-      ..strokeWidth = 1;
-
-    for (int i = 0; i <= 3; i++) {
-      final y = rect.top + (h * i / 3);
-      canvas.drawLine(Offset(rect.left, y), Offset(rect.right, y), gridPaint);
-    }
-
-    // Points
-    final points = <Offset>[];
+    final spots = <FlSpot>[];
     for (int i = 0; i < entries.length; i++) {
-      final x = rect.left + (w * i / (entries.length - 1));
-      final yVal = entries[i].weightKg;
-      final t = ((yVal - minY) / (maxY - minY)).clamp(0.0, 1.0);
-      final y = rect.bottom - (h * t);
-      points.add(Offset(x, y));
+      spots.add(FlSpot(i.toDouble(), entries[i].weightKg));
     }
 
-    // Line
-    final linePaint = Paint()
-      ..color = lineColor
-      ..strokeWidth = 2.5
-      ..style = PaintingStyle.stroke;
+    final minY =
+        entries.map((e) => e.weightKg).reduce((a, b) => a < b ? a : b) - 1;
+    final maxY =
+        entries.map((e) => e.weightKg).reduce((a, b) => a > b ? a : b) + 1;
 
-    final path = Path()..moveTo(points.first.dx, points.first.dy);
-    for (int i = 1; i < points.length; i++) {
-      path.lineTo(points[i].dx, points[i].dy);
-    }
-    canvas.drawPath(path, linePaint);
-
-    // Dots
-    final dotPaint = Paint()..color = lineColor;
-    for (final p in points) {
-      canvas.drawCircle(p, 3.5, dotPaint);
-    }
-
-    // Min/Max labels (simple)
-    _drawText(canvas, '${maxY.toStringAsFixed(1)} kg',
-        Offset(rect.left, rect.top - 2));
-    _drawText(canvas, '${minY.toStringAsFixed(1)} kg',
-        Offset(rect.left, rect.bottom - 14));
-  }
-
-  void _drawText(Canvas canvas, String text, Offset offset) {
-    final tp = TextPainter(
-      text: TextSpan(text: text, style: textStyle),
-      textDirection: TextDirection.ltr,
-    )..layout();
-    tp.paint(canvas, offset);
-  }
-
-  @override
-  bool shouldRepaint(covariant _LinePainter oldDelegate) {
-    return oldDelegate.entries != entries ||
-        oldDelegate.minY != minY ||
-        oldDelegate.maxY != maxY ||
-        oldDelegate.lineColor != lineColor ||
-        oldDelegate.gridColor != gridColor;
+    return LineChart(
+      LineChartData(
+        minY: minY,
+        maxY: maxY,
+        gridData: FlGridData(
+          show: true,
+          drawVerticalLine: false,
+          horizontalInterval: 1,
+          getDrawingHorizontalLine: (_) => FlLine(
+            color: Colors.grey.withOpacity(0.15),
+            strokeWidth: 1,
+          ),
+        ),
+        titlesData: FlTitlesData(
+          topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          rightTitles:
+              const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          leftTitles: AxisTitles(
+            sideTitles: SideTitles(
+              showTitles: true,
+              interval: 1,
+              reservedSize: 42,
+              getTitlesWidget: (value, _) => Text(
+                value.toStringAsFixed(0),
+                style: const TextStyle(fontSize: 12),
+              ),
+            ),
+          ),
+          bottomTitles: AxisTitles(
+            sideTitles: SideTitles(
+              showTitles: true,
+              interval: (entries.length / 4).clamp(1, 999),
+              getTitlesWidget: (value, _) {
+                final idx = value.toInt();
+                if (idx < 0 || idx >= entries.length) {
+                  return const SizedBox.shrink();
+                }
+                final date =
+                    DateFormat('dd/MM').format(entries[idx].date.toLocal());
+                return Padding(
+                  padding: const EdgeInsets.only(top: 6),
+                  child: Text(date, style: const TextStyle(fontSize: 11)),
+                );
+              },
+            ),
+          ),
+        ),
+        borderData: FlBorderData(show: false),
+        lineTouchData: LineTouchData(
+          handleBuiltInTouches: true,
+          touchTooltipData: LineTouchTooltipData(
+            tooltipBgColor: Theme.of(context).colorScheme.surface,
+            getTooltipItems: (touchedSpots) {
+              return touchedSpots.map((spot) {
+                final idx = spot.x.toInt();
+                final e = entries[idx];
+                return LineTooltipItem(
+                  '${e.weightKg.toStringAsFixed(1)} kg\n'
+                  '${DateFormat('EEE, dd MMM').format(e.date.toLocal())}',
+                  const TextStyle(fontWeight: FontWeight.w600),
+                );
+              }).toList();
+            },
+          ),
+        ),
+        lineBarsData: [
+          LineChartBarData(
+            spots: spots,
+            isCurved: true,
+            curveSmoothness: 0.35,
+            barWidth: 3,
+            dotData: FlDotData(
+              show: true,
+              getDotPainter: (_, __, ___, ____) => FlDotCirclePainter(
+                radius: 3.5,
+                color: Theme.of(context).colorScheme.primary,
+                strokeWidth: 0,
+              ),
+            ),
+            belowBarData: BarAreaData(
+              show: true,
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  Theme.of(context).colorScheme.primary.withOpacity(0.35),
+                  Theme.of(context).colorScheme.primary.withOpacity(0.05),
+                ],
+              ),
+            ),
+            gradient: LinearGradient(
+              colors: [
+                Theme.of(context).colorScheme.primary,
+                Theme.of(context).colorScheme.secondary,
+              ],
+            ),
+          ),
+        ],
+      ),
+      duration: const Duration(milliseconds: 250),
+    );
   }
 }
