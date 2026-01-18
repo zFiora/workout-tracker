@@ -22,6 +22,61 @@ class ExerciseSessionTile extends StatefulWidget {
 class _ExerciseSessionTileState extends State<ExerciseSessionTile> {
   bool _autoLoaded = false;
 
+  // Controllers keyed by "exerciseId:index"
+  final Map<String, TextEditingController> _wCtrls = {};
+  final Map<String, TextEditingController> _rCtrls = {};
+
+  // Mark controllers that were initialized from the model once.
+  final Set<String> _initialized = {};
+
+  // Which planned rows are currently in "edit mode" (only for done rows)
+  final Set<String> _editingKeys = {};
+
+  String _k(int exerciseId, int index) => '$exerciseId:$index';
+
+  TextEditingController _wc(int exerciseId, int index) =>
+      _wCtrls.putIfAbsent(_k(exerciseId, index), () => TextEditingController());
+
+  TextEditingController _rc(int exerciseId, int index) =>
+      _rCtrls.putIfAbsent(_k(exerciseId, index), () => TextEditingController());
+
+  void _initControllersOnce({
+    required int exerciseId,
+    required int index,
+    required PlannedSet p,
+  }) {
+    final key = _k(exerciseId, index);
+    if (_initialized.contains(key)) return;
+
+    final wCtrl = _wc(exerciseId, index);
+    final rCtrl = _rc(exerciseId, index);
+
+    wCtrl.text = p.weight == null ? '' : p.weight!.toString();
+    rCtrl.text = p.reps == null ? '' : p.reps!.toString();
+
+    _initialized.add(key);
+  }
+
+  void _cleanupControllers(int exerciseId, int plannedLength) {
+    final validKeys = <String>{};
+    for (int i = 0; i < plannedLength; i++) {
+      validKeys.add(_k(exerciseId, i));
+    }
+
+    final toRemove = _wCtrls.keys
+        .where((k) => k.startsWith('$exerciseId:') && !validKeys.contains(k))
+        .toList();
+
+    for (final k in toRemove) {
+      _wCtrls.remove(k)?.dispose();
+      _rCtrls.remove(k)?.dispose();
+      _editingKeys.remove(k);
+      _initialized.remove(k);
+    }
+  }
+
+  // ---------- history preload ----------
+
   List<PerformedSet> _lastWorkoutSetsForExercise({
     required HistoryViewModel historyVM,
     required String templateId,
@@ -29,23 +84,30 @@ class _ExerciseSessionTileState extends State<ExerciseSessionTile> {
   }) {
     if (historyVM.history.isEmpty) return const [];
 
-    final templateEntries = historyVM.history
-        .where((e) => e.templateId == templateId)
-        .toList();
+    final templateEntries =
+        historyVM.history.where((e) => e.templateId == templateId).toList();
     if (templateEntries.isEmpty) return const [];
 
-    for (final entry in templateEntries.reversed) {
-      final exLogs = entry.logs.where((l) => l.exerciseId == exerciseId);
-      if (exLogs.isEmpty) continue;
+    // Pick the most recent workout by endedAt (fallback to startedAt).
+    templateEntries.sort((a, b) {
+      final aTime = a.endedAt ?? a.startedAt;
+      final bTime = b.endedAt ?? b.startedAt;
+      return bTime.compareTo(aTime);
+    });
 
-      final sets = exLogs.last.sets;
-      if (sets.isEmpty) continue;
+    for (final entry in templateEntries) {
+      final exLog = entry.logs
+          .cast<ExerciseLog?>()
+          .firstWhere((l) => l?.exerciseId == exerciseId, orElse: () => null);
 
-      return List<PerformedSet>.from(sets);
+      final sets = exLog?.sets ?? const <PerformedSet>[];
+      if (sets.isNotEmpty) return List<PerformedSet>.from(sets);
     }
 
     return const [];
   }
+
+  // ---------- UI helpers ----------
 
   int _workNumberAtPlanned(List<PlannedSet> sets, int index) {
     int c = 0;
@@ -60,8 +122,8 @@ class _ExerciseSessionTileState extends State<ExerciseSessionTile> {
     return type == SetType.work
         ? cs.primary
         : type == SetType.warmup
-        ? Colors.orange
-        : Colors.purple;
+            ? Colors.orange
+            : Colors.purple;
   }
 
   @override
@@ -89,7 +151,6 @@ class _ExerciseSessionTileState extends State<ExerciseSessionTile> {
       );
 
       if (lastSets.isEmpty) {
-        // no history -> create 1 empty work row
         session.addPlannedSetRow(exerciseId: widget.exercise.id);
       } else {
         session.loadPlannedSetsFromLastWorkout(
@@ -101,6 +162,17 @@ class _ExerciseSessionTileState extends State<ExerciseSessionTile> {
   }
 
   @override
+  void dispose() {
+    for (final c in _wCtrls.values) {
+      c.dispose();
+    }
+    for (final c in _rCtrls.values) {
+      c.dispose();
+    }
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final session = context.watch<WorkoutSessionViewModel>();
     final log = session.logs[widget.exercise.id];
@@ -109,6 +181,8 @@ class _ExerciseSessionTileState extends State<ExerciseSessionTile> {
     final doneCount = planned.where((p) => p.done).length;
 
     final cs = Theme.of(context).colorScheme;
+
+    _cleanupControllers(widget.exercise.id, planned.length);
 
     return Card(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -141,6 +215,20 @@ class _ExerciseSessionTileState extends State<ExerciseSessionTile> {
                 separatorBuilder: (_, __) => const SizedBox(height: 8),
                 itemBuilder: (_, i) {
                   final p = planned[i];
+                  final key = _k(widget.exercise.id, i);
+
+                  _initControllersOnce(
+                    exerciseId: widget.exercise.id,
+                    index: i,
+                    p: p,
+                  );
+
+                  final wCtrl = _wc(widget.exercise.id, i);
+                  final rCtrl = _rc(widget.exercise.id, i);
+
+                  final isEditing = _editingKeys.contains(key);
+                  final isLocked = p.done && !isEditing;
+                  final allowEdit = !p.done || isEditing;
 
                   String label;
                   if (p.type == SetType.warmup) {
@@ -149,6 +237,34 @@ class _ExerciseSessionTileState extends State<ExerciseSessionTile> {
                     label = 'D';
                   } else {
                     label = _workNumberAtPlanned(planned, i).toString();
+                  }
+
+                  void showInvalidSnack() {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Enter valid weight and reps'),
+                        duration: Duration(seconds: 2),
+                      ),
+                    );
+                  }
+
+                  void commitToModel() {
+                    final w = double.tryParse(
+                      wCtrl.text.trim().replaceAll(',', '.'),
+                    );
+                    final r = int.tryParse(rCtrl.text.trim());
+
+                    if (w == null || r == null) {
+                      showInvalidSnack();
+                      return;
+                    }
+
+                    context.read<WorkoutSessionViewModel>().updatePlannedSet(
+                          exerciseId: widget.exercise.id,
+                          index: i,
+                          weight: w,
+                          reps: r,
+                        );
                   }
 
                   return Container(
@@ -171,14 +287,13 @@ class _ExerciseSessionTileState extends State<ExerciseSessionTile> {
                           label: label,
                           color: _typeColor(context, p.type),
                           tooltip: p.type.name,
-                          onTap: p.done
-                              ? null
-                              : () {
+                          onTap: allowEdit
+                              ? () {
                                   final next = p.type == SetType.work
                                       ? SetType.warmup
                                       : p.type == SetType.warmup
-                                      ? SetType.dropset
-                                      : SetType.work;
+                                          ? SetType.dropset
+                                          : SetType.work;
 
                                   context
                                       .read<WorkoutSessionViewModel>()
@@ -187,15 +302,15 @@ class _ExerciseSessionTileState extends State<ExerciseSessionTile> {
                                         index: i,
                                         type: next,
                                       );
-                                },
+                                }
+                              : null,
                         ),
                         const SizedBox(width: 12),
 
-                        // Weight
                         Expanded(
-                          child: TextFormField(
-                            initialValue: p.weight?.toString(),
-                            enabled: !p.done,
+                          child: TextField(
+                            controller: wCtrl,
+                            enabled: allowEdit,
                             keyboardType: const TextInputType.numberWithOptions(
                               decimal: true,
                             ),
@@ -203,42 +318,19 @@ class _ExerciseSessionTileState extends State<ExerciseSessionTile> {
                               isDense: true,
                               labelText: 'kg',
                             ),
-                            onChanged: (v) {
-                              final w = double.tryParse(
-                                v.trim().replaceAll(',', '.'),
-                              );
-                              context
-                                  .read<WorkoutSessionViewModel>()
-                                  .updatePlannedSet(
-                                    exerciseId: widget.exercise.id,
-                                    index: i,
-                                    weight: w,
-                                  );
-                            },
                           ),
                         ),
                         const SizedBox(width: 10),
 
-                        // Reps
                         Expanded(
-                          child: TextFormField(
-                            initialValue: p.reps?.toString(),
-                            enabled: !p.done,
+                          child: TextField(
+                            controller: rCtrl,
+                            enabled: allowEdit,
                             keyboardType: TextInputType.number,
                             decoration: const InputDecoration(
                               isDense: true,
                               labelText: 'reps',
                             ),
-                            onChanged: (v) {
-                              final r = int.tryParse(v.trim());
-                              context
-                                  .read<WorkoutSessionViewModel>()
-                                  .updatePlannedSet(
-                                    exerciseId: widget.exercise.id,
-                                    index: i,
-                                    reps: r,
-                                  );
-                            },
                           ),
                         ),
                         const SizedBox(width: 10),
@@ -257,21 +349,60 @@ class _ExerciseSessionTileState extends State<ExerciseSessionTile> {
                                   index: i,
                                 ),
                           )
+                        else if (!isEditing)
+                          IconButton(
+                            tooltip: 'Modify',
+                            icon: Icon(
+                              Icons.edit_outlined,
+                              color: cs.onSurfaceVariant,
+                            ),
+                            onPressed: () {
+                              setState(() => _editingKeys.add(key));
+                            },
+                          )
                         else
-                          const SizedBox(width: 48),
+                          IconButton(
+                            tooltip: 'Cancel',
+                            icon: Icon(
+                              Icons.close,
+                              color: cs.onSurfaceVariant,
+                            ),
+                            onPressed: () {
+                              // Revert controllers to the model values, then lock.
+                              wCtrl.text =
+                                  p.weight == null ? '' : p.weight!.toString();
+                              rCtrl.text =
+                                  p.reps == null ? '' : p.reps!.toString();
+
+                              setState(() => _editingKeys.remove(key));
+                              FocusScope.of(context).unfocus();
+                            },
+                          ),
 
                         FilledButton(
-                          onPressed: p.done
+                          onPressed: isLocked
                               ? null
                               : () {
-                                  context
-                                      .read<WorkoutSessionViewModel>()
-                                      .markPlannedSetDone(
-                                        exerciseId: widget.exercise.id,
-                                        index: i,
-                                      );
+                                  // Add: commit values then mark done
+                                  if (!p.done) {
+                                    commitToModel();
+                                    context
+                                        .read<WorkoutSessionViewModel>()
+                                        .markPlannedSetDone(
+                                          exerciseId: widget.exercise.id,
+                                          index: i,
+                                        );
+                                    return;
+                                  }
+
+                                  // Save: commit values then lock again
+                                  commitToModel();
+                                  setState(() => _editingKeys.remove(key));
+                                  FocusScope.of(context).unfocus();
                                 },
-                          child: Text(p.done ? 'Done' : 'Add'),
+                          child: Text(
+                            !p.done ? 'Add' : (isEditing ? 'Save' : 'Done'),
+                          ),
                         ),
                       ],
                     ),
@@ -281,7 +412,6 @@ class _ExerciseSessionTileState extends State<ExerciseSessionTile> {
 
             const SizedBox(height: 12),
 
-            // Add new planned row
             SizedBox(
               width: double.infinity,
               child: OutlinedButton.icon(
@@ -289,9 +419,9 @@ class _ExerciseSessionTileState extends State<ExerciseSessionTile> {
                 label: const Text('Add set'),
                 onPressed: () =>
                     context.read<WorkoutSessionViewModel>().addPlannedSetRow(
-                      exerciseId: widget.exercise.id,
-                      type: SetType.work,
-                    ),
+                          exerciseId: widget.exercise.id,
+                          type: SetType.work,
+                        ),
               ),
             ),
           ],

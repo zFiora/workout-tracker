@@ -13,6 +13,7 @@ import 'package:workout_tracker/home/account/model/streakSyncService.dart';
 import 'package:workout_tracker/home/friends/friendsService.dart';
 import 'package:workout_tracker/home/friends/friendsViewModel.dart';
 import 'package:workout_tracker/common/AppManager.dart';
+import 'package:workout_tracker/home/history/models/exNote.dart';
 import 'package:workout_tracker/home/measure/models/macro_profile.dart';
 import 'package:workout_tracker/home/measure/models/measurement_entry.dart';
 import 'package:workout_tracker/home/measure/models/measure_profile.dart';
@@ -37,8 +38,10 @@ Future<void> main() async {
     ..registerAdapter(WorkoutTemplateModelAdapter())
     ..registerAdapter(MeasurementEntryAdapter())
     ..registerAdapter(MeasureProfileAdapter())
-    ..registerAdapter(MacroProfileAdapter());
+    ..registerAdapter(MacroProfileAdapter())
+    ..registerAdapter(ExerciseNoteAdapter());
 
+  await Hive.openBox<ExerciseNote>('exerciseNotesBox');
   await Hive.openBox<WorkoutTemplateModel>('templatesBox');
   await Hive.openBox<WorkoutHistoryEntry>('historyBox');
   await Hive.openBox<MeasurementEntry>('measurementsBox');

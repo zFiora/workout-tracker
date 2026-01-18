@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:workout_tracker/common/widgets/myCustomeScaffoldView.dart';
 import 'package:workout_tracker/home/session/models/sessionModels.dart';
+import 'package:workout_tracker/home/history/exDetail/exDetailPage.dart';
 
 class HistorySessionDetailPage extends StatelessWidget {
   final WorkoutHistoryEntry entry;
@@ -33,18 +34,8 @@ class HistorySessionDetailPage extends StatelessWidget {
 
     const wd = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
     const mo = [
-      'Jan',
-      'Feb',
-      'Mar',
-      'Apr',
-      'May',
-      'Jun',
-      'Jul',
-      'Aug',
-      'Sep',
-      'Oct',
-      'Nov',
-      'Dec',
+      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
     ];
     return '${wd[dt.weekday - 1]}, ${mo[dt.month - 1]} ${dt.day}';
   }
@@ -103,8 +94,7 @@ class HistorySessionDetailPage extends StatelessWidget {
     final cs = theme.colorScheme;
 
     final day = _dayLabel(entry.endedAt);
-    final timeLine =
-        '${_fmtTime(entry.startedAt)} – ${_fmtTime(entry.endedAt)}';
+    final timeLine = '${_fmtTime(entry.startedAt)} – ${_fmtTime(entry.endedAt)}';
     final duration = _durationLabel(entry.duration);
 
     return MyCustomeScaffoldView(
@@ -136,11 +126,24 @@ class HistorySessionDetailPage extends StatelessWidget {
             return _ExerciseCard(
               exerciseName: log.exerciseName,
               exerciseIcon: log.exerciseIcon,
+              onTap: () {
+                // IMPORTANT: adjust if your field name differs
+                final int exId = (log as dynamic).exerciseId as int;
+
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => ExerciseDetailPage(
+                      exerciseId: exId,
+                      exerciseName: log.exerciseName,
+                    ),
+                  ),
+                );
+              },
               child: Column(
                 children: List.generate(log.sets.length, (i) {
                   final s = log.sets[i];
 
-                  // If you want warmups to show WU1 / WU2 instead of Set 1 / Set 2
                   final label = (s.type == SetType.warmup)
                       ? 'WU ${i + 1}'
                       : 'Set ${i + 1}';
@@ -203,7 +206,6 @@ class _HeaderCard extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Icon
           Container(
             width: 56,
             height: 56,
@@ -223,7 +225,6 @@ class _HeaderCard extends StatelessWidget {
           ),
           const SizedBox(width: 12),
 
-          // Text + chips
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -259,70 +260,79 @@ class _ExerciseCard extends StatelessWidget {
     required this.exerciseName,
     required this.exerciseIcon,
     required this.child,
+    required this.onTap,
   });
 
   final String exerciseName;
   final String exerciseIcon;
   final Widget child;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 14),
-      decoration: BoxDecoration(
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
         borderRadius: BorderRadius.circular(18),
-        color: cs.surface,
-        border: Border.all(color: cs.outline.withOpacity(0.18)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 10,
-            offset: const Offset(0, 5),
-          ),
-        ],
-      ),
-      padding: const EdgeInsets.fromLTRB(14, 14, 14, 10),
-      child: Column(
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  exerciseName,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 10),
-              Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(10),
-                  color: cs.secondaryContainer.withOpacity(0.6),
-                ),
-                clipBehavior: Clip.antiAlias,
-                child: Image.asset(
-                  exerciseIcon,
-                  fit: BoxFit.cover,
-                  errorBuilder: (_, _, _) => Icon(
-                    Icons.fitness_center,
-                    size: 22,
-                    color: cs.onSecondaryContainer.withOpacity(0.85),
-                  ),
-                ),
+        child: Container(
+          margin: const EdgeInsets.only(bottom: 14),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(18),
+            color: cs.surface,
+            border: Border.all(color: cs.outline.withOpacity(0.18)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.04),
+                blurRadius: 10,
+                offset: const Offset(0, 5),
               ),
             ],
           ),
-          const SizedBox(height: 12),
-          child,
-        ],
+          padding: const EdgeInsets.fromLTRB(14, 14, 14, 10),
+          child: Column(
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      exerciseName,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(10),
+                      color: cs.secondaryContainer.withOpacity(0.6),
+                    ),
+                    clipBehavior: Clip.antiAlias,
+                    child: Image.asset(
+                      exerciseIcon,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, _, _) => Icon(
+                        Icons.fitness_center,
+                        size: 22,
+                        color: cs.onSecondaryContainer.withOpacity(0.85),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              child,
+            ],
+          ),
+        ),
       ),
     );
   }
