@@ -54,17 +54,16 @@ class StartSessionPage extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          templateName,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-        ),
+        title: Text(templateName, maxLines: 1, overflow: TextOverflow.ellipsis),
         actions: [
           Padding(
             padding: const EdgeInsets.only(right: 12),
             child: Center(
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
                   color: cs.surfaceContainerHighest.withOpacity(0.6),
                   borderRadius: BorderRadius.circular(999),
@@ -73,7 +72,11 @@ class StartSessionPage extends StatelessWidget {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.timer_outlined, size: 16, color: cs.onSurfaceVariant),
+                    Icon(
+                      Icons.timer_outlined,
+                      size: 16,
+                      color: cs.onSurfaceVariant,
+                    ),
                     const SizedBox(width: 6),
                     Text(
                       _format(session.elapsed),
@@ -157,16 +160,17 @@ class StartSessionPage extends StatelessWidget {
 
                       if (!context.mounted) return;
 
-                      Navigator.pushReplacement(
-                        context,
-                        MaterialPageRoute(builder: (_) => const HistoryPage()),
-                      );
+                      Navigator.of(context).popUntil((route) => route.isFirst);
 
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Workout saved to history')),
+                        const SnackBar(
+                          content: Text('Workout saved to history'),
+                        ),
                       );
                     },
-                    child: Text(session.isRunning ? 'End & Save' : 'Start Session'),
+                    child: Text(
+                      session.isRunning ? 'End & Save' : 'Start Session',
+                    ),
                   ),
                 ),
               ),

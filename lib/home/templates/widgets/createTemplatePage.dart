@@ -51,25 +51,28 @@ class _CreateTemplatePageState extends State<CreateTemplatePage> {
               const SizedBox(height: 12),
 
               // Selected chips
-              if (_selectedExercises.isNotEmpty) ...[
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: Row(
-                      children: _selectedExercises
-                          .map(
-                            (ex) => Padding(
-                              padding: const EdgeInsets.only(right: 6),
-                              child: Chip(label: Text(ex.name)),
-                            ),
-                          )
-                          .toList(),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 12),
-              ],
+              SizedBox(
+                height: 48.0,
+                child: _selectedExercises.isEmpty
+                    ? const Chip(label: Text('Selected Workouts'))
+                    : Align(
+                        alignment: Alignment.centerLeft,
+                        child: SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          child: Row(
+                            children: _selectedExercises
+                                .map(
+                                  (ex) => Padding(
+                                    padding: const EdgeInsets.only(right: 6),
+                                    child: Chip(label: Text(ex.name)),
+                                  ),
+                                )
+                                .toList(),
+                          ),
+                        ),
+                      ),
+              ),
+              const SizedBox(height: 12),
 
               // List takes remaining space (NO fixed height -> no white space)
               Expanded(
@@ -92,10 +95,14 @@ class _CreateTemplatePageState extends State<CreateTemplatePage> {
               const SizedBox(height: saveButtonGap),
 
               // Save button (opens summary sheet)
-              Center(
+              Padding(
+                padding: const EdgeInsets.all(8.0),
                 child: MyCustomButton(
-                  label: "Save Template",
                   onPressed: _openSaveSummarySheet,
+                  fullWidth: true,
+                  label: 'Save Template',
+                  icon: Icons.add,
+                  iconPosition: IconPosition.right,
                 ),
               ),
 
@@ -137,11 +144,11 @@ class _CreateTemplatePageState extends State<CreateTemplatePage> {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(18)),
       ),
-      builder: (ctx) {
-        final bottomInset = MediaQuery.of(ctx).viewInsets.bottom;
+      builder: (sheetCtx) {
+        final bottomInset = MediaQuery.of(sheetCtx).viewInsets.bottom;
 
         return StatefulBuilder(
-          builder: (ctx, setSheetState) {
+          builder: (sheetCtx, setSheetState) {
             return Padding(
               padding: EdgeInsets.only(
                 left: 16,
@@ -153,23 +160,21 @@ class _CreateTemplatePageState extends State<CreateTemplatePage> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Header
                   Row(
                     children: [
                       Text(
                         "Review & Save",
-                        style: Theme.of(ctx).textTheme.titleMedium,
+                        style: Theme.of(sheetCtx).textTheme.titleMedium,
                       ),
                       const Spacer(),
                       IconButton(
-                        onPressed: () => Navigator.pop(ctx),
+                        onPressed: () => Navigator.pop(sheetCtx),
                         icon: const Icon(Icons.close),
                       ),
                     ],
                   ),
                   const SizedBox(height: 8),
 
-                  // Name
                   TextField(
                     controller: nameController,
                     decoration: const InputDecoration(
@@ -179,12 +184,12 @@ class _CreateTemplatePageState extends State<CreateTemplatePage> {
                   ),
                   const SizedBox(height: 12),
 
-                  // Icon picker
                   Text(
                     "Pick an Icon",
-                    style: Theme.of(ctx).textTheme.bodyMedium,
+                    style: Theme.of(sheetCtx).textTheme.bodyMedium,
                   ),
                   const SizedBox(height: 8),
+
                   SizedBox(
                     height: 72,
                     child: ListView.separated(
@@ -194,9 +199,9 @@ class _CreateTemplatePageState extends State<CreateTemplatePage> {
                       itemBuilder: (_, i) {
                         final path = icons[i];
                         final selected = path == selectedIconPath;
-                        final primary = Theme.of(ctx).colorScheme.primary;
+                        final primary = Theme.of(sheetCtx).colorScheme.primary;
                         final outline = Theme.of(
-                          ctx,
+                          sheetCtx,
                         ).colorScheme.outlineVariant;
 
                         return GestureDetector(
@@ -220,12 +225,12 @@ class _CreateTemplatePageState extends State<CreateTemplatePage> {
                   ),
                   const SizedBox(height: 12),
 
-                  // Summary chips
                   Text(
                     "Selected Exercises (${_selectedExercises.length})",
-                    style: Theme.of(ctx).textTheme.bodyMedium,
+                    style: Theme.of(sheetCtx).textTheme.bodyMedium,
                   ),
                   const SizedBox(height: 8),
+
                   ConstrainedBox(
                     constraints: const BoxConstraints(maxHeight: 220),
                     child: SingleChildScrollView(
@@ -241,7 +246,6 @@ class _CreateTemplatePageState extends State<CreateTemplatePage> {
 
                   const SizedBox(height: 16),
 
-                  // Confirm
                   SizedBox(
                     width: double.infinity,
                     child: MyCustomButton(
@@ -249,7 +253,7 @@ class _CreateTemplatePageState extends State<CreateTemplatePage> {
                       onPressed: () async {
                         final name = nameController.text.trim();
                         if (name.isEmpty || selectedIconPath == null) {
-                          ScaffoldMessenger.of(context).showSnackBar(
+                          ScaffoldMessenger.of(sheetCtx).showSnackBar(
                             const SnackBar(
                               content: Text('Enter a name and pick an icon.'),
                             ),
@@ -257,13 +261,30 @@ class _CreateTemplatePageState extends State<CreateTemplatePage> {
                           return;
                         }
 
-                        await _saveTemplate(
+                        final vm = context
+                            .read<TemplatesViewModel>(); // grab once
+
+                        final exerciseIds = _selectedExercises
+                            .map((e) => e.id)
+                            .toList();
+                        final now = DateTime.now();
+
+                        final template = WorkoutTemplateModel(
+                          id: now.millisecondsSinceEpoch.toString(),
                           name: name,
                           iconPath: selectedIconPath!,
+                          exerciseIds: exerciseIds,
+                          createdAt: now,
+                          updatedAt: now,
                         );
 
-                        if (mounted) Navigator.pop(ctx); // close sheet
-                        if (mounted) Navigator.pop(context); // back
+                        await vm.addTemplate(template);
+
+                        if (!mounted) return;
+
+                        // Close sheet first, then page
+                        Navigator.pop(sheetCtx);
+                        Navigator.pop(context);
                       },
                     ),
                   ),
@@ -273,7 +294,7 @@ class _CreateTemplatePageState extends State<CreateTemplatePage> {
           },
         );
       },
-    ).whenComplete(() => nameController.dispose());
+    );
   }
 
   Future<void> _saveTemplate({
@@ -282,11 +303,15 @@ class _CreateTemplatePageState extends State<CreateTemplatePage> {
   }) async {
     final exerciseIds = _selectedExercises.map((e) => e.id).toList();
 
+    final now = DateTime.now();
+
     final template = WorkoutTemplateModel(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
-      name: name,
+      name: name.trim(),
       iconPath: iconPath,
       exerciseIds: exerciseIds,
+      createdAt: now,
+      updatedAt: now,
     );
 
     await context.read<TemplatesViewModel>().addTemplate(template);
