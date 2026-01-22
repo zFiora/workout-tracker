@@ -6,6 +6,30 @@ import 'package:workout_tracker/home/exercises/exerciesesList.dart';
 import 'package:workout_tracker/home/exercises/models/exerciseModel.dart';
 import 'package:workout_tracker/home/session/models/sessionModels.dart';
 
+class PrHit {
+  final int exerciseId;
+  final DateTime performedAt;
+  final double weight;
+  final int reps;
+  final String kind; // "bestWeight"
+
+  const PrHit({
+    required this.exerciseId,
+    required this.performedAt,
+    required this.weight,
+    required this.reps,
+    required this.kind,
+  });
+
+  Map<String, dynamic> toJson() => {
+    'exerciseId': exerciseId,
+    'performedAt': performedAt.toIso8601String(),
+    'weight': weight,
+    'reps': reps,
+    'kind': kind,
+  };
+}
+
 class WorkoutSessionViewModel extends ChangeNotifier {
   final String templateId;
   final String templateName;
@@ -21,8 +45,10 @@ class WorkoutSessionViewModel extends ChangeNotifier {
   final List<ExerciseModel> allExercises = ExercisesViewModel.all;
 
   /// Maps a planned row (exerciseId:index) to the performed set timestamp created when it was marked done.
-  /// This is enough to find & update the performed set later (within this session).
   final Map<String, DateTime> _plannedToPerformedTs = {};
+
+  /// PR hits keyed by "exerciseId:timestampMs"
+  final Map<String, PrHit> _prHits = {};
 
   WorkoutSessionViewModel({
     required this.templateId,
@@ -46,6 +72,7 @@ class WorkoutSessionViewModel extends ChangeNotifier {
   DateTime? get startedAt => _startedAt;
 
   UnmodifiableMapView<int, ExerciseLog> get logs => UnmodifiableMapView(_logs);
+  UnmodifiableMapView<String, PrHit> get prHits => UnmodifiableMapView(_prHits);
 
   // ---------- UI-ready helpers ----------
 
@@ -55,9 +82,9 @@ class WorkoutSessionViewModel extends ChangeNotifier {
       _logs.values.fold(0, (sum, log) => sum + log.sets.length);
 
   int get totalWorkSets => _logs.values.fold(
-        0,
-        (sum, log) => sum + log.sets.where((s) => s.type == SetType.work).length,
-      );
+    0,
+    (sum, log) => sum + log.sets.where((s) => s.type == SetType.work).length,
+  );
 
   double get totalVolume {
     double v = 0;
@@ -68,6 +95,38 @@ class WorkoutSessionViewModel extends ChangeNotifier {
       }
     }
     return v;
+  }
+
+  // ---------- PR helpers ----------
+
+  String _prKey(int exerciseId, DateTime ts) =>
+      '$exerciseId:${ts.millisecondsSinceEpoch}';
+
+  void clearPrHits() {
+    _prHits.clear();
+    notifyListeners();
+  }
+
+  PrHit? prHitForPlannedRow({required int exerciseId, required int index}) {
+    final ts = _plannedToPerformedTs['$exerciseId:$index'];
+    if (ts == null) return null;
+    return _prHits[_prKey(exerciseId, ts)];
+  }
+
+  double _bestWeightAllTime({
+    required int exerciseId,
+    required List<WorkoutHistoryEntry> history,
+  }) {
+    double best = 0;
+    for (final entry in history) {
+      for (final log in entry.logs) {
+        if (log.exerciseId != exerciseId) continue;
+        for (final s in log.sets) {
+          if (s.weight > best) best = s.weight;
+        }
+      }
+    }
+    return best;
   }
 
   // ---------- Session lifecycle ----------
@@ -146,7 +205,6 @@ class WorkoutSessionViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Edit an existing performed set (replaces the object to support immutable fields).
   void updatePerformedSet({
     required int exerciseId,
     required int index,
@@ -179,7 +237,6 @@ class WorkoutSessionViewModel extends ChangeNotifier {
     if (log == null) return;
     if (index < 0 || index >= log.sets.length) return;
 
-    // type is mutable in your model; keep it.
     log.sets[index].type = type;
     notifyListeners();
   }
@@ -190,14 +247,12 @@ class WorkoutSessionViewModel extends ChangeNotifier {
     if (index < 0 || index >= log.sets.length) return;
 
     final removed = log.sets.removeAt(index);
-
-    // Clean any mapping pointing to this timestamp (optional safety).
     _plannedToPerformedTs.removeWhere((_, ts) => ts == removed.timestamp);
 
     notifyListeners();
   }
 
-  // ---------- Planned sets (your checklist UI) ----------
+  // ---------- Planned sets ----------
 
   void loadPlannedSetsFromLastWorkout({
     required int exerciseId,
@@ -229,18 +284,13 @@ class WorkoutSessionViewModel extends ChangeNotifier {
     final log = _logs[exerciseId];
     if (log == null) return;
 
-    // Also clean mappings for this exercise.
-    _plannedToPerformedTs.removeWhere((key, _) => key.startsWith('$exerciseId:'));
-
+    _plannedToPerformedTs.removeWhere(
+      (key, _) => key.startsWith('$exerciseId:'),
+    );
     log.plannedSets.clear();
     notifyListeners();
   }
 
-  /// Adds a planned row and auto-fills weight/reps from the last set in THIS session.
-  /// Priority:
-  /// 1) last planned row with non-null values
-  /// 2) last performed set
-  /// 3) nulls (user fills)
   void addPlannedSetRow({
     required int exerciseId,
     SetType type = SetType.work,
@@ -251,7 +301,6 @@ class WorkoutSessionViewModel extends ChangeNotifier {
     double? w;
     int? r;
 
-    // 1) last planned with values
     for (int i = log.plannedSets.length - 1; i >= 0; i--) {
       final p = log.plannedSets[i];
       if (p.weight != null && p.reps != null) {
@@ -261,7 +310,6 @@ class WorkoutSessionViewModel extends ChangeNotifier {
       }
     }
 
-    // 2) fallback: last performed
     if (w == null || r == null) {
       if (log.sets.isNotEmpty) {
         final last = log.sets.last;
@@ -271,30 +319,19 @@ class WorkoutSessionViewModel extends ChangeNotifier {
     }
 
     log.plannedSets.add(
-      PlannedSet(
-        type: type,
-        weight: w,
-        reps: r,
-        done: false,
-      ),
+      PlannedSet(type: type, weight: w, reps: r, done: false),
     );
 
     notifyListeners();
   }
 
-  void removePlannedSetRow({
-    required int exerciseId,
-    required int index,
-  }) {
+  void removePlannedSetRow({required int exerciseId, required int index}) {
     final log = _logs[exerciseId];
     if (log == null) return;
     if (index < 0 || index >= log.plannedSets.length) return;
 
-    // If it was done, you can decide whether to allow deleting it + also deleting its performed set.
-    // For now: keep your safety rule.
     if (log.plannedSets[index].done) return;
 
-    // Clean mapping key(s) after this index (because indices shift).
     _plannedToPerformedTs.remove('$exerciseId:$index');
     _rebuildPlannedMappingKeysForExercise(exerciseId);
 
@@ -302,9 +339,6 @@ class WorkoutSessionViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Updates a planned set.
-  /// - If NOT done: edits the row as usual.
-  /// - If done: edits the row AND updates the corresponding performed set too (fix mistakes).
   void updatePlannedSet({
     required int exerciseId,
     required int index,
@@ -322,20 +356,17 @@ class WorkoutSessionViewModel extends ChangeNotifier {
     if (weight != null) p.weight = weight;
     if (reps != null) p.reps = reps;
 
-    // If it's done, update the performed set created by this planned row.
     if (p.done) {
       final key = '$exerciseId:$index';
       final ts = _plannedToPerformedTs[key];
 
       if (ts != null) {
-        final performedIndex =
-            log.sets.indexWhere((s) => s.timestamp == ts);
+        final performedIndex = log.sets.indexWhere((s) => s.timestamp == ts);
 
         if (performedIndex != -1) {
           final w = p.weight;
           final r = p.reps;
 
-          // Only update if we have valid values.
           if (w != null && r != null) {
             updatePerformedSet(
               exerciseId: exerciseId,
@@ -344,7 +375,6 @@ class WorkoutSessionViewModel extends ChangeNotifier {
               reps: r,
               type: p.type,
             );
-            // updatePerformedSet notifies already, so return early.
             return;
           }
         }
@@ -357,6 +387,7 @@ class WorkoutSessionViewModel extends ChangeNotifier {
   void markPlannedSetDone({
     required int exerciseId,
     required int index,
+    required List<WorkoutHistoryEntry> history,
   }) {
     final log = _logs[exerciseId];
     if (log == null) return;
@@ -369,25 +400,34 @@ class WorkoutSessionViewModel extends ChangeNotifier {
     final r = p.reps;
     if (w == null || r == null) return;
 
+    final prevBest = _bestWeightAllTime(
+      exerciseId: exerciseId,
+      history: history,
+    );
+
     p.done = true;
 
     final ts = DateTime.now();
 
-    log.sets.add(
-      PerformedSet(
-        weight: w,
-        reps: r,
-        timestamp: ts,
-        type: p.type,
-      ),
-    );
+    log.sets.add(PerformedSet(weight: w, reps: r, timestamp: ts, type: p.type));
 
     _plannedToPerformedTs['$exerciseId:$index'] = ts;
+
+    // PR hit (best weight)
+    if (w > prevBest) {
+      final hit = PrHit(
+        exerciseId: exerciseId,
+        performedAt: ts,
+        weight: w,
+        reps: r,
+        kind: 'bestWeight',
+      );
+      _prHits[_prKey(exerciseId, ts)] = hit;
+    }
 
     notifyListeners();
   }
 
-  /// Optional: allow undo done (keeps things consistent).
   void undoPlannedSetDone({
     required int exerciseId,
     required int index,
@@ -406,11 +446,11 @@ class WorkoutSessionViewModel extends ChangeNotifier {
     p.done = false;
 
     if (removePerformed && ts != null) {
-      final performedIndex =
-          log.sets.indexWhere((s) => s.timestamp == ts);
+      final performedIndex = log.sets.indexWhere((s) => s.timestamp == ts);
       if (performedIndex != -1) {
         log.sets.removeAt(performedIndex);
       }
+      _prHits.remove(_prKey(exerciseId, ts));
     }
 
     _plannedToPerformedTs.remove(key);
@@ -418,8 +458,6 @@ class WorkoutSessionViewModel extends ChangeNotifier {
   }
 
   void _rebuildPlannedMappingKeysForExercise(int exerciseId) {
-    // If you delete planned rows, indices shift. This rebuild keeps the map sane.
-    // We rebuild only for this exercise.
     final log = _logs[exerciseId];
     if (log == null) return;
 
@@ -430,18 +468,16 @@ class WorkoutSessionViewModel extends ChangeNotifier {
       }
     });
 
-    // Clear old keys for this exercise
-    _plannedToPerformedTs.removeWhere((key, _) => key.startsWith('$exerciseId:'));
+    _plannedToPerformedTs.removeWhere(
+      (key, _) => key.startsWith('$exerciseId:'),
+    );
 
-    // Re-add sequentially for done rows where we can still match by timestamp in performed sets.
-    // NOTE: This is best-effort; if you rely heavily on deleting rows, consider persisting an ID on PlannedSet.
     for (int i = 0; i < log.plannedSets.length; i++) {
       final p = log.plannedSets[i];
       if (!p.done) continue;
 
-      // Try to reuse an existing ts that still exists in performed sets.
       DateTime? reused;
-      for (final e in entries) {
+      for (final e in List<MapEntry<String, DateTime>>.from(entries)) {
         final ts = e.value;
         if (log.sets.any((s) => s.timestamp == ts)) {
           reused = ts;

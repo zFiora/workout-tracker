@@ -20,7 +20,14 @@ class HistoryViewModel extends ChangeNotifier {
 
   void setSync(StreakSyncService? sync) => _sync = sync;
 
-  /// Key + entry pair (so sorting won't break delete).
+  // ✅ Always safe: opens the box if needed
+  Future<Box> _prBox() async {
+    if (!Hive.isBoxOpen('prEventsBox')) {
+      await Hive.openBox('prEventsBox');
+    }
+    return Hive.box('prEventsBox');
+  }
+
   List<HistoryItem> get historyItems {
     final items = <HistoryItem>[];
     for (final key in _box.keys) {
@@ -28,12 +35,10 @@ class HistoryViewModel extends ChangeNotifier {
       if (entry != null) items.add(HistoryItem(key: key, entry: entry));
     }
 
-    // Newest first
     items.sort((a, b) => b.entry.endedAt.compareTo(a.entry.endedAt));
     return List.unmodifiable(items);
   }
 
-  /// If you still need just entries (already sorted newest first).
   List<WorkoutHistoryEntry> get history =>
       List.unmodifiable(historyItems.map((e) => e.entry));
 
@@ -47,13 +52,34 @@ class HistoryViewModel extends ChangeNotifier {
     await _recomputeAndSync();
   }
 
+  /// Saves workout + stores PR events in a separate box (no adapter changes).
+  Future<void> saveWithPrEvents(
+    WorkoutHistoryEntry entry, {
+    required List<Map<String, dynamic>> prEvents,
+  }) async {
+    final key = await _box.add(entry);
+
+    final prBox = await _prBox();
+    await prBox.put(key, prEvents);
+
+    await _recomputeAndSync();
+  }
+
   Future<void> deleteByKey(dynamic key) async {
     await _box.delete(key);
+
+    final prBox = await _prBox();
+    await prBox.delete(key);
+
     await _recomputeAndSync();
   }
 
   Future<void> clear() async {
     await _box.clear();
+
+    final prBox = await _prBox();
+    await prBox.clear();
+
     await _recomputeAndSync();
   }
 
@@ -61,10 +87,10 @@ class HistoryViewModel extends ChangeNotifier {
       e.logs.fold(0, (sum, log) => sum + log.sets.length);
 
   double totalVolume(WorkoutHistoryEntry e) => e.logs.fold(
-        0.0,
-        (sum, log) =>
-            sum + log.sets.fold(0.0, (s, set) => s + (set.weight * set.reps)),
-      );
+    0.0,
+    (sum, log) =>
+        sum + log.sets.fold(0.0, (s, set) => s + (set.weight * set.reps)),
+  );
 
   Map<DateTime, List<WorkoutHistoryEntry>> groupedByDay() {
     final map = <DateTime, List<WorkoutHistoryEntry>>{};
@@ -78,7 +104,6 @@ class HistoryViewModel extends ChangeNotifier {
 
   Future<void> _recomputeAndSync() async {
     notifyListeners();
-
     // Keep your sync code here later if you want.
   }
 
@@ -90,7 +115,7 @@ class HistoryViewModel extends ChangeNotifier {
 }
 
 class HistoryItem {
-  final dynamic key; // Hive keys can be int or String depending on box usage
+  final dynamic key;
   final WorkoutHistoryEntry entry;
 
   const HistoryItem({required this.key, required this.entry});

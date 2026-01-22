@@ -47,6 +47,7 @@ Future<void> main() async {
   await Hive.openBox<MeasurementEntry>('measurementsBox');
   await Hive.openBox<MeasureProfile>('measureProfileBox');
   await Hive.openBox<MacroProfile>('macrosProfileBox');
+  await Hive.openBox('prEventsBox');
 
   // ----- PocketBase: restore token from secure storage -----
   await PB.I.bootstrapAuth(); // restores token & tries authRefresh()

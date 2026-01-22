@@ -74,9 +74,13 @@ class HistoryPage extends StatelessWidget {
             child: HistoryTile(
               entry: entry,
               onTap: () {
-                Navigator.of(context).push(
+                Navigator.push(
+                  context,
                   MaterialPageRoute(
-                    builder: (_) => HistorySessionDetailPage(entry: entry),
+                    builder: (_) => HistorySessionDetailPage(
+                      entry: item.entry,
+                      historyKey: item.key,
+                    ),
                   ),
                 );
               },

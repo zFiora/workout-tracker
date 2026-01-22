@@ -60,10 +60,8 @@ class StartSessionPage extends StatelessWidget {
             padding: const EdgeInsets.only(right: 12),
             child: Center(
               child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 6,
-                ),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                 decoration: BoxDecoration(
                   color: cs.surfaceContainerHighest.withOpacity(0.6),
                   borderRadius: BorderRadius.circular(999),
@@ -72,11 +70,8 @@ class StartSessionPage extends StatelessWidget {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(
-                      Icons.timer_outlined,
-                      size: 16,
-                      color: cs.onSurfaceVariant,
-                    ),
+                    Icon(Icons.timer_outlined,
+                        size: 16, color: cs.onSurfaceVariant),
                     const SizedBox(width: 6),
                     Text(
                       _format(session.elapsed),
@@ -92,7 +87,6 @@ class StartSessionPage extends StatelessWidget {
           ),
         ],
       ),
-
       body: exercises.isEmpty
           ? _EmptyExercisesState(
               templateName: templateName,
@@ -112,7 +106,6 @@ class StartSessionPage extends StatelessWidget {
                 );
               },
             ),
-
       bottomNavigationBar: SafeArea(
         top: false,
         child: Container(
@@ -125,7 +118,6 @@ class StartSessionPage extends StatelessWidget {
           ),
           child: Row(
             children: [
-              // Secondary action (optional but makes UI feel complete)
               IconButton(
                 tooltip: 'History',
                 onPressed: () {
@@ -137,7 +129,6 @@ class StartSessionPage extends StatelessWidget {
                 icon: const Icon(Icons.history),
               ),
               const SizedBox(width: 8),
-
               Expanded(
                 child: SizedBox(
                   height: 48,
@@ -151,12 +142,22 @@ class StartSessionPage extends StatelessWidget {
                         return;
                       }
 
-                      // confirm before ending
                       final ok = await _confirmEndSession(context);
                       if (!ok) return;
 
                       final entry = session.end();
-                      await context.read<HistoryViewModel>().save(entry);
+
+                      final prEvents = session.prHits.values
+                          .map((h) => h.toJson())
+                          .toList(growable: false);
+
+                      await context.read<HistoryViewModel>().saveWithPrEvents(
+                            entry,
+                            prEvents: prEvents,
+                          );
+
+                      // reset PR hits for next session
+                      session.clearPrHits();
 
                       if (!context.mounted) return;
 
@@ -168,9 +169,8 @@ class StartSessionPage extends StatelessWidget {
                         ),
                       );
                     },
-                    child: Text(
-                      session.isRunning ? 'End & Save' : 'Start Session',
-                    ),
+                    child:
+                        Text(session.isRunning ? 'End & Save' : 'Start Session'),
                   ),
                 ),
               ),

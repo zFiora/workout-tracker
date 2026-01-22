@@ -1,12 +1,23 @@
 // home/history/history_session_detail_page.dart
 import 'package:flutter/material.dart';
+import 'package:hive/hive.dart';
 import 'package:workout_tracker/common/widgets/myCustomeScaffoldView.dart';
 import 'package:workout_tracker/home/session/models/sessionModels.dart';
 import 'package:workout_tracker/home/history/exDetail/exDetailPage.dart';
 
 class HistorySessionDetailPage extends StatelessWidget {
   final WorkoutHistoryEntry entry;
-  const HistorySessionDetailPage({super.key, required this.entry});
+
+  /// IMPORTANT:
+  /// This must be the Hive key from `historyBox` for THIS entry
+  /// (the same key you used to store `prEventsBox[key] = prEvents`).
+  final dynamic historyKey;
+
+  const HistorySessionDetailPage({
+    super.key,
+    required this.entry,
+    required this.historyKey,
+  });
 
   // --------- Format helpers ---------
 
@@ -34,8 +45,18 @@ class HistorySessionDetailPage extends StatelessWidget {
 
     const wd = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
     const mo = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
     ];
     return '${wd[dt.weekday - 1]}, ${mo[dt.month - 1]} ${dt.day}';
   }
@@ -88,83 +109,143 @@ class HistorySessionDetailPage extends StatelessWidget {
     }
   }
 
+  // --------- PR reading ---------
+
+  Future<Set<String>> _loadPrKeys() async {
+    // stored as prEventsBox[historyKey] = List<Map>
+    if (!Hive.isBoxOpen('prEventsBox')) {
+      await Hive.openBox('prEventsBox');
+    }
+    final box = Hive.box('prEventsBox');
+
+    final raw = box.get(historyKey);
+    if (raw is! List) return <String>{};
+
+    final keys = <String>{};
+
+    for (final e in raw) {
+      if (e is! Map) continue;
+
+      final exId = e['exerciseId'];
+      final performedAt = e['performedAt'];
+      final kind = e['kind'];
+
+      if (exId is! int) continue;
+      if (performedAt is! String) continue;
+      if (kind != 'bestWeight') continue;
+
+      DateTime? dt;
+      try {
+        dt = DateTime.parse(performedAt);
+      } catch (_) {
+        dt = null;
+      }
+      if (dt == null) continue;
+
+      keys.add('$exId:${dt.millisecondsSinceEpoch}');
+    }
+
+    return keys;
+  }
+
+  bool _isPr(Set<String> prKeys, int exId, DateTime setTs) {
+    return prKeys.contains('$exId:${setTs.millisecondsSinceEpoch}');
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
 
     final day = _dayLabel(entry.endedAt);
-    final timeLine = '${_fmtTime(entry.startedAt)} – ${_fmtTime(entry.endedAt)}';
+    final timeLine =
+        '${_fmtTime(entry.startedAt)} – ${_fmtTime(entry.endedAt)}';
     final duration = _durationLabel(entry.duration);
 
-    return MyCustomeScaffoldView(
-      title: entry.templateName,
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-        children: [
-          _HeaderCard(
-            iconPath: entry.templateIcon,
-            title: entry.templateName,
-            subtitle: '$day • $timeLine • $duration',
-            chips: [
-              _InfoChip(
-                icon: Icons.list_alt_outlined,
-                label: '$_exerciseCount exercises',
-              ),
-              _InfoChip(icon: Icons.repeat, label: '$_setCount sets'),
-              _InfoChip(
-                icon: Icons.scale_outlined,
-                label: '${_formatVolume(_volume)} kg',
-              ),
-            ],
-          ),
+    return FutureBuilder<Set<String>>(
+      future: _loadPrKeys(),
+      builder: (context, snap) {
+        final prKeys = snap.data ?? <String>{};
 
-          const SizedBox(height: 14),
+        return MyCustomeScaffoldView(
+          title: entry.templateName,
+          body: ListView(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+            children: [
+              _HeaderCard(
+                iconPath: entry.templateIcon,
+                title: entry.templateName,
+                subtitle: '$day • $timeLine • $duration',
+                chips: [
+                  _InfoChip(
+                    icon: Icons.list_alt_outlined,
+                    label: '$_exerciseCount exercises',
+                  ),
+                  _InfoChip(icon: Icons.repeat, label: '$_setCount sets'),
+                  _InfoChip(
+                    icon: Icons.scale_outlined,
+                    label: '${_formatVolume(_volume)} kg',
+                  ),
+                  if (snap.connectionState == ConnectionState.waiting)
+                    _InfoChip(icon: Icons.star_outline, label: 'Loading PR…')
+                  else if (prKeys.isNotEmpty)
+                    _InfoChip(
+                      icon: Icons.emoji_events_outlined,
+                      label: '${prKeys.length} PR',
+                    ),
+                ],
+              ),
 
-          // Exercises sections
-          ...entry.logs.map((log) {
-            return _ExerciseCard(
-              exerciseName: log.exerciseName,
-              exerciseIcon: log.exerciseIcon,
-              onTap: () {
-                // IMPORTANT: adjust if your field name differs
+              const SizedBox(height: 14),
+
+              ...entry.logs.map((log) {
+                // Your model has exerciseId, but you casted dynamic earlier — keep that safe
                 final int exId = (log as dynamic).exerciseId as int;
 
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => ExerciseDetailPage(
-                      exerciseId: exId,
-                      exerciseName: log.exerciseName,
-                    ),
+                return _ExerciseCard(
+                  exerciseName: log.exerciseName,
+                  exerciseIcon: log.exerciseIcon,
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => ExerciseDetailPage(
+                          exerciseId: exId,
+                          exerciseName: log.exerciseName,
+                        ),
+                      ),
+                    );
+                  },
+                  child: Column(
+                    children: List.generate(log.sets.length, (i) {
+                      final s = log.sets[i];
+
+                      final label = (s.type == SetType.warmup)
+                          ? 'WU ${i + 1}'
+                          : 'Set ${i + 1}';
+
+                      final isPr = _isPr(prKeys, exId, s.timestamp);
+
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 10),
+                        child: _SetRow(
+                          leftLabel: label,
+                          badgeText: _setTypeShort(s.type),
+                          badgeBg: _badgeBg(cs, s.type),
+                          badgeFg: _badgeFg(cs, s.type),
+                          mainText: '${s.weight} kg × ${s.reps}',
+                          subText: _fmtTime(s.timestamp),
+                          showPr: isPr,
+                        ),
+                      );
+                    }),
                   ),
                 );
-              },
-              child: Column(
-                children: List.generate(log.sets.length, (i) {
-                  final s = log.sets[i];
-
-                  final label = (s.type == SetType.warmup)
-                      ? 'WU ${i + 1}'
-                      : 'Set ${i + 1}';
-
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 10),
-                    child: _SetRow(
-                      leftLabel: label,
-                      badgeText: _setTypeShort(s.type),
-                      badgeBg: _badgeBg(cs, s.type),
-                      badgeFg: _badgeFg(cs, s.type),
-                      mainText: '${s.weight} kg × ${s.reps}',
-                      subText: _fmtTime(s.timestamp),
-                    ),
-                  );
-                }),
-              ),
-            );
-          }),
-        ],
-      ),
+              }),
+            ],
+          ),
+        );
+      },
     );
   }
 }
@@ -224,7 +305,6 @@ class _HeaderCard extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 12),
-
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -233,15 +313,17 @@ class _HeaderCard extends StatelessWidget {
                   title,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: theme.textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.w800,
-                  ),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
                 ),
                 const SizedBox(height: 6),
                 Text(
                   subtitle,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.textTheme.bodySmall?.color?.withOpacity(0.75),
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Theme.of(
+                      context,
+                    ).textTheme.bodySmall?.color?.withOpacity(0.75),
                   ),
                 ),
                 const SizedBox(height: 12),
@@ -346,6 +428,7 @@ class _SetRow extends StatelessWidget {
     required this.badgeFg,
     required this.mainText,
     required this.subText,
+    required this.showPr,
   });
 
   final String leftLabel;
@@ -354,6 +437,7 @@ class _SetRow extends StatelessWidget {
   final Color badgeFg;
   final String mainText;
   final String subText;
+  final bool showPr;
 
   @override
   Widget build(BuildContext context) {
@@ -373,15 +457,29 @@ class _SetRow extends StatelessWidget {
         ),
         _Badge(text: badgeText, bg: badgeBg, fg: badgeFg),
         const SizedBox(width: 10),
+
         Expanded(
-          child: Text(
-            mainText,
-            style: theme.textTheme.bodyMedium?.copyWith(
-              fontWeight: FontWeight.w700,
-            ),
+          child: Row(
+            children: [
+              Flexible(
+                child: Text(
+                  mainText,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+              if (showPr) ...[
+                const SizedBox(width: 8),
+                _PrBadge(bg: cs.primaryContainer, fg: cs.onPrimaryContainer),
+              ],
+            ],
           ),
         ),
+
         const SizedBox(width: 10),
+
         Text(
           subText,
           style: theme.textTheme.bodySmall?.copyWith(
@@ -390,6 +488,35 @@ class _SetRow extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+class _PrBadge extends StatelessWidget {
+  final Color bg;
+  final Color fg;
+
+  const _PrBadge({required this.bg, required this.fg});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 22,
+      padding: const EdgeInsets.symmetric(horizontal: 8),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: fg.withOpacity(0.18)),
+      ),
+      alignment: Alignment.center,
+      child: Text(
+        'PR',
+        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+          color: fg,
+          fontWeight: FontWeight.w900,
+          letterSpacing: 0.2,
+        ),
+      ),
     );
   }
 }

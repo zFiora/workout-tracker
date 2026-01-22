@@ -84,8 +84,9 @@ class _ExerciseSessionTileState extends State<ExerciseSessionTile> {
   }) {
     if (historyVM.history.isEmpty) return const [];
 
-    final templateEntries =
-        historyVM.history.where((e) => e.templateId == templateId).toList();
+    final templateEntries = historyVM.history
+        .where((e) => e.templateId == templateId)
+        .toList();
     if (templateEntries.isEmpty) return const [];
 
     // Pick the most recent workout by endedAt (fallback to startedAt).
@@ -96,9 +97,10 @@ class _ExerciseSessionTileState extends State<ExerciseSessionTile> {
     });
 
     for (final entry in templateEntries) {
-      final exLog = entry.logs
-          .cast<ExerciseLog?>()
-          .firstWhere((l) => l?.exerciseId == exerciseId, orElse: () => null);
+      final exLog = entry.logs.cast<ExerciseLog?>().firstWhere(
+        (l) => l?.exerciseId == exerciseId,
+        orElse: () => null,
+      );
 
       final sets = exLog?.sets ?? const <PerformedSet>[];
       if (sets.isNotEmpty) return List<PerformedSet>.from(sets);
@@ -122,8 +124,8 @@ class _ExerciseSessionTileState extends State<ExerciseSessionTile> {
     return type == SetType.work
         ? cs.primary
         : type == SetType.warmup
-            ? Colors.orange
-            : Colors.purple;
+        ? Colors.orange
+        : Colors.purple;
   }
 
   @override
@@ -228,6 +230,11 @@ class _ExerciseSessionTileState extends State<ExerciseSessionTile> {
 
                   final isEditing = _editingKeys.contains(key);
                   final isLocked = p.done && !isEditing;
+                  final prHit = session.prHitForPlannedRow(
+                    exerciseId: widget.exercise.id,
+                    index: i,
+                  );
+
                   final allowEdit = !p.done || isEditing;
 
                   String label;
@@ -260,11 +267,11 @@ class _ExerciseSessionTileState extends State<ExerciseSessionTile> {
                     }
 
                     context.read<WorkoutSessionViewModel>().updatePlannedSet(
-                          exerciseId: widget.exercise.id,
-                          index: i,
-                          weight: w,
-                          reps: r,
-                        );
+                      exerciseId: widget.exercise.id,
+                      index: i,
+                      weight: w,
+                      reps: r,
+                    );
                   }
 
                   return Container(
@@ -292,8 +299,8 @@ class _ExerciseSessionTileState extends State<ExerciseSessionTile> {
                                   final next = p.type == SetType.work
                                       ? SetType.warmup
                                       : p.type == SetType.warmup
-                                          ? SetType.dropset
-                                          : SetType.work;
+                                      ? SetType.dropset
+                                      : SetType.work;
 
                                   context
                                       .read<WorkoutSessionViewModel>()
@@ -363,21 +370,25 @@ class _ExerciseSessionTileState extends State<ExerciseSessionTile> {
                         else
                           IconButton(
                             tooltip: 'Cancel',
-                            icon: Icon(
-                              Icons.close,
-                              color: cs.onSurfaceVariant,
-                            ),
+                            icon: Icon(Icons.close, color: cs.onSurfaceVariant),
                             onPressed: () {
                               // Revert controllers to the model values, then lock.
-                              wCtrl.text =
-                                  p.weight == null ? '' : p.weight!.toString();
-                              rCtrl.text =
-                                  p.reps == null ? '' : p.reps!.toString();
+                              wCtrl.text = p.weight == null
+                                  ? ''
+                                  : p.weight!.toString();
+                              rCtrl.text = p.reps == null
+                                  ? ''
+                                  : p.reps!.toString();
 
                               setState(() => _editingKeys.remove(key));
                               FocusScope.of(context).unfocus();
                             },
                           ),
+                        if (prHit != null) ...[
+                          const SizedBox(width: 8),
+                          const _PrPill(text: 'NEW PR'),
+                          const SizedBox(width: 8),
+                        ],
 
                         FilledButton(
                           onPressed: isLocked
@@ -386,12 +397,18 @@ class _ExerciseSessionTileState extends State<ExerciseSessionTile> {
                                   // Add: commit values then mark done
                                   if (!p.done) {
                                     commitToModel();
+                                    final history = context
+                                        .read<HistoryViewModel>()
+                                        .history;
+
                                     context
                                         .read<WorkoutSessionViewModel>()
                                         .markPlannedSetDone(
                                           exerciseId: widget.exercise.id,
                                           index: i,
+                                          history: history,
                                         );
+
                                     return;
                                   }
 
@@ -419,9 +436,9 @@ class _ExerciseSessionTileState extends State<ExerciseSessionTile> {
                 label: const Text('Add set'),
                 onPressed: () =>
                     context.read<WorkoutSessionViewModel>().addPlannedSetRow(
-                          exerciseId: widget.exercise.id,
-                          type: SetType.work,
-                        ),
+                      exerciseId: widget.exercise.id,
+                      type: SetType.work,
+                    ),
               ),
             ),
           ],
@@ -489,6 +506,58 @@ class _ExerciseThumb extends StatelessWidget {
       width: 48,
       height: 48,
       child: ClipRRect(borderRadius: BorderRadius.circular(10), child: child),
+    );
+  }
+}
+
+class _PrPill extends StatefulWidget {
+  final String text;
+  const _PrPill({required this.text});
+
+  @override
+  State<_PrPill> createState() => _PrPillState();
+}
+
+class _PrPillState extends State<_PrPill> with SingleTickerProviderStateMixin {
+  late final AnimationController _c = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 220),
+  )..forward();
+
+  late final Animation<double> _scale = CurvedAnimation(
+    parent: _c,
+    curve: Curves.easeOutBack,
+  );
+
+  @override
+  void dispose() {
+    _c.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+
+    return ScaleTransition(
+      scale: _scale,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        decoration: BoxDecoration(
+          color: cs.primaryContainer,
+          borderRadius: BorderRadius.circular(999),
+          border: Border.all(color: cs.primary.withOpacity(0.35)),
+        ),
+        child: Text(
+          widget.text,
+          style: TextStyle(
+            color: cs.onPrimaryContainer,
+            fontWeight: FontWeight.w900,
+            fontSize: 12,
+            letterSpacing: 0.2,
+          ),
+        ),
+      ),
     );
   }
 }
