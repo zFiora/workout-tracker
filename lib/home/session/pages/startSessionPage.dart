@@ -1,8 +1,8 @@
-// pages/start_session_page.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:workout_tracker/common/formatters/duarationFormatter.dart';
 import 'package:workout_tracker/home/exercises/models/exerciseModel.dart';
-import 'package:workout_tracker/home/history/historyViewModel.dart';
+import 'package:workout_tracker/home/history/ViewModel/historyViewModel.dart';
 import 'package:workout_tracker/home/history/widgets/historyPage.dart';
 import 'package:workout_tracker/home/session/sessionViewModel.dart';
 import 'package:workout_tracker/home/session/widgets/exerciseSessionTile.dart';
@@ -18,13 +18,6 @@ class StartSessionPage extends StatelessWidget {
     required this.exercises,
     required this.templateId,
   });
-
-  String _format(Duration d) {
-    final h = d.inHours.toString().padLeft(2, '0');
-    final m = (d.inMinutes % 60).toString().padLeft(2, '0');
-    final s = (d.inSeconds % 60).toString().padLeft(2, '0');
-    return '$h:$m:$s';
-  }
 
   Future<bool> _confirmEndSession(BuildContext context) async {
     return (await showDialog<bool>(
@@ -47,6 +40,34 @@ class StartSessionPage extends StatelessWidget {
         false;
   }
 
+  Future<void> _endAndSaveSession(BuildContext context) async {
+    final session = context.read<WorkoutSessionViewModel>();
+
+    final ok = await _confirmEndSession(context);
+    if (!ok) return;
+
+    final entry = session.end();
+
+    final prEvents = session.prHits.values
+        .map((h) => h.toJson())
+        .toList(growable: false);
+
+    await context.read<HistoryViewModel>().saveWithPrEvents(
+      entry,
+      prEvents: prEvents,
+    );
+
+    session.clearPrHits();
+
+    if (!context.mounted) return;
+
+    Navigator.of(context).popUntil((route) => route.isFirst);
+
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('Workout saved to history')));
+  }
+
   @override
   Widget build(BuildContext context) {
     final session = context.watch<WorkoutSessionViewModel>();
@@ -60,8 +81,10 @@ class StartSessionPage extends StatelessWidget {
             padding: const EdgeInsets.only(right: 12),
             child: Center(
               child: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
                   color: cs.surfaceContainerHighest.withOpacity(0.6),
                   borderRadius: BorderRadius.circular(999),
@@ -70,11 +93,14 @@ class StartSessionPage extends StatelessWidget {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.timer_outlined,
-                        size: 16, color: cs.onSurfaceVariant),
+                    Icon(
+                      Icons.timer_outlined,
+                      size: 16,
+                      color: cs.onSurfaceVariant,
+                    ),
                     const SizedBox(width: 6),
                     Text(
-                      _format(session.elapsed),
+                      hhmmss(session.elapsed),
                       style: TextStyle(
                         fontWeight: FontWeight.w800,
                         color: cs.onSurfaceVariant,
@@ -141,36 +167,11 @@ class StartSessionPage extends StatelessWidget {
                         session.start();
                         return;
                       }
-
-                      final ok = await _confirmEndSession(context);
-                      if (!ok) return;
-
-                      final entry = session.end();
-
-                      final prEvents = session.prHits.values
-                          .map((h) => h.toJson())
-                          .toList(growable: false);
-
-                      await context.read<HistoryViewModel>().saveWithPrEvents(
-                            entry,
-                            prEvents: prEvents,
-                          );
-
-                      // reset PR hits for next session
-                      session.clearPrHits();
-
-                      if (!context.mounted) return;
-
-                      Navigator.of(context).popUntil((route) => route.isFirst);
-
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Workout saved to history'),
-                        ),
-                      );
+                      await _endAndSaveSession(context);
                     },
-                    child:
-                        Text(session.isRunning ? 'End & Save' : 'Start Session'),
+                    child: Text(
+                      session.isRunning ? 'End & Save' : 'Start Session',
+                    ),
                   ),
                 ),
               ),

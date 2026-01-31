@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:workout_tracker/common/formatters/dateTimeFormatter.dart';
+import 'package:workout_tracker/home/history/utils/historyEnteryStats.dart';
 import 'package:workout_tracker/home/session/models/sessionModels.dart';
 
 class HistoryTile extends StatelessWidget {
@@ -13,68 +15,15 @@ class HistoryTile extends StatelessWidget {
   final VoidCallback? onTap;
   final VoidCallback? onDelete;
 
-  // --------- Formatting ---------
-
-  String _two(int n) => n.toString().padLeft(2, '0');
-
-  String _formatTime(DateTime dt) => '${_two(dt.hour)}:${_two(dt.minute)}';
-
-  String _formatDayLabel(DateTime dt) {
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    final day = DateTime(dt.year, dt.month, dt.day);
-    final diff = today.difference(day).inDays;
-
-    if (diff == 0) return 'Today';
-    if (diff == 1) return 'Yesterday';
-
-    const wd = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-    const mo = [
-      'Jan','Feb','Mar','Apr','May','Jun',
-      'Jul','Aug','Sep','Oct','Nov','Dec'
-    ];
-
-    final w = wd[dt.weekday - 1];
-    final m = mo[dt.month - 1];
-    return '$w, $m ${dt.day}';
-  }
-
-  String _formatDuration(Duration d) {
-    final h = d.inHours;
-    final m = d.inMinutes.remainder(60);
-    if (h > 0) return '${h}h ${m}m';
-    if (m > 0) return '${m}m';
-    final s = d.inSeconds.remainder(60);
-    return '${s}s';
-  }
-
-  String _formatVolume(double v) {
-    // Keep it simple: show 0 decimals if big enough, 1 decimal if small
-    if (v >= 100) return v.toStringAsFixed(0);
-    return v.toStringAsFixed(1);
-  }
-
-  // --------- Stats ---------
-
-  int get _exerciseCount => entry.logs.length;
-
-  int get _setCount =>
-      entry.logs.fold(0, (sum, log) => sum + log.sets.length);
-
-  double get _volume =>
-      entry.logs.fold(0.0, (sum, log) {
-        return sum +
-            log.sets.fold(0.0, (s, set) => s + (set.weight * set.reps));
-      });
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
 
-    final dayLabel = _formatDayLabel(entry.endedAt);
-    final timeLabel =
-        '${_formatTime(entry.startedAt)} – ${_formatTime(entry.endedAt)}';
+    final dayText = dayLabel(entry.endedAt);
+    final timeText = '${fmtTime(entry.startedAt)} – ${fmtTime(entry.endedAt)}';
+
+    final stats = computeHistoryEntryStats(entry);
 
     return InkWell(
       borderRadius: BorderRadius.circular(16),
@@ -91,10 +40,7 @@ class HistoryTile extends StatelessWidget {
               cs.surfaceVariant.withOpacity(0.35),
             ],
           ),
-          border: Border.all(
-            color: cs.outline.withOpacity(0.25),
-            width: 1,
-          ),
+          border: Border.all(color: cs.outline.withOpacity(0.25), width: 1),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withOpacity(0.06),
@@ -119,7 +65,7 @@ class HistoryTile extends StatelessWidget {
                 child: Image.asset(
                   entry.templateIcon,
                   fit: BoxFit.cover,
-                  errorBuilder: (_, _, _) => Icon(
+                  errorBuilder: (_, __, ___) => Icon(
                     Icons.fitness_center,
                     color: cs.onSecondaryContainer.withOpacity(0.8),
                   ),
@@ -132,7 +78,6 @@ class HistoryTile extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Title + day label
                     Row(
                       children: [
                         Expanded(
@@ -148,7 +93,7 @@ class HistoryTile extends StatelessWidget {
                         const SizedBox(width: 8),
                         _Pill(
                           icon: Icons.calendar_today_outlined,
-                          label: dayLabel,
+                          label: dayText,
                           background: cs.tertiaryContainer,
                           foreground: cs.onTertiaryContainer,
                         ),
@@ -156,44 +101,44 @@ class HistoryTile extends StatelessWidget {
                     ),
                     const SizedBox(height: 6),
 
-                    // Time range (sub)
                     Text(
-                      timeLabel,
+                      timeText,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.textTheme.bodySmall?.color?.withOpacity(0.75),
+                        color: theme.textTheme.bodySmall?.color?.withOpacity(
+                          0.75,
+                        ),
                       ),
                     ),
 
                     const SizedBox(height: 10),
 
-                    // Stats pills
                     Wrap(
                       spacing: 8,
                       runSpacing: 8,
                       children: [
                         _Pill(
                           icon: Icons.timer_outlined,
-                          label: _formatDuration(entry.duration),
+                          label: durationLabel(entry.duration),
                           background: cs.primaryContainer,
                           foreground: cs.onPrimaryContainer,
                         ),
                         _Pill(
                           icon: Icons.list_alt_outlined,
-                          label: '$_exerciseCount ex',
+                          label: '${stats.exerciseCount} ex',
                           background: cs.secondaryContainer,
                           foreground: cs.onSecondaryContainer,
                         ),
                         _Pill(
                           icon: Icons.repeat,
-                          label: '$_setCount sets',
+                          label: '${stats.setCount} sets',
                           background: cs.secondaryContainer,
                           foreground: cs.onSecondaryContainer,
                         ),
                         _Pill(
                           icon: Icons.scale_outlined,
-                          label: '${_formatVolume(_volume)} kg',
+                          label: '${formatVolumeKg(stats.volume)} kg',
                           background: cs.surface,
                           foreground: cs.onSurface,
                         ),
@@ -290,9 +235,9 @@ class _Pill extends StatelessWidget {
           Text(
             label,
             style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                  color: foreground,
-                  fontWeight: FontWeight.w700,
-                ),
+              color: foreground,
+              fontWeight: FontWeight.w700,
+            ),
           ),
         ],
       ),
@@ -316,6 +261,7 @@ class _MenuItem extends StatelessWidget {
     final color = danger
         ? Theme.of(context).colorScheme.error
         : Theme.of(context).textTheme.bodyMedium?.color;
+
     return Row(
       children: [
         Icon(icon, size: 18, color: color),

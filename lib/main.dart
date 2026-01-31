@@ -18,9 +18,9 @@ import 'package:workout_tracker/home/measure/models/macro_profile.dart';
 import 'package:workout_tracker/home/measure/models/measurement_entry.dart';
 import 'package:workout_tracker/home/measure/models/measure_profile.dart';
 import 'package:workout_tracker/home/session/models/sessionModels.dart';
-import 'package:workout_tracker/home/history/historyViewModel.dart';
+import 'package:workout_tracker/home/history/ViewModel/historyViewModel.dart';
 import 'package:workout_tracker/home/templates/models/workoutTemplateModel.dart';
-import 'package:workout_tracker/home/templates/templatesViewModel.dart';
+import 'package:workout_tracker/home/templates/viewmodels/templatesViewModel.dart';
 
 import 'package:workout_tracker/common/splash/splashLoading.dart';
 

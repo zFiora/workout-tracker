@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:workout_tracker/common/widgets/myCustomeScaffoldView.dart';
-import 'package:workout_tracker/home/history/historyViewModel.dart';
-import 'package:workout_tracker/home/history/widgets/historySessionDetailedPage.dart';
+import 'package:workout_tracker/home/history/ViewModel/historyViewModel.dart';
+import 'package:workout_tracker/home/history/pages/historySessionDetailedPage.dart';
 import 'package:workout_tracker/home/history/widgets/historyTile.dart';
 
 class HistoryPage extends StatelessWidget {

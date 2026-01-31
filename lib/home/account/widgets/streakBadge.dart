@@ -1,7 +1,7 @@
 // lib/home/account/widgets/streak_badge.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:workout_tracker/home/history/historyViewModel.dart';
+import 'package:workout_tracker/home/history/ViewModel/historyViewModel.dart';
 
 class StreakBadge extends StatelessWidget {
   const StreakBadge({super.key});

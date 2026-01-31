@@ -7,7 +7,7 @@ import 'package:workout_tracker/home/account/widgets/accountPage.dart';
 import 'package:workout_tracker/home/exercises/widgets/exercisesPage.dart';
 import 'package:workout_tracker/home/history/widgets/historyPage.dart';
 import 'package:workout_tracker/home/measure/widgets/measuresPage.dart';
-import 'package:workout_tracker/home/templates/widgets/templatesPage.dart';
+import 'package:workout_tracker/home/templates/pages/templatesPage.dart';
 
 class MainNavigation extends StatefulWidget {
   const MainNavigation({super.key});
