@@ -1,4 +1,4 @@
-import 'package:workout_tracker/home/templates/models/workoutTemplateModel.dart';
+import 'package:workout_tracker/home/templates/models/workout_template.dart';
 
 abstract class TemplatesRepository {
   List<WorkoutTemplateModel> getAllSorted();

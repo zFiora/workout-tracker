@@ -5,6 +5,7 @@ import 'package:workout_tracker/home/account/model/streakCalculator.dart';
 import 'package:workout_tracker/home/account/model/streakSyncService.dart';
 import 'package:workout_tracker/home/history/repos/PREventRepository.dart';
 import 'package:workout_tracker/home/history/repos/historyRepository.dart';
+import 'package:workout_tracker/home/history/repos/hivePREventRepo.dart';
 import 'package:workout_tracker/home/history/services/historyService.dart';
 import 'package:workout_tracker/home/session/models/sessionModels.dart';
 
@@ -15,7 +16,7 @@ class HistoryViewModel extends ChangeNotifier {
     PrEventsRepository? prRepo,
   }) : _sync = sync {
     _historyRepo = historyRepo ?? HistoryRepository();
-    _prRepo = prRepo ?? PrEventsRepository();
+    _prRepo = prRepo ?? HivePrEventsRepository();
     _service = HistoryService(historyRepo: _historyRepo, prRepo: _prRepo);
 
     _boxSub = _historyRepo.watch((_) => notifyListeners());

@@ -4,7 +4,7 @@ import 'package:workout_tracker/common/widgets/myCustomeScaffoldView.dart';
 import 'package:workout_tracker/home/exercises/exerciesesList.dart';
 import 'package:workout_tracker/home/exercises/models/exerciseModel.dart';
 import 'package:workout_tracker/home/exercises/widgets/exerciseTile.dart';
-import 'package:workout_tracker/home/templates/models/workoutTemplateModel.dart';
+import 'package:workout_tracker/home/templates/models/workout_template.dart';
 import 'package:workout_tracker/home/templates/navigation/startSessionFlow.dart';
 
 class ViewTemplatePage extends StatelessWidget {

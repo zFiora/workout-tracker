@@ -1,6 +1,6 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
-part of 'workoutTemplateModel.dart';
+part of 'workout_template.dart';
 
 // **************************************************************************
 // TypeAdapterGenerator
@@ -21,8 +21,8 @@ class WorkoutTemplateModelAdapter extends TypeAdapter<WorkoutTemplateModel> {
       name: fields[1] as String,
       iconPath: fields[2] as String,
       exerciseIds: (fields[3] as List).cast<int>(),
-      createdAt: fields[4] as DateTime?,
-      updatedAt: fields[5] as DateTime?,
+      createdAt: fields[4] as DateTime,
+      updatedAt: fields[5] as DateTime,
     );
   }
 

@@ -1,13 +1,22 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
-import 'package:workout_tracker/home/templates/models/workoutTemplateModel.dart';
+import 'package:hive/hive.dart';
+import 'package:workout_tracker/home/templates/models/workout_template.dart';
 import 'package:workout_tracker/home/templates/repositories/hiveTemplatesRepositories.dart';
 import 'package:workout_tracker/home/templates/repositories/templatesRepositories.dart';
 
 class TemplatesViewModel extends ChangeNotifier {
   TemplatesViewModel({TemplatesRepository? repo})
-    : _repo = repo ?? HiveTemplatesRepository();
+    : _repo = repo ?? HiveTemplatesRepository() {
+    // Auto-refresh UI when the Hive box changes (add/put/delete)
+    _sub = Hive.box<WorkoutTemplateModel>(
+      'templatesBox',
+    ).watch().listen((_) => notifyListeners());
+  }
 
   final TemplatesRepository _repo;
+  StreamSubscription<BoxEvent>? _sub;
 
   List<WorkoutTemplateModel> get templates => _repo.getAllSorted();
 
@@ -37,5 +46,11 @@ class TemplatesViewModel extends ChangeNotifier {
   ) async {
     await _repo.changeIconPath(template, newIconPath);
     notifyListeners();
+  }
+
+  @override
+  void dispose() {
+    _sub?.cancel();
+    super.dispose();
   }
 }

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:workout_tracker/home/templates/models/workoutTemplateModel.dart';
+import 'package:workout_tracker/home/templates/models/workout_template.dart';
 
 class TemplateCard extends StatelessWidget {
   const TemplateCard({super.key, required this.template, required this.onOpen});

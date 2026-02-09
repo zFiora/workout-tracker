@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:workout_tracker/home/templates/models/workoutTemplateModel.dart';
+import 'package:workout_tracker/home/templates/models/workout_template.dart';
 import 'package:workout_tracker/home/templates/viewmodels/templatesViewModel.dart';
 
 enum TemplateAction { rename, changeIcon, delete }

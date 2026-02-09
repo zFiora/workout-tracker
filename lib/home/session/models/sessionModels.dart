@@ -12,6 +12,31 @@ enum SetType {
   dropset,
 }
 
+extension SetTypeCodec on SetType {
+  String toShort() {
+    switch (this) {
+      case SetType.work:
+        return 'work';
+      case SetType.warmup:
+        return 'warmup';
+      case SetType.dropset:
+        return 'dropset';
+    }
+  }
+
+  static SetType fromShort(String v) {
+    switch (v) {
+      case 'warmup':
+        return SetType.warmup;
+      case 'dropset':
+        return SetType.dropset;
+      case 'work':
+      default:
+        return SetType.work;
+    }
+  }
+}
+
 @HiveType(typeId: 2)
 class PerformedSet {
   @HiveField(0)
@@ -24,39 +49,98 @@ class PerformedSet {
   final DateTime timestamp;
 
   @HiveField(3)
-  SetType type;
+  final SetType type;
 
-  PerformedSet({
+  const PerformedSet({
     required this.weight,
     required this.reps,
     required this.timestamp,
     this.type = SetType.work,
   });
 
-  get setType => type;
+  PerformedSet copyWith({
+    double? weight,
+    int? reps,
+    DateTime? timestamp,
+    SetType? type,
+  }) {
+    return PerformedSet(
+      weight: weight ?? this.weight,
+      reps: reps ?? this.reps,
+      timestamp: timestamp ?? this.timestamp,
+      type: type ?? this.type,
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+        'weight': weight,
+        'reps': reps,
+        'timestamp': timestamp.toIso8601String(),
+        'type': type.toShort(),
+      };
+
+  factory PerformedSet.fromJson(Map<String, dynamic> json) {
+    return PerformedSet(
+      weight: (json['weight'] as num).toDouble(),
+      reps: (json['reps'] as num).toInt(),
+      timestamp: DateTime.parse(json['timestamp'] as String),
+      type: SetTypeCodec.fromShort((json['type'] as String?) ?? 'work'),
+    );
+  }
 }
 
 /// A planned row shown to the user (editable) before they mark it Done.
+/// Note: This is runtime-ish, but you already store it in ExerciseLog, so we keep it Hive-friendly + JSON.
 @HiveType(typeId: 5)
 class PlannedSet {
   @HiveField(0)
-  SetType type;
+  final SetType type;
 
   @HiveField(1)
-  double? weight;
+  final double? weight;
 
   @HiveField(2)
-  int? reps;
+  final int? reps;
 
   @HiveField(3)
-  bool done;
+  final bool done;
 
-  PlannedSet({
+  const PlannedSet({
     required this.type,
     this.weight,
     this.reps,
     this.done = false,
   });
+
+  PlannedSet copyWith({
+    SetType? type,
+    double? weight,
+    int? reps,
+    bool? done,
+  }) {
+    return PlannedSet(
+      type: type ?? this.type,
+      weight: weight ?? this.weight,
+      reps: reps ?? this.reps,
+      done: done ?? this.done,
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+        'type': type.toShort(),
+        'weight': weight,
+        'reps': reps,
+        'done': done,
+      };
+
+  factory PlannedSet.fromJson(Map<String, dynamic> json) {
+    return PlannedSet(
+      type: SetTypeCodec.fromShort((json['type'] as String?) ?? 'work'),
+      weight: (json['weight'] as num?)?.toDouble(),
+      reps: (json['reps'] as num?)?.toInt(),
+      done: (json['done'] as bool?) ?? false,
+    );
+  }
 }
 
 @HiveType(typeId: 3)
@@ -68,12 +152,12 @@ class ExerciseLog {
   final List<PerformedSet> sets;
 
   @HiveField(2)
-  String exerciseName;
+  final String exerciseName;
 
   @HiveField(3)
-  String exerciseIcon;
+  final String exerciseIcon;
 
-  // New: checklist rows prefilled from last workout
+  // Checklist rows prefilled from last workout
   @HiveField(4)
   final List<PlannedSet> plannedSets;
 
@@ -83,8 +167,45 @@ class ExerciseLog {
     required this.exerciseName,
     List<PerformedSet>? sets,
     List<PlannedSet>? plannedSets,
-  })  : sets = sets ?? [],
-        plannedSets = plannedSets ?? [];
+  })  : sets = sets ?? <PerformedSet>[],
+        plannedSets = plannedSets ?? <PlannedSet>[];
+
+  ExerciseLog copyWith({
+    List<PerformedSet>? sets,
+    List<PlannedSet>? plannedSets,
+    String? exerciseName,
+    String? exerciseIcon,
+  }) {
+    return ExerciseLog(
+      exerciseId: exerciseId,
+      exerciseName: exerciseName ?? this.exerciseName,
+      exerciseIcon: exerciseIcon ?? this.exerciseIcon,
+      sets: sets ?? List<PerformedSet>.from(this.sets),
+      plannedSets: plannedSets ?? List<PlannedSet>.from(this.plannedSets),
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+        'exerciseId': exerciseId,
+        'exerciseName': exerciseName,
+        'exerciseIcon': exerciseIcon,
+        'sets': sets.map((s) => s.toJson()).toList(),
+        'plannedSets': plannedSets.map((p) => p.toJson()).toList(),
+      };
+
+  factory ExerciseLog.fromJson(Map<String, dynamic> json) {
+    return ExerciseLog(
+      exerciseId: (json['exerciseId'] as num).toInt(),
+      exerciseName: json['exerciseName'] as String? ?? '',
+      exerciseIcon: json['exerciseIcon'] as String? ?? '',
+      sets: (json['sets'] as List? ?? const [])
+          .map((e) => PerformedSet.fromJson(Map<String, dynamic>.from(e as Map)))
+          .toList(),
+      plannedSets: (json['plannedSets'] as List? ?? const [])
+          .map((e) => PlannedSet.fromJson(Map<String, dynamic>.from(e as Map)))
+          .toList(),
+    );
+  }
 }
 
 @HiveType(typeId: 4)
@@ -110,7 +231,7 @@ class WorkoutHistoryEntry {
   @HiveField(6)
   final List<ExerciseLog> logs;
 
-  WorkoutHistoryEntry({
+  const WorkoutHistoryEntry({
     required this.templateIcon,
     required this.templateId,
     required this.templateName,
@@ -119,6 +240,30 @@ class WorkoutHistoryEntry {
     required this.duration,
     required this.logs,
   });
+
+  Map<String, dynamic> toJson() => {
+        'templateId': templateId,
+        'templateName': templateName,
+        'templateIcon': templateIcon,
+        'startedAt': startedAt.toIso8601String(),
+        'endedAt': endedAt.toIso8601String(),
+        'durationMs': duration.inMilliseconds,
+        'logs': logs.map((l) => l.toJson()).toList(),
+      };
+
+  factory WorkoutHistoryEntry.fromJson(Map<String, dynamic> json) {
+    return WorkoutHistoryEntry(
+      templateId: json['templateId'] as String,
+      templateName: json['templateName'] as String? ?? '',
+      templateIcon: json['templateIcon'] as String? ?? '',
+      startedAt: DateTime.parse(json['startedAt'] as String),
+      endedAt: DateTime.parse(json['endedAt'] as String),
+      duration: Duration(milliseconds: (json['durationMs'] as num).toInt()),
+      logs: (json['logs'] as List? ?? const [])
+          .map((e) => ExerciseLog.fromJson(Map<String, dynamic>.from(e as Map)))
+          .toList(),
+    );
+  }
 }
 
 class DurationAdapter extends TypeAdapter<Duration> {

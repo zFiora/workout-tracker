@@ -319,6 +319,19 @@ class ExercisesViewModel {
       workoutImage: 'assets/workouts/legs/calf_raises.png',
     ),
     ExerciseModel(
+      id: 108,
+      name: 'Hip Abduction',
+      category: WorkoutCategory.legs,
+      workoutImage: 'assets/workouts/legs/hip_abduction.png',
+    ),
+    ExerciseModel(
+      id: 109,
+      name: 'Hip Adduction',
+      category: WorkoutCategory.legs,
+      workoutImage: 'assets/workouts/legs/hip_adduction.png',
+    ),
+    
+    ExerciseModel(
       id: 47,
       name: 'Dumbbell Shrugs',
       category: WorkoutCategory.shoulders,

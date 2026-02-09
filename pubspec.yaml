@@ -145,6 +145,8 @@ flutter:
     - assets/workouts/legs/calf_raises.png
     - assets/workouts/legs/hip_thrust_barbell.png
     - assets/workouts/legs/seated_calf_raise.png
+    - assets/workouts/legs/hip_abduction.png
+    - assets/workouts/legs/hip_adduction.png
 
     - assets/workout_category/chest_emoji.png
     - assets/workout_category/abs_emoji.png

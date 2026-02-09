@@ -19,7 +19,7 @@ import 'package:workout_tracker/home/measure/models/measurement_entry.dart';
 import 'package:workout_tracker/home/measure/models/measure_profile.dart';
 import 'package:workout_tracker/home/session/models/sessionModels.dart';
 import 'package:workout_tracker/home/history/ViewModel/historyViewModel.dart';
-import 'package:workout_tracker/home/templates/models/workoutTemplateModel.dart';
+import 'package:workout_tracker/home/templates/models/workout_template.dart';
 import 'package:workout_tracker/home/templates/viewmodels/templatesViewModel.dart';
 
 import 'package:workout_tracker/common/splash/splashLoading.dart';
@@ -48,6 +48,7 @@ Future<void> main() async {
   await Hive.openBox<MeasureProfile>('measureProfileBox');
   await Hive.openBox<MacroProfile>('macrosProfileBox');
   await Hive.openBox('prEventsBox');
+  
 
   // ----- PocketBase: restore token from secure storage -----
   await PB.I.bootstrapAuth(); // restores token & tries authRefresh()

@@ -210,7 +210,8 @@ class WorkoutSessionViewModel extends ChangeNotifier {
     if (log == null) return;
     if (index < 0 || index >= log.sets.length) return;
 
-    log.sets[index].type = type;
+    final old = log.sets[index];
+    log.sets[index] = old.copyWith(type: type);
     notifyListeners();
   }
 
@@ -331,28 +332,32 @@ class WorkoutSessionViewModel extends ChangeNotifier {
     if (log == null) return;
     if (index < 0 || index >= log.plannedSets.length) return;
 
-    final p = log.plannedSets[index];
+    final old = log.plannedSets[index];
 
-    if (type != null) p.type = type;
-    if (weight != null) p.weight = weight;
-    if (reps != null) p.reps = reps;
+    final updated = old.copyWith(
+      type: type ?? old.type,
+      weight: weight ?? old.weight,
+      reps: reps ?? old.reps,
+    );
 
-    // if already done, keep performed set in sync
-    if (p.done) {
+    log.plannedSets[index] = updated;
+
+    // If already done, keep performed set in sync too
+    if (updated.done) {
       final key = '$exerciseId:$index';
       final ts = _plannedToPerformedTs[key];
       if (ts != null) {
         final performedIndex = log.sets.indexWhere((s) => s.timestamp == ts);
         if (performedIndex != -1) {
-          final w = p.weight;
-          final r = p.reps;
+          final w = updated.weight;
+          final r = updated.reps;
           if (w != null && r != null) {
             updatePerformedSet(
               exerciseId: exerciseId,
               index: performedIndex,
               weight: w,
               reps: r,
-              type: p.type,
+              type: updated.type,
             );
             return;
           }
@@ -379,10 +384,14 @@ class WorkoutSessionViewModel extends ChangeNotifier {
     final r = p.reps;
     if (w == null || r == null) return;
 
-    p.done = true;
-
     final ts = DateTime.now();
+
+    // mark done (replace planned row)
+    log.plannedSets[index] = p.copyWith(done: true);
+
+    // add performed set
     log.sets.add(PerformedSet(weight: w, reps: r, timestamp: ts, type: p.type));
+
     _plannedToPerformedTs['$exerciseId:$index'] = ts;
 
     final hit = _prService.bestWeightHitIfAny(
@@ -415,7 +424,8 @@ class WorkoutSessionViewModel extends ChangeNotifier {
     final key = '$exerciseId:$index';
     final ts = _plannedToPerformedTs[key];
 
-    p.done = false;
+    // mark not done (replace planned row)
+    log.plannedSets[index] = p.copyWith(done: false);
 
     if (removePerformed && ts != null) {
       final performedIndex = log.sets.indexWhere((s) => s.timestamp == ts);

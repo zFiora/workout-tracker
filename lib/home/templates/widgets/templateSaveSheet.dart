@@ -4,7 +4,7 @@ import 'package:uuid/uuid.dart';
 import 'package:workout_tracker/common/widgets/myCustomeButton.dart';
 import 'package:workout_tracker/home/exercises/models/exerciseModel.dart';
 import 'package:workout_tracker/home/templates/constants/templateIcons.dart';
-import 'package:workout_tracker/home/templates/models/workoutTemplateModel.dart';
+import 'package:workout_tracker/home/templates/models/workout_template.dart';
 import 'package:workout_tracker/home/templates/viewmodels/templatesViewModel.dart';
 
 class TemplateSaveSheet extends StatefulWidget {
