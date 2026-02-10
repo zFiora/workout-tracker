@@ -1,10 +1,11 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
-import 'package:hive/hive.dart';
+
 import 'package:workout_tracker/home/account/model/streakCalculator.dart';
 import 'package:workout_tracker/home/account/model/streakSyncService.dart';
 import 'package:workout_tracker/home/history/repos/PREventRepository.dart';
 import 'package:workout_tracker/home/history/repos/historyRepository.dart';
+import 'package:workout_tracker/home/history/repos/hiveHistoryRepository.dart';
 import 'package:workout_tracker/home/history/repos/hivePREventRepo.dart';
 import 'package:workout_tracker/home/history/services/historyService.dart';
 import 'package:workout_tracker/home/session/models/sessionModels.dart';
@@ -14,69 +15,89 @@ class HistoryViewModel extends ChangeNotifier {
     StreakSyncService? sync,
     HistoryRepository? historyRepo,
     PrEventsRepository? prRepo,
+    HistoryService? service,
   }) : _sync = sync {
-    _historyRepo = historyRepo ?? HistoryRepository();
+    _historyRepo = historyRepo ?? HiveHistoryRepository();
     _prRepo = prRepo ?? HivePrEventsRepository();
-    _service = HistoryService(historyRepo: _historyRepo, prRepo: _prRepo);
+    _service =
+        service ?? HistoryService(historyRepo: _historyRepo, prRepo: _prRepo);
 
-    _boxSub = _historyRepo.watch((_) => notifyListeners());
+    // Initial compute
+    _recomputeDerived();
+
+    // Single refresh path: any Hive change triggers recompute + notify
+    _sub = _historyRepo.watch((_) {
+      _recomputeDerived();
+      notifyListeners();
+      _maybeSync();
+    });
   }
 
   late final HistoryRepository _historyRepo;
   late final PrEventsRepository _prRepo;
   late final HistoryService _service;
 
-  // ignore: unused_field
   StreakSyncService? _sync;
-  StreamSubscription<BoxEvent>? _boxSub;
+  StreamSubscription? _sub;
+
+  // Cached derived state
+  late List<HistoryItem> _historyItems;
+  late List<WorkoutHistoryEntry> _history;
+  late StreakInfo _streak;
+  late Map<DateTime, List<WorkoutHistoryEntry>> _groupedByDay;
 
   void setSync(StreakSyncService? sync) => _sync = sync;
 
-  List<HistoryItem> get historyItems => _service.historyItems;
+  List<HistoryItem> get historyItems => _historyItems;
+  List<WorkoutHistoryEntry> get history => _history;
+  HistoryService get service => _service;
+  StreakInfo get streak => _streak;
 
-  List<WorkoutHistoryEntry> get history => _service.history;
-
-  StreakInfo get streak => _service.computeStreak();
-
-  Map<DateTime, List<WorkoutHistoryEntry>> groupedByDay() =>
-      _service.groupedByDay();
+  Map<DateTime, List<WorkoutHistoryEntry>> get groupedByDay => _groupedByDay;
 
   Future<void> save(WorkoutHistoryEntry entry) async {
     await _service.save(entry);
-    await _recomputeAndSync();
+    // No notify here. The repo watch will fire and update everything.
   }
 
   Future<void> saveWithPrEvents(
     WorkoutHistoryEntry entry, {
     required List<Map<String, dynamic>> prEvents,
   }) async {
-    // store workout first, get key, then store PR events against that key
-    final key = await Hive.box<WorkoutHistoryEntry>('historyBox').add(entry);
-    await _prRepo.putEventsForHistoryKey(key, prEvents);
-
-    await _recomputeAndSync();
+    await _service.saveWithPrEvents(entry, prEvents: prEvents);
+    // No notify here. Watch will handle it.
   }
 
   Future<void> deleteByKey(dynamic key) async {
     await _service.deleteByKey(key);
-    await _recomputeAndSync();
+    // Watch will handle it.
   }
 
   Future<void> clear() async {
     await _service.clear();
-    await _recomputeAndSync();
+    // Watch will handle it.
   }
 
-  Future<void> _recomputeAndSync() async {
-    notifyListeners();
-    // Keep your sync code here later if you want.
-    // Example future usage:
-    // if (_sync != null) await _sync!.sync(streak);
+  void _recomputeDerived() {
+    _historyItems = _service.historyItems;
+    _history = List.unmodifiable(_historyItems.map((e) => e.entry));
+    _streak = StreakCalculator.compute(_history.map((e) => e.endedAt));
+    _groupedByDay = _service.groupedByDay();
+  }
+
+  void _maybeSync() {
+    // Keep it optional and non-blocking for UI.
+    // If you want strict sync guarantees, we can await in writes instead.
+    final s = _sync;
+    if (s == null) return;
+
+    // Uncomment when ready:
+    // unawaited(s.sync(_streak));
   }
 
   @override
   void dispose() {
-    _boxSub?.cancel();
+    _sub?.cancel();
     super.dispose();
   }
 }

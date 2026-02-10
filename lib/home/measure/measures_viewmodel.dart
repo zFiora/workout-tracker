@@ -1,16 +1,14 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:workout_tracker/home/measure/models/macroResults.dart';
 
 import 'package:workout_tracker/home/measure/models/macro_profile.dart';
-import 'package:workout_tracker/home/measure/repositeries/macros_profile_repository.dart';
-
-// ⚠️ Keep your current import path if that's where your MeasureProfile is.
-// If you actually created it under home/measure/models, then change this import.
 import 'package:workout_tracker/home/measure/models/measure_profile.dart';
+import 'package:workout_tracker/home/measure/repositeries/macros_profile_repository.dart';
+import 'package:workout_tracker/home/measure/repositeries/measures_profile_repository.dart';
+import 'package:workout_tracker/home/measure/repositeries/measures_repository.dart';
 
 import 'models/measurement_entry.dart';
-import 'repositeries/measures_repository.dart';
-import 'repositeries/measures_profile_repository.dart';
 
 class MeasuresViewModel extends ChangeNotifier {
   MeasuresViewModel(this._repo, this._profileRepo, this._macrosRepo);
@@ -31,7 +29,7 @@ class MeasuresViewModel extends ChangeNotifier {
   MacroProfile _macroProfile = MacroProfile.defaults;
   MacroProfile get macroProfile => _macroProfile;
 
-  // ===== Height / BMI =====
+  // ===== Derived (computed) =====
   double? get heightCm => _profile.heightCm;
 
   double? get latestWeight => _entries.isEmpty ? null : _entries.last.weightKg;
@@ -44,17 +42,71 @@ class MeasuresViewModel extends ChangeNotifier {
     return w / (meters * meters);
   }
 
+  (double min, double max) get weightRange {
+    if (_entries.isEmpty) return (0, 0);
+    final minW = _entries.map((e) => e.weightKg).reduce(min);
+    final maxW = _entries.map((e) => e.weightKg).reduce(max);
+    const pad = 1.0;
+    return (minW - pad, maxW + pad);
+  }
+
+  MacroPack? get macrosPack {
+    final w = latestWeight;
+    final h = heightCm;
+    if (w == null || h == null || w <= 0 || h <= 0) return null;
+
+    final age = _macroProfile.age;
+
+    // Mifflin-St Jeor BMR
+    final bmr = 10 * w + 6.25 * h - 5 * age + (_macroProfile.isMale ? 5 : -161);
+
+    // TDEE
+    final tdee = bmr * _macroProfile.activityFactor;
+
+    final maintenance = tdee.round();
+    final cutting = (tdee - 500).round();
+    final bulking = (tdee + 250).round();
+
+    MacroResult buildPlan(int calories, double proteinPerKg) {
+      final proteinG = (proteinPerKg * w).round();
+      final fatG = (0.8 * w).round();
+
+      final proteinCals = proteinG * 4;
+      final fatCals = fatG * 9;
+
+      final remaining = calories - proteinCals - fatCals;
+      final carbsG = (remaining / 4).floor().clamp(0, 9999);
+
+      return MacroResult(
+        calories: calories,
+        proteinG: proteinG,
+        carbsG: carbsG,
+        fatG: fatG,
+      );
+    }
+
+    return MacroPack(
+      maintenance: buildPlan(maintenance, 1.8),
+      cutting: buildPlan(cutting, 2.2),
+      bulking: buildPlan(bulking, 1.6),
+    );
+  }
+
   // ===== Load =====
   Future<void> load() async {
     _loading = true;
     notifyListeners();
 
-    _profile = _profileRepo.getProfile();
-    _macroProfile = _macrosRepo.getProfile();
-    _entries = await _repo.getAll();
+    try {
+      _profile = _profileRepo.getProfile();
+      _macroProfile = _macrosRepo.getProfile();
+      _entries = await _repo.getAll();
 
-    _loading = false;
-    notifyListeners();
+      _sortEntries();
+    } finally {
+      _loading = false;
+      notifyListeners();
+    }
   }
 
   // ===== Profile setters =====
@@ -85,124 +137,81 @@ class MeasuresViewModel extends ChangeNotifier {
   }
 
   // ===== Weight stats =====
+  /// Difference between latest weight and the closest entry at/BEFORE (latest - days).
   double? deltaDays(int days) {
     if (_entries.isEmpty) return null;
 
     final latest = _entries.last;
     final target = latest.date.toLocal().subtract(Duration(days: days));
 
-    MeasurementEntry? closest;
-
-    for (final e in _entries) {
-      if (e.date.toLocal().isBefore(target)) continue;
-      closest = e;
-      break;
+    // Entries sorted ascending by date.
+    // Find closest entry with date <= target (search backwards).
+    MeasurementEntry? candidate;
+    for (int i = _entries.length - 1; i >= 0; i--) {
+      final d = _entries[i].date.toLocal();
+      if (!d.isAfter(target)) {
+        candidate = _entries[i];
+        break;
+      }
     }
 
-    closest ??= _entries.first;
-    return latest.weightKg - closest.weightKg;
+    candidate ??= _entries.first;
+    return latest.weightKg - candidate.weightKg;
   }
 
+  /// Adds a new entry, or replaces an existing entry on the same local day.
   Future<void> addOrReplaceEntry({
     required double weightKg,
     required DateTime dateLocal,
   }) async {
+    final existing = _findByLocalDay(dateLocal);
+
     final entry = MeasurementEntry(
-      id: _uuid(),
+      id: existing?.id ?? _uuid(),
       date: dateLocal.toUtc(),
       weightKg: weightKg,
     );
 
     await _repo.upsert(entry);
-    await load();
+
+    if (existing == null) {
+      _entries.add(entry);
+    } else {
+      final idx = _entries.indexWhere((e) => e.id == existing.id);
+      if (idx != -1) _entries[idx] = entry;
+    }
+
+    _sortEntries();
+    notifyListeners();
   }
 
   Future<void> deleteEntry(String id) async {
     await _repo.deleteById(id);
-    await load();
+
+    _entries.removeWhere((e) => e.id == id);
+    _sortEntries();
+    notifyListeners();
   }
 
-  (double min, double max) get weightRange {
-    if (_entries.isEmpty) return (0, 0);
-    final minW = _entries.map((e) => e.weightKg).reduce(min);
-    final maxW = _entries.map((e) => e.weightKg).reduce(max);
-    const pad = 1.0;
-    return (minW - pad, maxW + pad);
+  // ===== Helpers =====
+  void _sortEntries() {
+    _entries.sort((a, b) => a.date.compareTo(b.date)); // ascending
   }
 
-  // ===== Macros =====
-  MacroPack? get macrosPack {
-    final w = latestWeight;
-    final h = heightCm;
-    if (w == null || h == null || w <= 0 || h <= 0) return null;
-
-    final age = _macroProfile.age;
-
-    // Mifflin-St Jeor BMR
-    final bmr = 10 * w + 6.25 * h - 5 * age + (_macroProfile.isMale ? 5 : -161);
-
-    // TDEE
-    final tdee = bmr * _macroProfile.activityFactor;
-
-    final maintenance = tdee.round();
-    final cutting = (tdee - 500).round(); // default cut
-    final bulking = (tdee + 250).round(); // lean bulk
-
-    MacroResult buildPlan(int calories, double proteinPerKg) {
-      final proteinG = (proteinPerKg * w).round();
-      final fatG = (0.8 * w).round();
-
-      final proteinCals = proteinG * 4;
-      final fatCals = fatG * 9;
-
-      final remaining = calories - proteinCals - fatCals;
-      final carbsG = (remaining / 4).floor().clamp(0, 9999);
-
-      return MacroResult(
-        calories: calories,
-        proteinG: proteinG,
-        carbsG: carbsG,
-        fatG: fatG,
-      );
+  MeasurementEntry? _findByLocalDay(DateTime dateLocal) {
+    for (final e in _entries) {
+      if (_sameLocalDay(e.date.toLocal(), dateLocal)) return e;
     }
-
-    return MacroPack(
-      maintenance: buildPlan(maintenance, 1.8),
-      cutting: buildPlan(cutting, 2.2),
-      bulking: buildPlan(bulking, 1.6),
-    );
+    return null;
   }
 
-  // ===== Utils =====
+  bool _sameLocalDay(DateTime a, DateTime b) {
+    return a.year == b.year && a.month == b.month && a.day == b.day;
+  }
+
   String _uuid() {
     final ms = DateTime.now().microsecondsSinceEpoch;
     final rnd = Random().nextInt(1 << 20);
     return '$ms-$rnd';
   }
-}
-
-class MacroResult {
-  final int calories;
-  final int proteinG;
-  final int carbsG;
-  final int fatG;
-
-  const MacroResult({
-    required this.calories,
-    required this.proteinG,
-    required this.carbsG,
-    required this.fatG,
-  });
-}
-
-class MacroPack {
-  final MacroResult maintenance;
-  final MacroResult cutting;
-  final MacroResult bulking;
-
-  const MacroPack({
-    required this.maintenance,
-    required this.cutting,
-    required this.bulking,
-  });
 }

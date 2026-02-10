@@ -80,6 +80,7 @@ class HistoryPage extends StatelessWidget {
                     builder: (_) => HistorySessionDetailPage(
                       entry: item.entry,
                       historyKey: item.key,
+                      historyService: vm.service,
                     ),
                   ),
                 );

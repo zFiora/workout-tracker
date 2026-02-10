@@ -3,7 +3,7 @@ import 'package:workout_tracker/common/formatters/dateTimeFormatter.dart';
 import 'package:workout_tracker/common/widgets/myCustomeScaffoldView.dart';
 import 'package:workout_tracker/home/history/ViewModel/historySessionDetailedVM.dart';
 import 'package:workout_tracker/home/history/exDetail/exDetailPage.dart';
-import 'package:workout_tracker/home/history/repos/hivePREventRepo.dart';
+import 'package:workout_tracker/home/history/services/historyService.dart';
 import 'package:workout_tracker/home/history/utils/historyEnteryStats.dart';
 import 'package:workout_tracker/home/history/widgets/historyExcersiceCard.dart';
 import 'package:workout_tracker/home/history/widgets/historyHeaderCard.dart';
@@ -14,11 +14,13 @@ import 'package:workout_tracker/home/session/models/sessionModels.dart';
 class HistorySessionDetailPage extends StatefulWidget {
   final WorkoutHistoryEntry entry;
   final dynamic historyKey;
+  final HistoryService historyService;
 
   const HistorySessionDetailPage({
     super.key,
     required this.entry,
     required this.historyKey,
+    required this.historyService,
   });
 
   @override
@@ -32,10 +34,12 @@ class _HistorySessionDetailPageState extends State<HistorySessionDetailPage> {
   @override
   void initState() {
     super.initState();
+
     vm = HistorySessionDetailVM(
       historyKey: widget.historyKey,
-      prRepo: HivePrEventsRepository(),
+      historyService: widget.historyService,
     );
+
     vm.load();
   }
 
@@ -98,7 +102,6 @@ class _HistorySessionDetailPageState extends State<HistorySessionDetailPage> {
                 ],
               ),
               const SizedBox(height: 14),
-
               ...entry.logs.map((log) {
                 final dynamic rawId = (log as dynamic).exerciseId;
                 final int? exId = rawId is int ? rawId : null;
@@ -125,9 +128,9 @@ class _HistorySessionDetailPageState extends State<HistorySessionDetailPage> {
                       final label = (s.type == SetType.warmup)
                           ? 'WU ${i + 1}'
                           : 'Set ${i + 1}';
-                      final isPr = (exId == null)
-                          ? false
-                          : vm.isPr(exId, s.timestamp);
+
+                      final isPr =
+                          (exId == null) ? false : vm.isPr(exId, s.timestamp);
 
                       return Padding(
                         padding: const EdgeInsets.only(bottom: 10),

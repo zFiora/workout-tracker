@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:workout_tracker/common/widgets/myCustomeScaffoldView.dart';
 import 'package:workout_tracker/home/measure/measures_viewmodel.dart';
+import 'package:workout_tracker/home/measure/models/macroResults.dart';
 import 'package:workout_tracker/home/measure/repositeries/macros_profile_repository.dart';
 import 'package:workout_tracker/home/measure/repositeries/measures_profile_repository.dart';
 import 'package:workout_tracker/home/measure/repositeries/measures_repository.dart';
@@ -525,5 +526,3 @@ class _MeasuresViewState extends State<_MeasuresView> {
     );
   }
 }
-
-

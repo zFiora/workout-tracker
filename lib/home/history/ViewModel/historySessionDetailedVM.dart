@@ -1,14 +1,14 @@
 import 'package:flutter/foundation.dart';
-import 'package:workout_tracker/home/history/repos/PREventRepository.dart';
+import 'package:workout_tracker/home/history/services/historyService.dart';
 
 class HistorySessionDetailVM extends ChangeNotifier {
   HistorySessionDetailVM({
     required this.historyKey,
-    required PrEventsRepository prRepo,
-  }) : _prRepo = prRepo;
+    required HistoryService historyService,
+  }) : _service = historyService;
 
   final dynamic historyKey;
-  final PrEventsRepository _prRepo;
+  final HistoryService _service;
 
   Set<String> _prKeys = <String>{};
   bool _loading = true;
@@ -20,11 +20,12 @@ class HistorySessionDetailVM extends ChangeNotifier {
     _loading = true;
     notifyListeners();
 
-    _prKeys = await _prRepo.loadBestWeightPrKeys(historyKey);
+    _prKeys = await _service.loadBestWeightPrKeys(historyKey);
 
     _loading = false;
     notifyListeners();
   }
 
-  bool isPr(int exerciseId, DateTime ts) => _prRepo.isPr(_prKeys, exerciseId, ts);
+  bool isPr(int exerciseId, DateTime ts) =>
+      _service.isPr(_prKeys, exerciseId, ts);
 }

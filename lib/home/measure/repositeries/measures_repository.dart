@@ -5,28 +5,27 @@ class MeasuresRepository {
   static const String boxName = 'measurementsBox';
 
   Future<Box<MeasurementEntry>> _box() async {
-    return Hive.openBox<MeasurementEntry>(boxName);
+    if (!Hive.isBoxOpen(boxName)) {
+      await Hive.openBox<MeasurementEntry>(boxName);
+    }
+    return Hive.box<MeasurementEntry>(boxName);
   }
 
+  /// Returns entries UNSORTED. ViewModel decides ordering.
   Future<List<MeasurementEntry>> getAll() async {
     final box = await _box();
-    final list = box.values.toList();
-    list.sort((a, b) => a.date.compareTo(b.date));
-    return list;
+    return box.values.toList();
   }
 
+  /// Enforce 1 entry per local day.
   Future<void> upsert(MeasurementEntry entry) async {
     final box = await _box();
 
-    // Enforce 1 entry per day (local day), replace if same day exists
-    final existingKey = box.keys.cast<dynamic>().firstWhere(
-      (k) {
-        final e = box.get(k);
-        if (e == null) return false;
-        return _isSameLocalDay(e.date.toLocal(), entry.date.toLocal());
-      },
-      orElse: () => null,
-    );
+    final existingKey = box.keys.cast<dynamic>().firstWhere((k) {
+      final e = box.get(k);
+      if (e == null) return false;
+      return _isSameLocalDay(e.date.toLocal(), entry.date.toLocal());
+    }, orElse: () => null);
 
     if (existingKey != null) {
       await box.put(existingKey, entry);
@@ -37,10 +36,12 @@ class MeasuresRepository {
 
   Future<void> deleteById(String id) async {
     final box = await _box();
+
     final key = box.keys.cast<dynamic>().firstWhere(
       (k) => box.get(k)?.id == id,
       orElse: () => null,
     );
+
     if (key != null) {
       await box.delete(key);
     }

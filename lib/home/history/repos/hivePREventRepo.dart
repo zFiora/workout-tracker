@@ -23,6 +23,27 @@ class HivePrEventsRepository implements PrEventsRepository {
   }
 
   @override
+  Future<List<Map<String, dynamic>>> loadEventsForHistoryKey(
+    dynamic historyKey,
+  ) async {
+    final box = await _open();
+    final raw = box.get(historyKey);
+
+    if (raw is! List) return const <Map<String, dynamic>>[];
+
+    final out = <Map<String, dynamic>>[];
+    for (final e in raw) {
+      if (e is Map<String, dynamic>) {
+        out.add(e);
+      } else if (e is Map) {
+        // Defensive: coerce Map<dynamic,dynamic> to Map<String,dynamic>
+        out.add(Map<String, dynamic>.from(e));
+      }
+    }
+    return out;
+  }
+
+  @override
   Future<void> deleteEventsForHistoryKey(dynamic historyKey) async {
     final box = await _open();
     await box.delete(historyKey);
@@ -32,39 +53,5 @@ class HivePrEventsRepository implements PrEventsRepository {
   Future<void> clearAll() async {
     final box = await _open();
     await box.clear();
-  }
-
-  @override
-  Future<Set<String>> loadBestWeightPrKeys(dynamic historyKey) async {
-    final box = await _open();
-    final raw = box.get(historyKey);
-
-    if (raw is! List) return <String>{};
-
-    final keys = <String>{};
-
-    for (final e in raw) {
-      if (e is! Map) continue;
-
-      final exId = e['exerciseId'];
-      final performedAt = e['performedAt'];
-      final kind = e['kind'];
-
-      if (exId is! int) continue;
-      if (performedAt is! String) continue;
-      if (kind != 'bestWeight') continue;
-
-      final dt = DateTime.tryParse(performedAt);
-      if (dt == null) continue;
-
-      keys.add(PrEventKey.of(exId, dt));
-    }
-
-    return keys;
-  }
-
-  @override
-  bool isPr(Set<String> prKeys, int exId, DateTime setTs) {
-    return prKeys.contains(PrEventKey.of(exId, setTs));
   }
 }
