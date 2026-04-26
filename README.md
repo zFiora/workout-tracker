@@ -86,15 +86,4 @@ dependencies:
 - [ ] REST API integration for exercise database
 - [ ] Charts and analytics dashboard
 
----
 
-## 👤 Author
-
-**Haidar AlDahan**  
-[GitHub](https://github.com/your-username) · [LinkedIn](https://linkedin.com/in/your-profile) · [Portfolio](https://your-portfolio.com)
-
----
-
-## 📄 License
-
-This project is for personal and academic use.
