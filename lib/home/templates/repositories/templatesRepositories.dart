@@ -15,4 +15,9 @@ abstract class TemplatesRepository {
     WorkoutTemplateModel template,
     String newIconPath,
   );
+
+  Future<void> updateExercises(
+    WorkoutTemplateModel template,
+    List<int> newExerciseIds,
+  );
 }

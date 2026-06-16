@@ -1,97 +1,104 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
-import 'package:pocketbase/pocketbase.dart';
+import 'package:workout_tracker/core/api/api_config.dart';
 import 'package:workout_tracker/core/api/api_result.dart';
-import 'package:workout_tracker/core/pb.dart';
+import 'package:workout_tracker/core/auth_token.dart';
 
-/// Thin wrapper around PocketBase that:
-///   • Catches [ClientException] and maps them to [ApiError]
+/// Thin Dio wrapper that:
+///   • Attaches Authorization: Bearer <token> to every protected request
+///   • Catches DioException and maps to ApiError
 ///   • Catches connectivity errors (SocketException / TimeoutException)
-///   • Re-tries auth refresh once on 401 before failing
+///   • Clears the auth token on 401 responses
 ///
 /// Every public method returns [ApiResult<T>] — never throws.
 class ApiClient {
   ApiClient._();
   static final ApiClient instance = ApiClient._();
 
-  PocketBase get _pb => PB.I.pb;
+  late final Dio _dio = Dio(
+    BaseOptions(
+      baseUrl: ApiConfig.baseUrl,
+      connectTimeout: ApiConfig.connectTimeout,
+      receiveTimeout: ApiConfig.receiveTimeout,
+      headers: {'Content-Type': 'application/json'},
+    ),
+  );
+
+  Options get _auth => Options(headers: {
+    'Authorization': 'Bearer ${AuthToken.I.token}',
+  });
 
   // ── Generic guarded call ─────────────────────────────────────────────────
 
-  /// Wraps any async PocketBase call in error handling.
   Future<ApiResult<T>> guard<T>(Future<T> Function() call) async {
     try {
-      final result = await call();
-      return ApiSuccess(result);
-    } on ClientException catch (e) {
-      if (e.statusCode == 401) {
-        // Attempt a single silent refresh, then retry.
-        try {
-          await _pb.collection('users').authRefresh();
-          final retried = await call();
-          return ApiSuccess(retried);
-        } catch (_) {
-          await PB.I.clearAuthEverywhere();
-          return ApiError('Session expired. Please sign in again.', statusCode: 401, cause: e);
-        }
+      return ApiSuccess(await call());
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 401) {
+        await AuthToken.I.clear();
+        return ApiError(
+          'Session expired. Please sign in again.',
+          statusCode: 401,
+          cause: e,
+        );
       }
-      final msg = (e.response['message'] as String?) ??
-          (e.response.toString().isNotEmpty
-              ? e.response.toString()
-              : 'Request failed (${e.statusCode})');
-      return ApiError(msg, statusCode: e.statusCode, cause: e);
+      final msg =
+          (e.response?.data as Map?)?['message'] as String? ??
+          'Request failed (${e.response?.statusCode ?? 'no response'})';
+      return ApiError(msg, statusCode: e.response?.statusCode, cause: e);
     } catch (e, st) {
       debugPrint('[ApiClient] unexpected error: $e\n$st');
-      final isNetworkError = e.toString().contains('SocketException') ||
-          e.toString().contains('TimeoutException') ||
-          e.toString().contains('Connection refused');
-      if (isNetworkError) {
+      final s = e.toString();
+      if (s.contains('SocketException') ||
+          s.contains('Connection refused') ||
+          s.contains('TimeoutException')) {
         return ApiError('No connection. Check your internet.', cause: e);
       }
       return ApiError('Unexpected error. Please try again.', cause: e);
     }
   }
 
-  // ── Users ────────────────────────────────────────────────────────────────
+  // ── HTTP verbs ───────────────────────────────────────────────────────────
 
-  Future<ApiResult<RecordModel>> getUser(String id) =>
-      guard(() => _pb.collection('users').getOne(id));
+  Future<ApiResult<Map<String, dynamic>>> post(
+    String path,
+    Map<String, dynamic> body, {
+    bool withAuth = true,
+  }) => guard(() async {
+    final r = await _dio.post(
+      path,
+      data: body,
+      options: withAuth ? _auth : null,
+    );
+    return (r.data as Map<String, dynamic>);
+  });
 
-  Future<ApiResult<RecordModel>> updateUser(
-    String id,
+  Future<ApiResult<Map<String, dynamic>>> patch(
+    String path,
     Map<String, dynamic> body,
-  ) =>
-      guard(() => _pb.collection('users').update(id, body: body));
+  ) => guard(() async {
+    final r = await _dio.patch(path, data: body, options: _auth);
+    return (r.data as Map<String, dynamic>);
+  });
 
-  // ── Generic collection helpers (used by social features) ─────────────────
-
-  Future<ApiResult<List<RecordModel>>> list(
-    String collection, {
-    int page = 1,
-    int perPage = 30,
-    String sort = '-created',
-    String filter = '',
-    String expand = '',
-  }) =>
-      guard(() async {
-        final page0 = await _pb.collection(collection).getList(
-          page: page,
-          perPage: perPage,
-          sort: sort,
-          filter: filter,
-          expand: expand,
-        );
-        return page0.items;
-      });
-
-  Future<ApiResult<RecordModel>> create(
-    String collection,
+  Future<ApiResult<Map<String, dynamic>>> put(
+    String path,
     Map<String, dynamic> body,
-  ) =>
-      guard(() => _pb.collection(collection).create(body: body));
+  ) => guard(() async {
+    final r = await _dio.put(path, data: body, options: _auth);
+    return (r.data as Map<String, dynamic>);
+  });
 
-  Future<ApiResult<bool>> delete(String collection, String id) =>
-      guard(() async {
-        await _pb.collection(collection).delete(id);
-        return true;
-      });
+  Future<ApiResult<dynamic>> get(
+    String path, {
+    Map<String, dynamic>? params,
+  }) => guard(() async {
+    final r = await _dio.get(path, queryParameters: params, options: _auth);
+    return r.data;
+  });
+
+  Future<ApiResult<bool>> delete(String path) => guard(() async {
+    await _dio.delete(path, options: _auth);
+    return true;
+  });
 }

@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:workout_tracker/auth/authViewModel.dart';
@@ -42,7 +40,6 @@ class _RegisterPageState extends State<RegisterPage>
       );
 
   // Form controllers
-  File? _avatarFile;
   final _displayNameCtrl = TextEditingController();
   final _usernameCtrl = TextEditingController();
   final _emailCtrl = TextEditingController();
@@ -163,7 +160,7 @@ class _RegisterPageState extends State<RegisterPage>
                                 size: 96,
                                 placeholderAsset:
                                     'assets/logo/default_avatar.png',
-                                onChanged: (f) => _avatarFile = f,
+                                onChanged: (_) {},
                               ),
                             ),
                           ),
@@ -255,8 +252,6 @@ class _RegisterPageState extends State<RegisterPage>
                                           password: _passCtrl.text,
                                           displayName: _displayNameCtrl.text
                                               .trim(),
-                                          avatarFile: _avatarFile,
-                                          
                                         );
                                     if (!mounted) return;
                                     if (ok) {

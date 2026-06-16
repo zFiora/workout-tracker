@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:pocketbase/pocketbase.dart';
 import 'package:workout_tracker/common/widgets/myCustomeScaffoldView.dart';
-import 'package:workout_tracker/core/pb.dart';
+import 'package:workout_tracker/home/friends/friendModel.dart';
 import 'package:workout_tracker/home/friends/friendsViewModel.dart';
 
 class FriendsListPage extends StatefulWidget {
@@ -37,8 +36,7 @@ class _FriendsListPageState extends State<FriendsListPage> {
                   child: CircularProgressIndicator(),
                 ),
               ),
-            if (!vm.loading && vm.friends.isEmpty)
-              _EmptyFriendsState(),
+            if (!vm.loading && vm.friends.isEmpty) const _EmptyFriendsState(),
             ...vm.friends.map((u) => _FriendTile(user: u)),
           ],
         ),
@@ -48,6 +46,8 @@ class _FriendsListPageState extends State<FriendsListPage> {
 }
 
 class _EmptyFriendsState extends StatelessWidget {
+  const _EmptyFriendsState();
+
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
@@ -79,26 +79,11 @@ class _EmptyFriendsState extends StatelessWidget {
 
 class _FriendTile extends StatelessWidget {
   const _FriendTile({required this.user});
-  final RecordModel user;
-
-  ImageProvider _resolveAvatar(String avatarField) {
-    if (avatarField.isEmpty) {
-      return const AssetImage('assets/logo/default_avatar.png');
-    }
-    // PocketBase stores avatar as a filename; construct the full file URL.
-    final baseUrl = PB.I.pb.baseURL;
-    final collectionId = user.collectionId;
-    final recordId = user.id;
-    return NetworkImage('$baseUrl/api/files/$collectionId/$recordId/$avatarField');
-  }
+  final FriendUser user;
 
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    final username = user.getStringValue('name');
-    final currentStreak = user.getIntValue('currentStreak');
-    final avatarField = user.getStringValue('avatar');
-    final avatarProvider = _resolveAvatar(avatarField);
 
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
@@ -107,15 +92,20 @@ class _FriendTile extends StatelessWidget {
         leading: CircleAvatar(
           radius: 22,
           backgroundColor: cs.primaryContainer,
-          backgroundImage: avatarProvider,
-          onBackgroundImageError: (_, _) {},
-          child: avatarField.isEmpty
+          backgroundImage: user.avatarUrl != null
+              ? NetworkImage(user.avatarUrl!)
+              : null,
+          child: user.avatarUrl == null
               ? Icon(Icons.person, color: cs.onPrimaryContainer, size: 20)
               : null,
         ),
         title: Text(
-          username.isEmpty ? 'Unknown' : username,
+          user.name,
           style: const TextStyle(fontWeight: FontWeight.w700),
+        ),
+        subtitle: Text(
+          '@${user.username}',
+          style: TextStyle(color: cs.onSurfaceVariant, fontSize: 12),
         ),
         trailing: Container(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
@@ -129,16 +119,12 @@ class _FriendTile extends StatelessWidget {
               const Icon(Icons.local_fire_department, size: 16, color: Colors.white),
               const SizedBox(width: 4),
               Text(
-                '$currentStreak',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w700,
-                ),
+                '${user.currentStreak}',
+                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
               ),
             ],
           ),
         ),
-        onTap: () {},
       ),
     );
   }

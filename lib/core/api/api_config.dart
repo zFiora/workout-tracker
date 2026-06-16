@@ -6,26 +6,26 @@
 class ApiConfig {
   ApiConfig._();
 
-  /// PocketBase server URL.
+  /// .NET API server URL.
   /// Android emulator localhost  → 10.0.2.2
   /// iOS simulator localhost     → 127.0.0.1
   /// Real device on LAN          → your machine's LAN IP
   static const String baseUrl = String.fromEnvironment(
     'API_BASE_URL',
-    defaultValue: 'http://10.0.2.2:8090',
+    defaultValue: 'http://10.0.2.2:5289',
   );
 
   /// Seconds before a network request is considered timed out.
   static const Duration connectTimeout = Duration(seconds: 10);
-  static const Duration receiveTimeout = Duration(seconds: 20);
+  static const Duration receiveTimeout = Duration(seconds: 30);
 
-  // ── PocketBase collection names ──────────────────────────────────────────
+  // ── API route prefixes ───────────────────────────────────────────────────
   static const String colUsers       = 'users';
   static const String colFriends     = 'friendships';
-  static const String colWorkouts    = 'workouts';         // future
-  static const String colTemplates   = 'templates';        // future
-  static const String colLeaderboard = 'leaderboard';      // future
-  static const String colPrEvents    = 'pr_events';        // future
+  static const String colWorkouts    = 'workouts';
+  static const String colTemplates   = 'templates';
+  static const String colLeaderboard = 'leaderboard';
+  static const String colPrEvents    = 'pr_events';
 
   // ── Hive box names ───────────────────────────────────────────────────────
   static const String boxHistory      = 'historyBox';

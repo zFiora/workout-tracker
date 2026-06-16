@@ -1,11 +1,10 @@
-// models/account.dart
 class AccountModel {
-  final String id;            // profile record id
-  final String userId;        // _pb_users_auth_ id
+  final String id;
+  final String userId;
   final String displayName;
   final String username;
-  final String email;         // from expanded user
-  final String? avatarUrl;    // full URL or null
+  final String email;
+  final String? avatarUrl;
 
   AccountModel({
     required this.id,
@@ -15,4 +14,19 @@ class AccountModel {
     required this.email,
     required this.avatarUrl,
   });
+
+  factory AccountModel.fromJson(Map<String, dynamic> json) {
+    final id = json['id'] as String? ?? '';
+    return AccountModel(
+      id: id,
+      userId: id,
+      displayName:
+          (json['displayName'] as String?)?.isNotEmpty == true
+              ? json['displayName'] as String
+              : (json['username'] as String? ?? ''),
+      username: json['username'] as String? ?? '',
+      email: json['email'] as String? ?? '',
+      avatarUrl: json['avatarUrl'] as String?,
+    );
+  }
 }

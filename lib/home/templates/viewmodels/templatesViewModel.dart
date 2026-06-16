@@ -48,6 +48,14 @@ class TemplatesViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> updateExercises(
+    WorkoutTemplateModel template,
+    List<int> newExerciseIds,
+  ) async {
+    await _repo.updateExercises(template, newExerciseIds);
+    notifyListeners();
+  }
+
   @override
   void dispose() {
     _sub?.cancel();

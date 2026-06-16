@@ -6,7 +6,7 @@ import 'package:workout_tracker/home/account/widgets/accountPageBody.dart';
 import 'package:workout_tracker/home/history/ViewModel/historyViewModel.dart';
 import 'package:workout_tracker/common/AppManager.dart';
 import 'package:workout_tracker/common/splash/splashLoading.dart';
-import 'package:workout_tracker/core/pb.dart';
+import 'package:workout_tracker/core/auth_token.dart';
 
 class AccountPage extends StatefulWidget {
   const AccountPage({super.key});
@@ -90,7 +90,7 @@ class _AccountPageState extends State<AccountPage> {
           },
           onSignOut: () async {
             await context.read<AuthViewModel>().logout();
-            await PB.I.clearAuthEverywhere();
+            await AuthToken.I.clear();
             if (!context.mounted) return;
             context.read<AppManager>().setOffline();
             Navigator.of(context).pushAndRemoveUntil(

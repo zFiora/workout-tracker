@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:workout_tracker/common/AppManager.dart';
 import 'package:workout_tracker/common/widgets/myCustomeScaffoldView.dart';
-import 'package:workout_tracker/core/pb.dart';
 import 'package:workout_tracker/core/services/sync_coordinator.dart';
 import 'package:workout_tracker/home/exercises/exerciesesList.dart';
 import 'package:workout_tracker/home/templates/viewmodels/templatesViewModel.dart';
@@ -101,10 +100,7 @@ class TemplatesPage extends StatelessWidget {
       return;
     }
 
-    final pb = PB.I.pb;
-    final userId = pb.authStore.record?.id ?? '';
-    final coordinator = SyncCoordinator(pb: pb, userId: userId);
-    final ok = await coordinator.shareTemplate(templateJson);
+    final ok = await SyncCoordinator().shareTemplate(templateJson);
 
     if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(

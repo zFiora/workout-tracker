@@ -51,8 +51,8 @@ class _AddFriendPageState extends State<AddFriendPage> {
           ...vm.searchResults.map(
             (u) => ListTile(
               leading: const CircleAvatar(child: Icon(Icons.person)),
-              title: Text(u.getStringValue('username')),
-              subtitle: Text(u.getStringValue('email')),
+              title: Text(u.username),
+              subtitle: Text(u.email),
               trailing: TextButton(
                 onPressed: () async {
                   await vm.send(u.id);

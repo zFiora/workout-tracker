@@ -1,75 +1,46 @@
-import 'dart:io';
-import 'package:http/http.dart' as http;
-import 'package:pocketbase/pocketbase.dart';
-import '../core/pb.dart'; // for PB.I.persistAuth() / clearAuthEverywhere()
+import 'package:workout_tracker/core/api/api_client.dart';
+import 'package:workout_tracker/core/api/api_result.dart';
+import 'package:workout_tracker/core/auth_token.dart';
 
 class AuthService {
-  AuthService(this._pb);
+  bool get isLoggedIn => AuthToken.I.isValid;
+  String? get userId => AuthToken.I.userId;
 
-  final PocketBase _pb;
-
-  bool get isLoggedIn => _pb.authStore.isValid && _pb.authStore.record != null;
-  String? get userId => _pb.authStore.record?.id;
-
-  /// Email/Username + password login
-  Future<void> login(String emailOrUsername, String password) async {
-    await _pb.collection('users').authWithPassword(emailOrUsername, password);
-    await PB.I.persistAuth(); // save token to secure storage
+  Future<void> login(String identity, String password) async {
+    final result = await ApiClient.instance.post(
+      '/api/auth/login',
+      {'identity': identity, 'password': password},
+      withAuth: false,
+    );
+    if (result is ApiError) throw Exception((result as ApiError).message);
+    final data = (result as ApiSuccess<Map<String, dynamic>>).data;
+    final token = data['token'] as String;
+    final userId = (data['user'] as Map<String, dynamic>)['id'] as String;
+    await AuthToken.I.save(token, userId);
   }
 
-  /// Register a user in `users`, then create their `profiles` row
-  /// Assumes you have a `profiles` collection with fields:
-  /// - user (relation -> _pb_users_auth_)
-  /// - displayName (text)
-  /// - username (text)
-  /// - avatar (file)
   Future<void> register({
     required String email,
     required String username,
     required String password,
     required String displayName,
-    File? avatarFile,
   }) async {
-    // 1) Create user (users collection)
-    await _pb
-        .collection('users')
-        .create(
-          body: {
-            'email': email,
-            'name': username,
-            'password': password,
-            'passwordConfirm': password,
-            'emailVisibility': true,
-          },
-        );
-
-    // 2) Login so we have a token & user model
-    await _pb.collection('users').authWithPassword(email, password);
-    await PB.I.persistAuth();
-
-    // 3) Create profile linked to the authed user
-    final uid = _pb.authStore.record!.id;
-
-    final files = <http.MultipartFile>[];
-    if (avatarFile != null) {
-      files.add(await http.MultipartFile.fromPath('avatar', avatarFile.path));
-    }
-
-    await _pb
-        .collection('profiles')
-        .create(
-          body: {'user': uid, 'displayName': displayName, 'username': username},
-          files: files, // empty list is fine
-        );
+    final result = await ApiClient.instance.post(
+      '/api/auth/register',
+      {
+        'email': email,
+        'username': username,
+        'password': password,
+        'displayName': displayName,
+      },
+      withAuth: false,
+    );
+    if (result is ApiError) throw Exception((result as ApiError).message);
+    final data = (result as ApiSuccess<Map<String, dynamic>>).data;
+    final token = data['token'] as String;
+    final userId = (data['user'] as Map<String, dynamic>)['id'] as String;
+    await AuthToken.I.save(token, userId);
   }
 
-  /// Resend email verification (if you enforce verification)
-  Future<void> resendVerification(String email) async {
-    await _pb.collection('users').requestVerification(email);
-  }
-
-  /// Logout and clear tokens everywhere (authStore + secure storage)
-  Future<void> logout() async {
-    await PB.I.clearAuthEverywhere();
-  }
+  Future<void> logout() => AuthToken.I.clear();
 }

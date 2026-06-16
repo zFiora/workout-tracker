@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:workout_tracker/common/AppManager.dart';
+import 'package:workout_tracker/home/exercises/exerciesesList.dart';
 import 'package:workout_tracker/home/templates/models/workout_template.dart';
+import 'package:workout_tracker/home/templates/pages/editTemplatePage.dart';
 import 'package:workout_tracker/home/templates/viewmodels/templatesViewModel.dart';
 
-enum _Action { rename, changeIcon, share, delete }
+enum _Action { rename, changeIcon, editExercises, share, delete }
 
 class TemplateActionsMenu extends StatelessWidget {
   const TemplateActionsMenu({
@@ -19,9 +21,13 @@ class TemplateActionsMenu extends StatelessWidget {
   final VoidCallback? onShare;
 
   Future<void> _rename(BuildContext context, TemplatesViewModel vm) async {
+    // The text is captured inside the callback and returned as the dialog result
+    // so we never call controller.dispose() from outside — the dialog's exit
+    // animation is still running when showDialog returns, and disposing then
+    // triggers _dependents.isEmpty assertion failure in ChangeNotifier.
     final controller = TextEditingController(text: template.name);
 
-    final ok = await showDialog<bool>(
+    final newName = await showDialog<String?>(
       context: context,
       builder: (dialogCtx) => AlertDialog(
         title: const Text('Rename template'),
@@ -32,21 +38,21 @@ class TemplateActionsMenu extends StatelessWidget {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(dialogCtx, false),
+            onPressed: () => Navigator.pop(dialogCtx),
             child: const Text('Cancel'),
           ),
           FilledButton(
-            onPressed: () => Navigator.pop(dialogCtx, true),
+            onPressed: () {
+              final text = controller.text.trim();
+              Navigator.pop(dialogCtx, text.isEmpty ? null : text);
+            },
             child: const Text('Save'),
           ),
         ],
       ),
     );
 
-    final newName = controller.text.trim();
-    controller.dispose();
-
-    if (ok == true && newName.isNotEmpty) {
+    if (newName != null) {
       await vm.renameTemplate(template, newName);
     }
   }
@@ -57,6 +63,18 @@ class TemplateActionsMenu extends StatelessWidget {
     if (newPath != null && newPath.isNotEmpty) {
       await vm.changeIconPath(template, newPath);
     }
+  }
+
+  Future<void> _editExercises(BuildContext context) async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => EditTemplatePage(
+          template: template,
+          allExercises: ExercisesViewModel.all,
+        ),
+      ),
+    );
   }
 
   Future<void> _delete(BuildContext context, TemplatesViewModel vm) async {
@@ -106,6 +124,8 @@ class TemplateActionsMenu extends StatelessWidget {
             await _rename(context, vm);
           case _Action.changeIcon:
             await _changeIcon(context, vm);
+          case _Action.editExercises:
+            await _editExercises(context);
           case _Action.share:
             onShare?.call();
           case _Action.delete:
@@ -115,11 +135,15 @@ class TemplateActionsMenu extends StatelessWidget {
       itemBuilder: (context) => [
         const PopupMenuItem(
           value: _Action.rename,
-          child: _MenuRow(icon: Icons.edit_outlined, label: 'Rename'),
+          child: _MenuRow(icon: Icons.drive_file_rename_outline_rounded, label: 'Rename'),
         ),
         const PopupMenuItem(
           value: _Action.changeIcon,
           child: _MenuRow(icon: Icons.image_outlined, label: 'Change icon'),
+        ),
+        const PopupMenuItem(
+          value: _Action.editExercises,
+          child: _MenuRow(icon: Icons.edit_note_rounded, label: 'Edit exercises'),
         ),
         if (isOnline)
           const PopupMenuItem(
@@ -133,7 +157,7 @@ class TemplateActionsMenu extends StatelessWidget {
         PopupMenuItem(
           value: _Action.delete,
           child: _MenuRow(
-            icon: Icons.delete_outline,
+            icon: Icons.delete_outline_rounded,
             label: 'Delete',
             color: Theme.of(context).colorScheme.error,
           ),

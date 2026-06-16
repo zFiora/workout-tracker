@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
-import 'package:pocketbase/pocketbase.dart';
 import 'package:provider/provider.dart';
 
-import 'package:workout_tracker/core/pb.dart';
+import 'package:workout_tracker/core/auth_token.dart';
 import 'package:workout_tracker/auth/authService.dart';
 import 'package:workout_tracker/auth/authViewModel.dart';
 
@@ -22,6 +21,7 @@ import 'package:workout_tracker/home/history/ViewModel/historyViewModel.dart';
 import 'package:workout_tracker/home/templates/models/workout_template.dart';
 import 'package:workout_tracker/home/templates/viewmodels/templatesViewModel.dart';
 
+import 'package:workout_tracker/home/session/active_session_manager.dart';
 import 'package:workout_tracker/common/splash/splashLoading.dart';
 
 Future<void> main() async {
@@ -48,36 +48,32 @@ Future<void> main() async {
   await Hive.openBox<MacroProfile>('macrosProfileBox');
   await Hive.openBox('prEventsBox');
 
-  await PB.I.bootstrapAuth();
+  await AuthToken.I.load();
 
   runApp(
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => AppManager()),
-        Provider<PocketBase>.value(value: PB.I.pb),
 
         ChangeNotifierProvider(
-          create: (ctx) => AuthViewModel(AuthService(ctx.read<PocketBase>())),
+          create: (_) => AuthViewModel(AuthService()),
         ),
 
-        Provider(create: (ctx) => AccountRepository(ctx.read<PocketBase>())),
+        Provider(create: (_) => AccountRepository()),
         ChangeNotifierProvider(
           create: (ctx) => AccountViewModel(ctx.read<AccountRepository>()),
         ),
 
-        ProxyProvider<PocketBase, FriendService>(
-          update: (_, pb, _) => FriendService(pb),
-        ),
+        Provider(create: (_) => FriendService()),
         ChangeNotifierProvider(
           create: (ctx) => FriendsViewModel(ctx.read<FriendService>()),
         ),
 
-        ProxyProvider2<PocketBase, AccountViewModel, StreakSyncService?>(
-          update: (_, pb, accountVM, _) {
-            final userId = pb.authStore.record?.id;
-            final profileId = accountVM.account?.id;
-            if (userId == null || profileId == null) return null;
-            return StreakSyncService(pb: pb, profileId: profileId, userId: userId);
+        ProxyProvider<AccountViewModel, StreakSyncService?>(
+          update: (_, accountVM, prev) {
+            final userId = AuthToken.I.userId;
+            if (userId == null) return null;
+            return StreakSyncService(userId: userId);
           },
         ),
 
@@ -91,6 +87,7 @@ Future<void> main() async {
         ),
 
         ChangeNotifierProvider(create: (_) => TemplatesViewModel()),
+        ChangeNotifierProvider(create: (_) => ActiveSessionManager()),
       ],
       child: const MyApp(),
     ),

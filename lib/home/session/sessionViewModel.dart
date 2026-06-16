@@ -439,6 +439,36 @@ class WorkoutSessionViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
+  // ------------------- mid-session exercise management -------------------
+
+  /// Cancels the timer without ending the session. Used by ActiveSessionManager
+  /// when discarding or replacing a session without a history entry.
+  void cancel() {
+    _ticker?.cancel();
+    _ticker = null;
+  }
+
+  /// Adds a new exercise log entry for mid-session exercise insertion.
+  void addExercise(ExerciseModel exercise) {
+    if (_logs.containsKey(exercise.id)) return;
+    _logs[exercise.id] = ExerciseLog(
+      exerciseId: exercise.id,
+      exerciseName: exercise.name,
+      exerciseIcon: exercise.workoutImage,
+    );
+    notifyListeners();
+  }
+
+  /// Removes an exercise log entry for mid-session exercise removal.
+  void removeExercise(int exerciseId) {
+    _logs.remove(exerciseId);
+    _plannedToPerformedTs.removeWhere(
+      (key, _) => key.startsWith('$exerciseId:'),
+    );
+    _prHits.removeWhere((key, _) => key.startsWith('$exerciseId:'));
+    notifyListeners();
+  }
+
   @override
   void dispose() {
     _ticker?.cancel();

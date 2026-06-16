@@ -1,60 +1,56 @@
 import 'package:flutter/foundation.dart';
-import 'package:pocketbase/pocketbase.dart';
-import 'package:workout_tracker/core/api/api_config.dart';
+import 'package:workout_tracker/core/api/api_client.dart';
 import 'package:workout_tracker/core/api/api_result.dart';
+import 'package:workout_tracker/core/auth_token.dart';
 
-/// Fetches leaderboard + friend PR data from PocketBase.
-///
-/// Swap point: replace PocketBase calls with any REST/GraphQL client
-/// by changing the implementation of each method while keeping the signature.
 class LeaderboardService {
-  LeaderboardService(this._pb);
-  final PocketBase _pb;
+  final _client = ApiClient.instance;
 
-  /// Friends ranked by [currentStreak] descending.
-  Future<ApiResult<List<LeaderboardEntry>>> fetchStreakLeaderboard(
-    String currentUserId,
-  ) async {
+  /// Friends ranked by currentStreak descending (includes self).
+  Future<ApiResult<List<LeaderboardEntry>>> fetchStreakLeaderboard() async {
+    if (!AuthToken.I.isValid) {
+      return const ApiSuccess([]);
+    }
     try {
-      final page = await _pb.collection(ApiConfig.colUsers).getList(
-        perPage: 50,
-        sort: '-currentStreak',
-      );
-
-      final entries = page.items
-          .map((r) => LeaderboardEntry.fromRecord(r))
-          .toList();
-
-      return ApiSuccess(entries);
+      final result = await _client.get('/api/friends/leaderboard');
+      return switch (result) {
+        ApiSuccess(:final data) => ApiSuccess(
+          (data as List)
+              .map((e) => LeaderboardEntry.fromJson(e as Map<String, dynamic>))
+              .toList(),
+        ),
+        ApiError(:final message) => ApiError(message),
+      };
     } catch (e, st) {
-      debugPrint('[Leaderboard] fetchStreakLeaderboard error: $e\n$st');
-      return ApiError('Could not load leaderboard.', cause: e);
+      debugPrint('[Leaderboard] error: $e\n$st');
+      return const ApiError('Could not load leaderboard.');
     }
   }
 
-  /// All-time PR records for [exerciseId] across friends (for comparison).
-  Future<ApiResult<List<PrRecord>>> fetchFriendPrs(
-    String exerciseId,
-    String currentUserId,
-  ) async {
+  /// All-time PR records for [exerciseId] (own records for now).
+  Future<ApiResult<List<PrRecord>>> fetchExercisePrs(int exerciseId) async {
+    if (!AuthToken.I.isValid) return const ApiSuccess([]);
     try {
-      final page = await _pb.collection(ApiConfig.colPrEvents).getList(
-        perPage: 100,
-        sort: '-weight',
-        filter: 'exerciseId = "$exerciseId"',
-        expand: 'user',
+      final result = await _client.get(
+        '/api/pr-events',
+        params: {'exerciseId': exerciseId},
       );
-
-      final records = page.items.map(PrRecord.fromRecord).toList();
-      return ApiSuccess(records);
+      return switch (result) {
+        ApiSuccess(:final data) => ApiSuccess(
+          (data as List)
+              .map((e) => PrRecord.fromJson(e as Map<String, dynamic>))
+              .toList(),
+        ),
+        ApiError(:final message) => ApiError(message),
+      };
     } catch (e, st) {
-      debugPrint('[Leaderboard] fetchFriendPrs error: $e\n$st');
-      return ApiError('Could not load PRs.', cause: e);
+      debugPrint('[Leaderboard] fetchExercisePrs error: $e\n$st');
+      return const ApiError('Could not load PRs.');
     }
   }
 }
 
-// ── Data models returned by LeaderboardService ──────────────────────────────
+// ── Data models ──────────────────────────────────────────────────────────────
 
 class LeaderboardEntry {
   const LeaderboardEntry({
@@ -71,17 +67,15 @@ class LeaderboardEntry {
   final int currentStreak;
   final int bestStreak;
 
-  factory LeaderboardEntry.fromRecord(RecordModel r) {
-    final avatar = r.getStringValue('avatar');
+  factory LeaderboardEntry.fromJson(Map<String, dynamic> json) {
+    final display = json['displayName'] as String?;
+    final username = json['username'] as String?;
     return LeaderboardEntry(
-      userId: r.id,
-      displayName:
-          r.getStringValue('displayName').isNotEmpty
-              ? r.getStringValue('displayName')
-              : r.getStringValue('name'),
-      avatarUrl: avatar.isNotEmpty ? avatar : null,
-      currentStreak: r.getIntValue('currentStreak'),
-      bestStreak: r.getIntValue('bestStreak'),
+      userId: json['id'] as String? ?? '',
+      displayName: (display?.isNotEmpty == true) ? display! : (username ?? ''),
+      avatarUrl: json['avatarUrl'] as String?,
+      currentStreak: (json['currentStreak'] as num?)?.toInt() ?? 0,
+      bestStreak: (json['bestStreak'] as num?)?.toInt() ?? 0,
     );
   }
 }
@@ -89,32 +83,27 @@ class LeaderboardEntry {
 class PrRecord {
   const PrRecord({
     required this.userId,
-    required this.displayName,
     required this.exerciseId,
     required this.weightKg,
     required this.reps,
     required this.achievedAt,
+    required this.kind,
   });
 
   final String userId;
-  final String displayName;
-  final String exerciseId;
+  final int exerciseId;
   final double weightKg;
   final int reps;
   final DateTime achievedAt;
+  final String kind;
 
-  factory PrRecord.fromRecord(RecordModel r) {
-    final expandedUser = r.get<RecordModel?>('expand.user');
-    return PrRecord(
-      userId: r.getStringValue('user'),
-      displayName:
-          expandedUser?.getStringValue('displayName') ??
-          expandedUser?.getStringValue('name') ??
-          'Unknown',
-      exerciseId: r.getStringValue('exerciseId'),
-      weightKg: (r.data['weight'] as num?)?.toDouble() ?? 0,
-      reps: r.getIntValue('reps'),
-      achievedAt: DateTime.tryParse(r.getStringValue('created')) ?? DateTime.now(),
-    );
-  }
+  factory PrRecord.fromJson(Map<String, dynamic> json) => PrRecord(
+    userId: json['userId'] as String? ?? '',
+    exerciseId: (json['exerciseId'] as num?)?.toInt() ?? 0,
+    weightKg: (json['weight'] as num?)?.toDouble() ?? 0,
+    reps: (json['reps'] as num?)?.toInt() ?? 0,
+    achievedAt:
+        DateTime.tryParse(json['performedAt'] as String? ?? '') ?? DateTime.now(),
+    kind: json['kind'] as String? ?? '',
+  );
 }

@@ -1,45 +1,42 @@
-// lib/viewmodels/friends_view_model.dart
 import 'package:flutter/foundation.dart';
-import 'package:pocketbase/pocketbase.dart';
+import 'package:workout_tracker/home/friends/friendModel.dart';
 import 'package:workout_tracker/home/friends/friendsService.dart';
 
 class FriendsViewModel extends ChangeNotifier {
-  final FriendService service;
   FriendsViewModel(this.service);
+  final FriendService service;
 
   bool loading = false;
-  List<RecordModel> friends = [];
-  List<RecordModel> incoming = [];
-  List<RecordModel> outgoing = [];
-  List<RecordModel> searchResults = [];
+  List<FriendUser> friends = [];
+  List<PendingRequest> incoming = [];
+  List<FriendUser> searchResults = [];
 
   Future<void> refresh() async {
     loading = true;
     notifyListeners();
     friends = await service.listFriends();
     incoming = await service.incomingPending();
-    outgoing = await service.outgoingPending();
     loading = false;
     notifyListeners();
   }
 
-  Future<void> send(String toUserId) async {
-    await service.sendRequest(toUserId);
+  Future<void> send(String addresseeId) async {
+    await service.sendRequest(addresseeId);
     await refresh();
   }
 
-  Future<void> accept(String id) async {
-    await service.accept(id);
+  Future<void> accept(String friendshipId) async {
+    await service.accept(friendshipId);
     await refresh();
   }
 
-  Future<void> decline(String id) async {
-    await service.decline(id);
+  Future<void> decline(String friendshipId) async {
+    await service.decline(friendshipId);
     await refresh();
   }
 
-  Future<void> cancel(String id) async {
-    await service.cancel(id);
+  Future<void> remove(String friendshipId) async {
+    await service.remove(friendshipId);
     await refresh();
   }
 

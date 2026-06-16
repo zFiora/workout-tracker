@@ -1,6 +1,4 @@
-import 'dart:io';
 import 'package:flutter/foundation.dart';
-import 'package:http/http.dart' as http;
 import 'package:workout_tracker/home/account/accountReposirtry.dart';
 import 'package:workout_tracker/home/account/model/accountModel.dart';
 
@@ -23,7 +21,7 @@ class AccountViewModel extends ChangeNotifier {
       _account = await repo.fetchMe();
       _error = null;
     } catch (e) {
-      _error = e.toString();
+      _error = e.toString().replaceFirst('Exception: ', '');
     } finally {
       _setLoading(false);
     }
@@ -31,36 +29,17 @@ class AccountViewModel extends ChangeNotifier {
 
   Future<void> refresh() => load();
 
-  Future<void> update({
-    String? displayName,
-    String? username,
-    File? avatarFile,
-  }) async {
+  Future<void> update({String? displayName, String? username}) async {
     if (_account == null) return;
-
-    // If nothing to update, skip the call
-    final nothingToUpdate =
-        (displayName == null || displayName == _account!.displayName) &&
-        (username == null || username == _account!.username) &&
-        avatarFile == null;
-    if (nothingToUpdate) return;
-
     _setLoading(true);
     try {
-      // Build files list (non-nullable)
-      final files = <http.MultipartFile>[];
-      if (avatarFile != null) {
-        files.add(await http.MultipartFile.fromPath('avatar', avatarFile.path));
-      }
-
       _account = await repo.updateMe(
         displayName: displayName,
         username: username,
-        files: files, 
       );
       _error = null;
     } catch (e) {
-      _error = e.toString();
+      _error = e.toString().replaceFirst('Exception: ', '');
     } finally {
       _setLoading(false);
     }

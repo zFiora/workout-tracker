@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import 'package:pocketbase/pocketbase.dart';
 import 'package:workout_tracker/common/widgets/myCustomeScaffoldView.dart';
 import 'package:workout_tracker/core/api/api_result.dart';
-import 'package:workout_tracker/core/pb.dart';
 import 'package:workout_tracker/home/social/services/leaderboard_service.dart';
 
 class LeaderboardPage extends StatefulWidget {
@@ -22,14 +19,13 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
   @override
   void initState() {
     super.initState();
-    _service = LeaderboardService(context.read<PocketBase>());
+    _service = LeaderboardService();
     _load();
   }
 
   Future<void> _load() async {
     setState(() { _loading = true; _error = null; });
-    final userId = PB.I.pb.authStore.record?.id ?? '';
-    final result = await _service.fetchStreakLeaderboard(userId);
+    final result = await _service.fetchStreakLeaderboard();
     if (!mounted) return;
     setState(() {
       _loading = false;

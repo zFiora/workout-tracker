@@ -1,48 +1,30 @@
 import 'package:flutter/foundation.dart';
-import 'package:pocketbase/pocketbase.dart';
 import 'package:workout_tracker/core/api/api_client.dart';
-import 'package:workout_tracker/core/api/api_config.dart';
 import 'package:workout_tracker/core/api/api_result.dart';
+import 'package:workout_tracker/core/auth_token.dart';
 import 'package:workout_tracker/home/session/models/sessionModels.dart';
 
-/// Orchestrates syncing local Hive data to the PocketBase backend.
+/// Orchestrates syncing local Hive data to the .NET backend.
 ///
-/// Swap point: replace [ApiClient.instance] calls with your own HTTP client
-/// (e.g. Dio) if you move away from PocketBase.
-///
-/// Current sync surface:
-///   • Workout history entries  → [ApiConfig.colWorkouts]
-///   • PR events                → [ApiConfig.colPrEvents]
-///   • Templates (future)       → [ApiConfig.colTemplates]
+/// All methods are best-effort — errors are silently swallowed so the
+/// local Hive save always succeeds regardless of network state.
 class SyncCoordinator {
-  SyncCoordinator({required this.pb, required this.userId});
-
-  final PocketBase pb;
-  final String userId;
-
   final _client = ApiClient.instance;
 
   // ── History ──────────────────────────────────────────────────────────────
 
-  /// Push a single finished session to the server.
-  /// Safe to call even when offline — errors are silently swallowed so the
-  /// local save always succeeds regardless of network state.
   Future<void> pushWorkoutEntry(WorkoutHistoryEntry entry) async {
-    final body = {
-      'user': userId,
-      ...entry.toJson(),
-    };
-    final result = await _client.create(ApiConfig.colWorkouts, body);
+    if (!AuthToken.I.isValid) return;
+    final result = await _client.post('/api/workouts', entry.toJson());
     if (result.isError && kDebugMode) {
       debugPrint('[Sync] pushWorkoutEntry failed: ${result.errorOrNull}');
     }
   }
 
-  /// Push a batch of PR events produced at the end of a session.
   Future<void> pushPrEvents(List<Map<String, dynamic>> events) async {
+    if (!AuthToken.I.isValid) return;
     for (final event in events) {
-      final body = {'user': userId, ...event};
-      final result = await _client.create(ApiConfig.colPrEvents, body);
+      final result = await _client.post('/api/pr-events', event);
       if (result.isError && kDebugMode) {
         debugPrint('[Sync] pushPrEvent failed: ${result.errorOrNull}');
       }
@@ -51,35 +33,23 @@ class SyncCoordinator {
 
   // ── Leaderboard ──────────────────────────────────────────────────────────
 
-  /// Fetch friends ordered by current streak descending.
-  /// Returns a list of user records with streak fields.
   Future<List<Map<String, dynamic>>> fetchLeaderboard() async {
-    final result = await _client.list(
-      ApiConfig.colUsers,
-      sort: '-currentStreak',
-      filter: 'friends.user ?= "$userId"',
-      perPage: 50,
-    );
+    if (!AuthToken.I.isValid) return [];
+    final result = await _client.get('/api/friends/leaderboard');
     if (result.isError) return [];
-    return result.dataOrNull
-            ?.map((r) => {
-                  'id': r.id,
-                  'name': r.getStringValue('name'),
-                  'displayName': r.getStringValue('displayName'),
-                  'avatar': r.getStringValue('avatar'),
-                  'currentStreak': r.getIntValue('currentStreak'),
-                  'bestStreak': r.getIntValue('bestStreak'),
-                })
-            .toList() ??
-        [];
+    return List<Map<String, dynamic>>.from(
+      (result as ApiSuccess).data as List? ?? [],
+    );
   }
 
-  // ── Templates (future) ───────────────────────────────────────────────────
+  // ── Templates ────────────────────────────────────────────────────────────
 
-  /// Share a template publicly so friends can clone it.
   Future<bool> shareTemplate(Map<String, dynamic> templateJson) async {
-    final body = {'user': userId, ...templateJson, 'isPublic': true};
-    final result = await _client.create(ApiConfig.colTemplates, body);
+    if (!AuthToken.I.isValid) return false;
+    final result = await _client.post(
+      '/api/templates',
+      {...templateJson, 'isPublic': true},
+    );
     return result.isSuccess;
   }
 }

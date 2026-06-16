@@ -1,7 +1,4 @@
-import 'dart:io';
-
 import 'package:flutter/foundation.dart';
-import 'package:pocketbase/pocketbase.dart';
 import 'package:workout_tracker/auth/authService.dart';
 
 class AuthViewModel extends ChangeNotifier {
@@ -15,19 +12,15 @@ class AuthViewModel extends ChangeNotifier {
   String? get error => _error;
   bool get isLoggedIn => _auth.isLoggedIn;
 
-  Future<bool> login(String emailOrUsername, String password) async {
+  Future<bool> login(String identity, String password) async {
     _busy = true;
     _error = null;
     notifyListeners();
     try {
-      await _auth.login(emailOrUsername, password);
+      await _auth.login(identity, password);
       return true;
-    } on ClientException catch (e) {
-      _error = e.response['message']?.toString() ?? 'Login failed';
-      return false;
-    } catch (e, st) {
-      debugPrint('Login error: $e\n$st');
-      _error = 'Something went wrong. Please try again.';
+    } catch (e) {
+      _error = e.toString().replaceFirst('Exception: ', '');
       return false;
     } finally {
       _busy = false;
@@ -40,7 +33,6 @@ class AuthViewModel extends ChangeNotifier {
     required String username,
     required String password,
     required String displayName,
-    File? avatarFile,
   }) async {
     _busy = true;
     _error = null;
@@ -51,28 +43,14 @@ class AuthViewModel extends ChangeNotifier {
         username: username,
         password: password,
         displayName: displayName,
-        avatarFile: avatarFile,
       );
-      return true; // auto-logged in if verification not enforced
-    } on ClientException catch (e) {
-      _error = e.response['message']?.toString() ?? 'Registration failed';
-      return false;
-    } catch (e, st) {
-      debugPrint('Register error: $e\n$st');
-      _error = 'Something went wrong. Please try again.';
+      return true;
+    } catch (e) {
+      _error = e.toString().replaceFirst('Exception: ', '');
       return false;
     } finally {
       _busy = false;
       notifyListeners();
-    }
-  }
-
-  Future<bool> resendVerification(String email) async {
-    try {
-      await _auth.resendVerification(email);
-      return true;
-    } catch (_) {
-      return false;
     }
   }
 
