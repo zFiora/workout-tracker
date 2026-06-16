@@ -40,7 +40,7 @@ class _AccountPageSwitchTileState extends State<AccountPageSwitchTile> {
         secondary: CircleAvatar(
           radius: 18,
           // ignore: deprecated_member_use
-          backgroundColor: scheme.primary.withOpacity(.08),
+          backgroundColor: scheme.primary.withValues(alpha: .08),
           child: Icon(widget.icon, color: kDeepBlue, size: 20),
         ),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),

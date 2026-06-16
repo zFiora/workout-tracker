@@ -8,15 +8,19 @@ import 'package:workout_tracker/home/account/widgets/accountPageVaultTile.dart';
 import 'package:workout_tracker/home/friends/widgets/addFriendPage.dart';
 import 'package:workout_tracker/home/friends/widgets/friendsListPage.dart';
 import 'package:workout_tracker/home/friends/widgets/manageFriendsPage.dart';
+import 'package:workout_tracker/home/social/pages/leaderboard_page.dart';
 
 class AccountPageBody extends StatelessWidget {
   const AccountPageBody({
+    super.key,
     required this.name,
     required this.email,
     required this.streakDays,
     required this.avatarUrl,
     required this.onEditProfile,
     required this.onSignOut,
+    required this.isDarkMode,
+    required this.onDarkModeChanged,
   });
 
   final String name;
@@ -25,6 +29,8 @@ class AccountPageBody extends StatelessWidget {
   final String? avatarUrl;
   final VoidCallback onEditProfile;
   final VoidCallback onSignOut;
+  final bool isDarkMode;
+  final ValueChanged<bool> onDarkModeChanged;
 
   @override
   Widget build(BuildContext context) {
@@ -44,7 +50,7 @@ class AccountPageBody extends StatelessWidget {
         // Friends section
         SliverToBoxAdapter(
           child: AccountPageSection(
-            title: 'Friends',
+            title: 'Social',
             children: [
               AccountPageVaultTile(
                 icon: Icons.local_fire_department_rounded,
@@ -52,6 +58,14 @@ class AccountPageBody extends StatelessWidget {
                 title: 'Streak',
                 value: '$streakDays days',
                 onTap: () {},
+              ),
+              AccountPageTile(
+                icon: Icons.emoji_events_outlined,
+                title: 'Leaderboard',
+                subtitle: 'Streak rankings with friends',
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const LeaderboardPage()),
+                ),
               ),
               AccountPageTile(
                 icon: Icons.group_outlined,
@@ -72,7 +86,7 @@ class AccountPageBody extends StatelessWidget {
               AccountPageTile(
                 icon: Icons.manage_accounts_outlined,
                 title: 'Manage Friends',
-                subtitle: 'Requests • Blocks • Visibility',
+                subtitle: 'Requests · Blocks · Visibility',
                 onTap: () => Navigator.of(context).push(
                   MaterialPageRoute(builder: (_) => const ManageFriendsPage()),
                 ),
@@ -88,7 +102,7 @@ class AccountPageBody extends StatelessWidget {
             children: [
               AccountPageTile(
                 icon: Icons.person_outline,
-                title: 'Edit Account',
+                title: 'Edit Profile',
                 subtitle: 'Name, photo, email',
                 onTap: onEditProfile,
               ),
@@ -115,8 +129,8 @@ class AccountPageBody extends StatelessWidget {
               AccountPageSwitchTile(
                 icon: Icons.dark_mode_outlined,
                 title: 'Dark Mode',
-                initialValue: Theme.of(context).brightness == Brightness.dark,
-                onChanged: (v) {},
+                initialValue: isDarkMode,
+                onChanged: onDarkModeChanged,
               ),
               AccountPageTile(
                 icon: Icons.verified_user_outlined,

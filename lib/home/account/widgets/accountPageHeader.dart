@@ -61,7 +61,7 @@ class AccountPageHeader extends StatelessWidget {
                     children: [
                       CircleAvatar(
                         radius: 28,
-                        backgroundColor: scheme.primary.withOpacity(.1),
+                        backgroundColor: scheme.primary.withValues(alpha: .1),
                         backgroundImage: avatarProvider,
                         child: const Icon(
                           Icons.person,

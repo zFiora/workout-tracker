@@ -63,7 +63,7 @@ class HistorySetRow extends StatelessWidget {
         Text(
           subText,
           style: theme.textTheme.bodySmall?.copyWith(
-            color: cs.onSurface.withOpacity(0.65),
+            color: cs.onSurface.withValues(alpha: 0.65),
             fontWeight: FontWeight.w600,
           ),
         ),

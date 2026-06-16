@@ -36,14 +36,14 @@ class HistoryTile extends StatelessWidget {
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              cs.surfaceVariant.withOpacity(0.70),
-              cs.surfaceVariant.withOpacity(0.35),
+              cs.surfaceVariant.withValues(alpha: 0.70),
+              cs.surfaceVariant.withValues(alpha: 0.35),
             ],
           ),
-          border: Border.all(color: cs.outline.withOpacity(0.25), width: 1),
+          border: Border.all(color: cs.outline.withValues(alpha: 0.25), width: 1),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.06),
+              color: Colors.black.withValues(alpha: 0.06),
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),
@@ -59,7 +59,7 @@ class HistoryTile extends StatelessWidget {
                 height: 56,
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(14),
-                  color: cs.secondaryContainer.withOpacity(0.6),
+                  color: cs.secondaryContainer.withValues(alpha: 0.6),
                 ),
                 clipBehavior: Clip.antiAlias,
                 child: Image.asset(
@@ -67,7 +67,7 @@ class HistoryTile extends StatelessWidget {
                   fit: BoxFit.cover,
                   errorBuilder: (_, __, ___) => Icon(
                     Icons.fitness_center,
-                    color: cs.onSecondaryContainer.withOpacity(0.8),
+                    color: cs.onSecondaryContainer.withValues(alpha: 0.8),
                   ),
                 ),
               ),
@@ -106,9 +106,7 @@ class HistoryTile extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.textTheme.bodySmall?.color?.withOpacity(
-                          0.75,
-                        ),
+                        color: theme.textTheme.bodySmall?.color?.withValues(alpha: 0.75),
                       ),
                     ),
 
@@ -186,13 +184,13 @@ class HistoryTile extends StatelessWidget {
                     ],
                     child: Icon(
                       Icons.more_horiz,
-                      color: theme.iconTheme.color?.withOpacity(0.9),
+                      color: theme.iconTheme.color?.withValues(alpha: 0.9),
                     ),
                   ),
                   const SizedBox(height: 6),
                   Icon(
                     Icons.chevron_right,
-                    color: theme.iconTheme.color?.withOpacity(0.6),
+                    color: theme.iconTheme.color?.withValues(alpha: 0.6),
                   ),
                 ],
               ),
@@ -225,7 +223,7 @@ class _Pill extends StatelessWidget {
       decoration: BoxDecoration(
         color: background,
         borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: foreground.withOpacity(0.18)),
+        border: Border.all(color: foreground.withValues(alpha: 0.18)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,

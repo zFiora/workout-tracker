@@ -78,7 +78,7 @@ class _MyCustomeScaffoldView extends State<MyCustomeScaffoldView> {
                       Theme.of(context).colorScheme.primary,
                   automaticallyImplyLeading: !widget.isMainPage,
                   elevation: 4, // subtle shadow
-                  shadowColor: Colors.black.withOpacity(0.3),
+                  shadowColor: Colors.black.withValues(alpha: 0.3),
                   shape: const RoundedRectangleBorder(
                     borderRadius: BorderRadius.vertical(
                       bottom: Radius.circular(16), // round bottom corners

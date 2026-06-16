@@ -25,11 +25,11 @@ class HistoryHeaderCard extends StatelessWidget {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            cs.surfaceVariant.withOpacity(0.75),
-            cs.surfaceVariant.withOpacity(0.35),
+            cs.surfaceVariant.withValues(alpha: 0.75),
+            cs.surfaceVariant.withValues(alpha: 0.35),
           ],
         ),
-        border: Border.all(color: cs.outline.withOpacity(0.22)),
+        border: Border.all(color: cs.outline.withValues(alpha: 0.22)),
       ),
       padding: const EdgeInsets.all(14),
       child: Row(
@@ -40,7 +40,7 @@ class HistoryHeaderCard extends StatelessWidget {
             height: 56,
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(14),
-              color: cs.secondaryContainer.withOpacity(0.55),
+              color: cs.secondaryContainer.withValues(alpha: 0.55),
             ),
             clipBehavior: Clip.antiAlias,
             child: Image.asset(
@@ -48,7 +48,7 @@ class HistoryHeaderCard extends StatelessWidget {
               fit: BoxFit.cover,
               errorBuilder: (_, __, ___) => Icon(
                 Icons.fitness_center,
-                color: cs.onSecondaryContainer.withOpacity(0.85),
+                color: cs.onSecondaryContainer.withValues(alpha: 0.85),
               ),
             ),
           ),
@@ -73,7 +73,7 @@ class HistoryHeaderCard extends StatelessWidget {
                             .textTheme
                             .bodySmall
                             ?.color
-                            ?.withOpacity(0.75),
+                            ?.withValues(alpha: 0.75),
                       ),
                 ),
                 const SizedBox(height: 12),

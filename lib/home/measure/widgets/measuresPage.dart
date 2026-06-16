@@ -221,7 +221,6 @@ class _MeasuresViewState extends State<_MeasuresView> {
   // ===== Chart =====
   Widget _chartCard(MeasuresViewModel vm) {
     final entries = vm.entries;
-    final (minY, maxY) = vm.weightRange;
 
     return Card(
       child: Padding(

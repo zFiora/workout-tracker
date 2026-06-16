@@ -74,9 +74,9 @@ class PlannedSetRow extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: cs.outlineVariant.withOpacity(0.6)),
+        border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.6)),
         color: p.done
-            ? cs.surfaceContainerHighest.withOpacity(0.25)
+            ? cs.surfaceContainerHighest.withValues(alpha: 0.25)
             : Colors.transparent,
       ),
       child: Row(
@@ -222,7 +222,7 @@ class _PrPillState extends State<_PrPill> with SingleTickerProviderStateMixin {
         decoration: BoxDecoration(
           color: cs.primaryContainer,
           borderRadius: BorderRadius.circular(999),
-          border: Border.all(color: cs.primary.withOpacity(0.35)),
+          border: Border.all(color: cs.primary.withValues(alpha: 0.35)),
         ),
         child: Text(
           widget.text,

@@ -17,9 +17,9 @@ class StreakBadge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
-        color: Colors.teal.withOpacity(0.12),
+        color: Colors.teal.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.teal.withOpacity(0.3)),
+        border: Border.all(color: Colors.teal.withValues(alpha: 0.3)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,

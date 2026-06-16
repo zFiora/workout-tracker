@@ -1,15 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:workout_tracker/common/AppManager.dart';
 import 'package:workout_tracker/home/templates/models/workout_template.dart';
 import 'package:workout_tracker/home/templates/viewmodels/templatesViewModel.dart';
 
-enum TemplateAction { rename, changeIcon, delete }
+enum _Action { rename, changeIcon, share, delete }
 
 class TemplateActionsMenu extends StatelessWidget {
-  const TemplateActionsMenu({super.key, required this.template, this.pickIcon});
+  const TemplateActionsMenu({
+    super.key,
+    required this.template,
+    this.pickIcon,
+    this.onShare,
+  });
 
   final WorkoutTemplateModel template;
   final Future<String?> Function(BuildContext ctx)? pickIcon;
+  final VoidCallback? onShare;
 
   Future<void> _rename(BuildContext context, TemplatesViewModel vm) async {
     final controller = TextEditingController(text: template.name);
@@ -28,7 +35,7 @@ class TemplateActionsMenu extends StatelessWidget {
             onPressed: () => Navigator.pop(dialogCtx, false),
             child: const Text('Cancel'),
           ),
-          TextButton(
+          FilledButton(
             onPressed: () => Navigator.pop(dialogCtx, true),
             child: const Text('Save'),
           ),
@@ -46,7 +53,6 @@ class TemplateActionsMenu extends StatelessWidget {
 
   Future<void> _changeIcon(BuildContext context, TemplatesViewModel vm) async {
     if (pickIcon == null) return;
-
     final newPath = await pickIcon!(context);
     if (newPath != null && newPath.isNotEmpty) {
       await vm.changeIconPath(template, newPath);
@@ -59,7 +65,7 @@ class TemplateActionsMenu extends StatelessWidget {
       builder: (dialogCtx) => AlertDialog(
         title: const Text('Delete template?'),
         content: Text(
-          '“${template.name}” will be removed. This cannot be undone.',
+          '"${template.name}" will be removed. This cannot be undone.',
         ),
         actions: [
           TextButton(
@@ -68,7 +74,9 @@ class TemplateActionsMenu extends StatelessWidget {
           ),
           TextButton(
             onPressed: () => Navigator.pop(dialogCtx, true),
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            style: TextButton.styleFrom(
+              foregroundColor: Theme.of(context).colorScheme.error,
+            ),
             child: const Text('Delete'),
           ),
         ],
@@ -77,66 +85,87 @@ class TemplateActionsMenu extends StatelessWidget {
 
     if (ok == true) {
       await vm.deleteTemplate(template);
-
       if (!context.mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Template deleted')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Template deleted')),
+      );
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final vm = context.read<TemplatesViewModel>();
+    final isOnline = context.watch<AppManager>().isOnline;
 
-    return PopupMenuButton<TemplateAction>(
+    return PopupMenuButton<_Action>(
       tooltip: 'Template actions',
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
       onSelected: (action) async {
         switch (action) {
-          case TemplateAction.rename:
+          case _Action.rename:
             await _rename(context, vm);
-            break;
-          case TemplateAction.changeIcon:
+          case _Action.changeIcon:
             await _changeIcon(context, vm);
-            break;
-          case TemplateAction.delete:
+          case _Action.share:
+            onShare?.call();
+          case _Action.delete:
             await _delete(context, vm);
-            break;
         }
       },
-      itemBuilder: (context) => const [
-        PopupMenuItem(
-          value: TemplateAction.rename,
-          child: Row(
-            children: [
-              Icon(Icons.edit, size: 18),
-              SizedBox(width: 8),
-              Text('Rename'),
-            ],
-          ),
+      itemBuilder: (context) => [
+        const PopupMenuItem(
+          value: _Action.rename,
+          child: _MenuRow(icon: Icons.edit_outlined, label: 'Rename'),
         ),
-        PopupMenuItem(
-          value: TemplateAction.changeIcon,
-          child: Row(
-            children: [
-              Icon(Icons.image_outlined, size: 18),
-              SizedBox(width: 8),
-              Text('Change icon'),
-            ],
-          ),
+        const PopupMenuItem(
+          value: _Action.changeIcon,
+          child: _MenuRow(icon: Icons.image_outlined, label: 'Change icon'),
         ),
+        if (isOnline)
+          const PopupMenuItem(
+            value: _Action.share,
+            child: _MenuRow(
+              icon: Icons.share_outlined,
+              label: 'Share with friends',
+            ),
+          ),
+        const PopupMenuDivider(),
         PopupMenuItem(
-          value: TemplateAction.delete,
-          child: Row(
-            children: [
-              Icon(Icons.delete_outline, size: 18),
-              SizedBox(width: 8),
-              Text('Delete'),
-            ],
+          value: _Action.delete,
+          child: _MenuRow(
+            icon: Icons.delete_outline,
+            label: 'Delete',
+            color: Theme.of(context).colorScheme.error,
           ),
         ),
       ],
-      child: const Icon(Icons.more_vert, size: 28),
+      child: Container(
+        padding: const EdgeInsets.all(4),
+        decoration: BoxDecoration(
+          color: Colors.black.withValues(alpha: 0.25),
+          shape: BoxShape.circle,
+        ),
+        child: const Icon(Icons.more_vert, size: 20, color: Colors.white),
+      ),
+    );
+  }
+}
+
+class _MenuRow extends StatelessWidget {
+  const _MenuRow({required this.icon, required this.label, this.color});
+  final IconData icon;
+  final String label;
+  final Color? color;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = color ?? Theme.of(context).colorScheme.onSurface;
+    return Row(
+      children: [
+        Icon(icon, size: 18, color: c),
+        const SizedBox(width: 10),
+        Text(label, style: TextStyle(color: c)),
+      ],
     );
   }
 }

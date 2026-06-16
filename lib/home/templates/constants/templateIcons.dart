@@ -9,5 +9,6 @@ class TemplateIcons {
     "assets/workout_category/cardio_emoji.png",
     "assets/workout_category/legs_emoji.png",
     "assets/workout_category/forearms_emoji.png",
+    "assets/workout_category/muscular_forearms_emoji.png",
   ];
 }

@@ -86,9 +86,9 @@ class StartSessionPage extends StatelessWidget {
                   vertical: 6,
                 ),
                 decoration: BoxDecoration(
-                  color: cs.surfaceContainerHighest.withOpacity(0.6),
+                  color: cs.surfaceContainerHighest.withValues(alpha: 0.6),
                   borderRadius: BorderRadius.circular(999),
-                  border: Border.all(color: cs.outlineVariant.withOpacity(0.6)),
+                  border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.6)),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
@@ -139,7 +139,7 @@ class StartSessionPage extends StatelessWidget {
           decoration: BoxDecoration(
             color: Theme.of(context).scaffoldBackgroundColor,
             border: Border(
-              top: BorderSide(color: cs.outlineVariant.withOpacity(0.6)),
+              top: BorderSide(color: cs.outlineVariant.withValues(alpha: 0.6)),
             ),
           ),
           child: Row(

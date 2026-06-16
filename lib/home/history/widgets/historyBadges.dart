@@ -15,7 +15,7 @@ class SetTypeBadge extends StatelessWidget {
       decoration: BoxDecoration(
         color: bg,
         borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: fg.withOpacity(0.18)),
+        border: Border.all(color: fg.withValues(alpha: 0.18)),
       ),
       alignment: Alignment.center,
       child: Text(
@@ -43,7 +43,7 @@ class PrBadge extends StatelessWidget {
       decoration: BoxDecoration(
         color: bg,
         borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: fg.withOpacity(0.18)),
+        border: Border.all(color: fg.withValues(alpha: 0.18)),
       ),
       alignment: Alignment.center,
       child: Text(

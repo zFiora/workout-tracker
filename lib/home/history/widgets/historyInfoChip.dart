@@ -17,12 +17,12 @@ class HistoryInfoChip extends StatelessWidget {
       decoration: BoxDecoration(
         color: cs.surface,
         borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: cs.outline.withOpacity(0.18)),
+        border: Border.all(color: cs.outline.withValues(alpha: 0.18)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 16, color: cs.onSurface.withOpacity(0.75)),
+          Icon(icon, size: 16, color: cs.onSurface.withValues(alpha: 0.75)),
           const SizedBox(width: 6),
           Text(
             label,

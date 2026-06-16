@@ -31,7 +31,7 @@ class MiniSeriesCard extends StatelessWidget {
             width: 6,
             height: h,
             decoration: BoxDecoration(
-              color: primary.withOpacity(0.85),
+              color: primary.withValues(alpha: 0.85),
               borderRadius: BorderRadius.circular(4),
             ),
           );

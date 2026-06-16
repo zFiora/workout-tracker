@@ -104,7 +104,7 @@ class _ExerciseTileState extends State<ExerciseTile>
                               vertical: 2,
                             ),
                             decoration: BoxDecoration(
-                              color: Theme.of(context).colorScheme.primary.withOpacity(0.85),
+                              color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.85),
                               borderRadius: BorderRadius.circular(6),
                             ),
                             child: Text(
@@ -167,7 +167,7 @@ class _ExerciseTileState extends State<ExerciseTile>
               Positioned.fill(
                 child: Container(
                   decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.primary.withOpacity(0.25),
+                    color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.25),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   // child: const Icon(

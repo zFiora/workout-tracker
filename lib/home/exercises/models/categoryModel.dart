@@ -32,7 +32,7 @@ extension WorkoutCategoryExtension on WorkoutCategory {
       case WorkoutCategory.abs:
         return 'Abs';
       case WorkoutCategory.forearms:
-      return 'Forearms';
+        return 'Forearms';
     }
   }
 
@@ -55,8 +55,8 @@ extension WorkoutCategoryExtension on WorkoutCategory {
         return 'assets/workout_category/legs_emoji.png';
       case WorkoutCategory.abs:
         return 'assets/workout_category/abs_emoji.png';
-        case WorkoutCategory.forearms:
-      return 'assets/workout_category/forearms_emoji.png';
+      case WorkoutCategory.forearms:
+        return 'assets/workout_category/muscular_forearms_emoji.png';
     }
   }
 }

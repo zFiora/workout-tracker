@@ -21,7 +21,7 @@ class AccountPageDangerTile extends StatelessWidget {
       child: ListTile(
         leading: CircleAvatar(
           radius: 18,
-          backgroundColor: Colors.red.withOpacity(.08),
+          backgroundColor: Colors.red.withValues(alpha: .08),
           child: Icon(icon, color: Colors.red, size: 20),
         ),
         title: Text(

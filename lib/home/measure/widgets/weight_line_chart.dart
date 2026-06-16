@@ -38,7 +38,7 @@ class WeightLineChart extends StatelessWidget {
           drawVerticalLine: false,
           horizontalInterval: 1,
           getDrawingHorizontalLine: (_) => FlLine(
-            color: Colors.grey.withOpacity(0.15),
+            color: Colors.grey.withValues(alpha: 0.15),
             strokeWidth: 1,
           ),
         ),
@@ -114,8 +114,8 @@ class WeightLineChart extends StatelessWidget {
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
                 colors: [
-                  Theme.of(context).colorScheme.primary.withOpacity(0.35),
-                  Theme.of(context).colorScheme.primary.withOpacity(0.05),
+                  Theme.of(context).colorScheme.primary.withValues(alpha: 0.35),
+                  Theme.of(context).colorScheme.primary.withValues(alpha: 0.05),
                 ],
               ),
             ),

@@ -25,7 +25,7 @@ class AccountPageTile extends StatelessWidget {
       child: ListTile(
         leading: CircleAvatar(
           radius: 18,
-          backgroundColor: scheme.primary.withOpacity(.08),
+          backgroundColor: scheme.primary.withValues(alpha: .08),
           child: Icon(icon, color: kDeepBlue, size: 20),
         ),
         title: Text(title),

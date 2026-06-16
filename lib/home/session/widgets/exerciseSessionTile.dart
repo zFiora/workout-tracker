@@ -30,6 +30,30 @@ class _ExerciseSessionTileState extends State<ExerciseSessionTile> {
 
   final Set<String> _editingKeys = {};
 
+  List<PerformedSet> _fixWarmupOrder(List<PerformedSet> sets) {
+    if (sets.isEmpty) return sets;
+
+    final warmups = <PerformedSet>[];
+    final others = <PerformedSet>[];
+
+    for (final s in sets) {
+      if (s.type == SetType.warmup) {
+        warmups.add(s);
+      } else {
+        others.add(s);
+      }
+    }
+
+    // Warmups should usually go light -> heavy.
+    warmups.sort((a, b) {
+      final w = (a.weight).compareTo(b.weight);
+      if (w != 0) return w;
+      return (a.reps).compareTo(b.reps);
+    });
+
+    return [...warmups, ...others];
+  }
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
@@ -46,18 +70,21 @@ class _ExerciseSessionTileState extends State<ExerciseSessionTile> {
       if (log.plannedSets.isNotEmpty) return;
 
       final historyVM = context.read<HistoryViewModel>();
+
       final lastSets = _autoLoadService.lastWorkoutSetsForExercise(
         historyVM: historyVM,
         templateId: widget.templateId,
         exerciseId: widget.exercise.id,
       );
 
-      if (lastSets.isEmpty) {
+      final fixedLastSets = _fixWarmupOrder(lastSets);
+
+      if (fixedLastSets.isEmpty) {
         session.addPlannedSetRow(exerciseId: widget.exercise.id);
       } else {
         session.loadPlannedSetsFromLastWorkout(
           exerciseId: widget.exercise.id,
-          lastSets: lastSets,
+          lastSets: fixedLastSets,
         );
       }
     });
@@ -230,9 +257,7 @@ class _ExerciseSessionTileState extends State<ExerciseSessionTile> {
                   );
                 },
               ),
-
             const SizedBox(height: 12),
-
             SizedBox(
               width: double.infinity,
               child: OutlinedButton.icon(

@@ -11,10 +11,13 @@ class HistoryPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final vm = context.watch<HistoryViewModel>();
-    final items = vm.historyItems; // ✅ sorted newest-first + has Hive key
+    final items = vm.historyItems;
 
     if (items.isEmpty) {
-      return const Center(child: Text('No old sessions'));
+      return MyCustomeScaffoldView(
+        title: 'History',
+        body: _EmptyHistoryState(),
+      );
     }
 
     return MyCustomeScaffoldView(
@@ -29,11 +32,8 @@ class HistoryPage extends StatelessWidget {
 
           Future<void> deleteWithUndo() async {
             final deletedEntry = entry;
-
             await vm.deleteByKey(item.key);
-
             if (!context.mounted) return;
-
             ScaffoldMessenger.of(context)
               ..clearSnackBars()
               ..showSnackBar(
@@ -52,11 +52,7 @@ class HistoryPage extends StatelessWidget {
           return Dismissible(
             key: ValueKey(item.key),
             direction: DismissDirection.endToStart,
-            confirmDismiss: (_) async {
-              // Optional: prevent accidental deletes by requiring a swipe + release.
-              // Returning true allows dismiss.
-              return true;
-            },
+            confirmDismiss: (_) async => true,
             background: Container(
               margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               padding: const EdgeInsets.only(right: 18),
@@ -85,10 +81,57 @@ class HistoryPage extends StatelessWidget {
                   ),
                 );
               },
-              onDelete: deleteWithUndo, // menu delete fallback
+              onDelete: deleteWithUndo,
             ),
           );
         },
+      ),
+    );
+  }
+}
+
+class _EmptyHistoryState extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: 80,
+              height: 80,
+              decoration: BoxDecoration(
+                color: cs.primaryContainer.withValues(alpha: 0.4),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                Icons.history_rounded,
+                size: 40,
+                color: cs.primary,
+              ),
+            ),
+            const SizedBox(height: 20),
+            Text(
+              'No workouts yet',
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Complete your first session to\nsee your history here.',
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: cs.onSurfaceVariant,
+                height: 1.5,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

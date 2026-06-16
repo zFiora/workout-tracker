@@ -4,8 +4,8 @@ import 'package:workout_tracker/common/AppManager.dart';
 import 'package:workout_tracker/common/navigation/mainNavigation.dart';
 import 'package:workout_tracker/core/pb.dart';
 import 'package:workout_tracker/home/login/widgets/gradiantPillButton.dart';
-import 'package:workout_tracker/main.dart';
-
+import 'package:workout_tracker/home/login/widgets/loginPage.dart';
+import 'package:workout_tracker/home/login/widgets/registerPage.dart';
 class SplashPage extends StatefulWidget {
   const SplashPage({super.key});
 
@@ -53,77 +53,6 @@ class _SplashPageState extends State<SplashPage>
     super.dispose();
   }
 
-  void _showOnlineComingSoon(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      isDismissible: true,
-      builder: (_) {
-        return Container(
-          margin: const EdgeInsets.all(16),
-          padding: const EdgeInsets.fromLTRB(20, 20, 20, 28),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(24),
-            gradient: const LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [Color(0xFF111827), Color(0xFF020617)],
-            ),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(
-                Icons.cloud_off_rounded,
-                size: 42,
-                color: Colors.white,
-              ),
-              const SizedBox(height: 14),
-              const Text(
-                'Online Mode Coming Soon',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w700,
-                  color: Colors.white,
-                ),
-              ),
-              const SizedBox(height: 10),
-              const Text(
-                'We’re still working on the online experience.\n'
-                'For now, you can use the app offline without any limits.',
-                textAlign: TextAlign.center,
-                style: TextStyle(color: Colors.white70, height: 1.4),
-              ),
-              const SizedBox(height: 22),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.white,
-                    foregroundColor: Colors.black,
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(999),
-                    ),
-                  ),
-                  onPressed: () => Navigator.pop(context),
-                  child: const Text(
-                    'OK, GOT IT',
-                    style: TextStyle(
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 0.6,
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
   Future<void> _goMain() async {
     if (_navigated || !mounted) return;
     _navigated = true;
@@ -137,7 +66,6 @@ class _SplashPageState extends State<SplashPage>
 
     final pb = PB.I.pb;
 
-    // Try refresh once if token exists but not valid
     if (!pb.authStore.isValid && pb.authStore.token.isNotEmpty) {
       try {
         await pb.collection('users').authRefresh();
@@ -150,24 +78,18 @@ class _SplashPageState extends State<SplashPage>
     if (!mounted) return;
 
     if (authed) {
-      // Online session
       context.read<AppManager>().setOnline();
       await _goMain();
     } else {
-      // Show buttons every time (Option B)
       setState(() => _checking = false);
     }
   }
 
   Future<void> _continueOffline() async {
-    // In-memory only (Option B)
     context.read<AppManager>().setOffline();
-
-    // Optional: clear PB state to avoid confusion
     try {
       PB.I.pb.authStore.clear();
     } catch (_) {}
-
     if (!mounted) return;
     await _goMain();
   }
@@ -198,7 +120,7 @@ class _SplashPageState extends State<SplashPage>
                   textAlign: TextAlign.center,
                   style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                     color: Colors.white,
-                    fontWeight: FontWeight.w700,
+                    fontWeight: FontWeight.w800,
                     letterSpacing: 0.5,
                   ),
                 ),
@@ -220,20 +142,30 @@ class _SplashPageState extends State<SplashPage>
                   child: _checking
                       ? const Padding(
                           padding: EdgeInsets.only(bottom: 28),
-                          child: CircularProgressIndicator(color: Colors.blue),
+                          child: CircularProgressIndicator(color: Colors.white),
                         )
                       : Column(
                           children: [
                             GradientPillButton(
                               whiteColor: true,
-                              labelColor: brandEnd,
+                              labelColor: const Color(0xFF0A2D73),
                               label: 'SIGN IN',
-                              onPressed: () => _showOnlineComingSoon(context),
+                              onPressed: () => Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => const LoginPage(),
+                                ),
+                              ),
                             ),
                             const SizedBox(height: 14),
                             GradientPillButton(
                               label: 'SIGN UP',
-                              onPressed: () => _showOnlineComingSoon(context),
+                              onPressed: () => Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => const RegisterPage(),
+                                ),
+                              ),
                             ),
                             const SizedBox(height: 14),
                             TextButton(

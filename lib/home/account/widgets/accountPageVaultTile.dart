@@ -28,7 +28,7 @@ class AccountPageVaultTile extends StatelessWidget {
       child: ListTile(
         leading: CircleAvatar(
           radius: 18,
-          backgroundColor: (iconColor ?? scheme.primary).withOpacity(.12),
+          backgroundColor: (iconColor ?? scheme.primary).withValues(alpha: .12),
           child: Icon(icon, color: iconColor ?? kDeepBlue, size: 20),
         ),
         title: Text(title),
