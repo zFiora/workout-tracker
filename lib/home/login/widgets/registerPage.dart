@@ -1,8 +1,11 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:workout_tracker/auth/authViewModel.dart';
+import 'package:workout_tracker/common/AppManager.dart';
 import 'package:workout_tracker/common/navigation/mainNavigation.dart';
 import 'package:workout_tracker/common/widgets/avatarPicker.dart';
+import 'package:workout_tracker/home/account/accountReposirtry.dart';
 import 'package:workout_tracker/home/login/widgets/gradiantPillButton.dart';
 import 'package:workout_tracker/home/login/widgets/loginPage.dart';
 import 'package:workout_tracker/home/login/widgets/underlineField.dart';
@@ -38,6 +41,8 @@ class _RegisterPageState extends State<RegisterPage>
           curve: const Interval(0.3, 1.0, curve: Curves.easeOutCubic),
         ),
       );
+
+  File? _avatarFile;
 
   // Form controllers
   final _displayNameCtrl = TextEditingController();
@@ -160,7 +165,8 @@ class _RegisterPageState extends State<RegisterPage>
                                 size: 96,
                                 placeholderAsset:
                                     'assets/logo/default_avatar.png',
-                                onChanged: (_) {},
+                                onChanged: (f) =>
+                                    setState(() => _avatarFile = f),
                               ),
                             ),
                           ),
@@ -242,34 +248,53 @@ class _RegisterPageState extends State<RegisterPage>
                             onPressed: vm.busy
                                 ? null
                                 : () async {
-                                    if (!_formKey.currentState!.validate())
+                                    if (!_formKey.currentState!.validate()) {
                                       return;
-                                    final ok = await context
-                                        .read<AuthViewModel>()
-                                        .register(
-                                          email: _emailCtrl.text.trim(),
-                                          username: _usernameCtrl.text.trim(),
-                                          password: _passCtrl.text,
-                                          displayName: _displayNameCtrl.text
-                                              .trim(),
-                                        );
+                                    }
+                                    // Capture before any await
+                                    final appManager =
+                                        context.read<AppManager>();
+                                    final authVM =
+                                        context.read<AuthViewModel>();
+                                    final accountRepo =
+                                        context.read<AccountRepository>();
+                                    final messenger =
+                                        ScaffoldMessenger.of(context);
+                                    final nav = Navigator.of(context);
+                                    final avatarFile = _avatarFile;
+
+                                    final ok = await authVM.register(
+                                      email: _emailCtrl.text.trim(),
+                                      username: _usernameCtrl.text.trim(),
+                                      password: _passCtrl.text,
+                                      displayName:
+                                          _displayNameCtrl.text.trim(),
+                                    );
                                     if (!mounted) return;
+
                                     if (ok) {
-                                      Navigator.pushReplacement(
-                                        context,
+                                      // Best-effort avatar upload
+                                      if (avatarFile != null) {
+                                        try {
+                                          await accountRepo
+                                              .uploadAvatar(avatarFile);
+                                        } catch (_) {}
+                                      }
+                                      appManager.setOnline();
+                                      nav.pushReplacement(
                                         MaterialPageRoute(
                                           builder: (_) =>
                                               const MainNavigation(),
                                         ),
                                       );
                                     } else {
-                                      final msg =
-                                          context.read<AuthViewModel>().error ??
-                                          'Registration failed';
-                                      ScaffoldMessenger.of(
-                                        context,
-                                      ).showSnackBar(
-                                        SnackBar(content: Text(msg)),
+                                      messenger.showSnackBar(
+                                        SnackBar(
+                                          content: Text(
+                                            authVM.error ??
+                                                'Registration failed',
+                                          ),
+                                        ),
                                       );
                                     }
                                   },

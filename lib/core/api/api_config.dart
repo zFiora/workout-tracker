@@ -6,13 +6,12 @@
 class ApiConfig {
   ApiConfig._();
 
-  /// .NET API server URL.
-  /// Android emulator localhost  → 10.0.2.2
-  /// iOS simulator localhost     → 127.0.0.1
-  /// Real device on LAN          → your machine's LAN IP
+  /// .NET API server URL, deployed on Railway.
+  /// Override at build time with `--dart-define=API_BASE_URL=https://...`
+  /// for a different environment (e.g. local dev).
   static const String baseUrl = String.fromEnvironment(
     'API_BASE_URL',
-    defaultValue: 'http://10.0.2.2:5289',
+    defaultValue: 'https://workout-tracker-api-production-99ed.up.railway.app',
   );
 
   /// Seconds before a network request is considered timed out.

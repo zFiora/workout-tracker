@@ -3,6 +3,8 @@ import 'package:provider/provider.dart';
 import 'package:workout_tracker/common/AppManager.dart';
 import 'package:workout_tracker/common/navigation/mainNavigation.dart';
 import 'package:workout_tracker/core/auth_token.dart';
+import 'package:workout_tracker/home/login/widgets/loginPage.dart';
+import 'package:workout_tracker/home/login/widgets/registerPage.dart';
 
 class SplashPage extends StatefulWidget {
   const SplashPage({super.key});
@@ -80,16 +82,6 @@ class _SplashPageState extends State<SplashPage>
     await AuthToken.I.clear();
     if (!mounted) return;
     await _goMain();
-  }
-
-  void _showComingSoon() {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      isDismissible: true,
-      isScrollControlled: true,
-      builder: (_) => _ComingSoonSheet(onContinueOffline: _continueOffline),
-    );
   }
 
   @override
@@ -186,12 +178,17 @@ class _SplashPageState extends State<SplashPage>
                         )
                       : Column(
                           children: [
-                            // SIGN IN - tapping shows "Coming Soon"
+                            // SIGN IN
                             SizedBox(
                               width: double.infinity,
                               height: 52,
                               child: OutlinedButton(
-                                onPressed: _showComingSoon,
+                                onPressed: () => Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => const LoginPage(),
+                                  ),
+                                ),
                                 style: OutlinedButton.styleFrom(
                                   foregroundColor: Colors.white,
                                   side: const BorderSide(
@@ -224,7 +221,7 @@ class _SplashPageState extends State<SplashPage>
                             ),
                             const SizedBox(height: 12),
 
-                            // SIGN UP - also "Coming Soon"
+                            // SIGN UP
                             SizedBox(
                               width: double.infinity,
                               height: 52,
@@ -247,7 +244,12 @@ class _SplashPageState extends State<SplashPage>
                                   ],
                                 ),
                                 child: ElevatedButton(
-                                  onPressed: _showComingSoon,
+                                  onPressed: () => Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => const RegisterPage(),
+                                    ),
+                                  ),
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: Colors.transparent,
                                     shadowColor: Colors.transparent,
@@ -296,95 +298,3 @@ class _SplashPageState extends State<SplashPage>
   }
 }
 
-class _ComingSoonSheet extends StatelessWidget {
-  const _ComingSoonSheet({required this.onContinueOffline});
-  final VoidCallback onContinueOffline;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.fromLTRB(16, 0, 16, 24),
-      padding: const EdgeInsets.fromLTRB(24, 28, 24, 28),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(28),
-        color: const Color(0xFF161B22),
-        border: Border.all(color: const Color(0xFF30363D)),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 60,
-            height: 60,
-            decoration: BoxDecoration(
-              color: const Color(0xFF3B82F6).withValues(alpha: 0.12),
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(
-              Icons.rocket_launch_rounded,
-              color: Color(0xFF3B82F6),
-              size: 30,
-            ),
-          ),
-          const SizedBox(height: 20),
-          const Text(
-            'Online Features Coming Soon',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 18,
-              fontWeight: FontWeight.w800,
-            ),
-          ),
-          const SizedBox(height: 10),
-          const Text(
-            'Friends, leaderboards, and cloud sync\nare actively being built.\n\nFor now, enjoy the full workout\nexperience — completely offline.',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              color: Color(0xFF8B949E),
-              height: 1.6,
-              fontSize: 14,
-            ),
-          ),
-          const SizedBox(height: 28),
-          SizedBox(
-            width: double.infinity,
-            height: 50,
-            child: ElevatedButton(
-              onPressed: () => Navigator.pop(context),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF3B82F6),
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(14),
-                ),
-              ),
-              child: const Text(
-                'Got it',
-                style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
-              ),
-            ),
-          ),
-          const SizedBox(height: 12),
-          GestureDetector(
-            onTap: () {
-              Navigator.pop(context);
-              onContinueOffline();
-            },
-            child: const Padding(
-              padding: EdgeInsets.symmetric(vertical: 6),
-              child: Text(
-                'Continue without account',
-                style: TextStyle(
-                  color: Color(0xFF8B949E),
-                  fontSize: 13,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}

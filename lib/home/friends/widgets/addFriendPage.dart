@@ -49,22 +49,29 @@ class _AddFriendPageState extends State<AddFriendPage> {
           const SizedBox(height: 16),
           if (_searching) const Center(child: CircularProgressIndicator()),
           ...vm.searchResults.map(
-            (u) => ListTile(
-              leading: const CircleAvatar(child: Icon(Icons.person)),
-              title: Text(u.username),
-              subtitle: Text(u.email),
-              trailing: TextButton(
-                onPressed: () async {
-                  await vm.send(u.id);
-                  if (mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Request sent')),
-                    );
-                  }
-                }, 
-                child: const Text('Add'),
-              ),
-            ),
+            (u) {
+              final alreadySent = vm.sentRequestIds.contains(u.id);
+              return ListTile(
+                leading: const CircleAvatar(child: Icon(Icons.person)),
+                title: Text(u.username),
+                subtitle: Text(u.email),
+                trailing: TextButton(
+                  onPressed: alreadySent
+                      ? null
+                      : () async {
+                          final messenger = ScaffoldMessenger.of(context);
+                          final error = await vm.send(u.id);
+                          if (!mounted) return;
+                          messenger.showSnackBar(
+                            SnackBar(
+                              content: Text(error ?? 'Request sent'),
+                            ),
+                          );
+                        },
+                  child: Text(alreadySent ? 'Sent' : 'Add'),
+                ),
+              );
+            },
           ),
         ],
       ),

@@ -4,7 +4,6 @@ import 'package:workout_tracker/home/account/widgets/accountPageHeader.dart';
 import 'package:workout_tracker/home/account/widgets/accountPageSection.dart';
 import 'package:workout_tracker/home/account/widgets/accountPageSwitchTile.dart';
 import 'package:workout_tracker/home/account/widgets/accountPageTile.dart';
-import 'package:workout_tracker/home/account/widgets/accountPageVaultTile.dart';
 import 'package:workout_tracker/home/friends/widgets/addFriendPage.dart';
 import 'package:workout_tracker/home/friends/widgets/friendsListPage.dart';
 import 'package:workout_tracker/home/friends/widgets/manageFriendsPage.dart';
@@ -14,20 +13,28 @@ class AccountPageBody extends StatelessWidget {
   const AccountPageBody({
     super.key,
     required this.name,
+    required this.username,
     required this.email,
-    required this.streakDays,
+    required this.streakCurrent,
+    required this.streakBest,
     required this.avatarUrl,
     required this.onEditProfile,
+    required this.onEditAvatar,
+    required this.onChangePassword,
     required this.onSignOut,
     required this.isDarkMode,
     required this.onDarkModeChanged,
   });
 
   final String name;
+  final String username;
   final String email;
-  final int streakDays;
+  final int streakCurrent;
+  final int streakBest;
   final String? avatarUrl;
   final VoidCallback onEditProfile;
+  final VoidCallback onEditAvatar;
+  final VoidCallback onChangePassword;
   final VoidCallback onSignOut;
   final bool isDarkMode;
   final ValueChanged<bool> onDarkModeChanged;
@@ -39,26 +46,22 @@ class AccountPageBody extends StatelessWidget {
         SliverToBoxAdapter(
           child: AccountPageHeader(
             name: name,
+            username: username,
             email: email,
-            streakDays: streakDays,
+            streakCurrent: streakCurrent,
+            streakBest: streakBest,
             avatarUrl: avatarUrl,
             onEditProfile: onEditProfile,
+            onEditAvatar: onEditAvatar,
           ),
         ),
-        const SliverToBoxAdapter(child: SizedBox(height: 60)),
+        const SliverToBoxAdapter(child: SizedBox(height: 64)),
 
-        // Friends section
+        // Social section
         SliverToBoxAdapter(
           child: AccountPageSection(
             title: 'Social',
             children: [
-              AccountPageVaultTile(
-                icon: Icons.local_fire_department_rounded,
-                iconColor: Colors.orangeAccent,
-                title: 'Streak',
-                value: '$streakDays days',
-                onTap: () {},
-              ),
               AccountPageTile(
                 icon: Icons.emoji_events_outlined,
                 title: 'Leaderboard',
@@ -78,7 +81,7 @@ class AccountPageBody extends StatelessWidget {
               AccountPageTile(
                 icon: Icons.person_add_alt_1_outlined,
                 title: 'Add Friends',
-                subtitle: 'Search by username or QR',
+                subtitle: 'Search by username',
                 onTap: () => Navigator.of(context).push(
                   MaterialPageRoute(builder: (_) => const AddFriendPage()),
                 ),
@@ -86,7 +89,7 @@ class AccountPageBody extends StatelessWidget {
               AccountPageTile(
                 icon: Icons.manage_accounts_outlined,
                 title: 'Manage Friends',
-                subtitle: 'Requests · Blocks · Visibility',
+                subtitle: 'Requests & pending',
                 onTap: () => Navigator.of(context).push(
                   MaterialPageRoute(builder: (_) => const ManageFriendsPage()),
                 ),
@@ -103,13 +106,13 @@ class AccountPageBody extends StatelessWidget {
               AccountPageTile(
                 icon: Icons.person_outline,
                 title: 'Edit Profile',
-                subtitle: 'Name, photo, email',
+                subtitle: 'Name & username',
                 onTap: onEditProfile,
               ),
               AccountPageTile(
                 icon: Icons.lock_outline,
                 title: 'Change Password',
-                onTap: () {},
+                onTap: onChangePassword,
               ),
             ],
           ),
@@ -120,22 +123,11 @@ class AccountPageBody extends StatelessWidget {
           child: AccountPageSection(
             title: 'App',
             children: [
-              AccountPageTile(
-                icon: Icons.notifications_active_outlined,
-                title: 'Notifications',
-                subtitle: 'Reminders & workout alerts',
-                onTap: () {},
-              ),
               AccountPageSwitchTile(
                 icon: Icons.dark_mode_outlined,
                 title: 'Dark Mode',
                 initialValue: isDarkMode,
                 onChanged: onDarkModeChanged,
-              ),
-              AccountPageTile(
-                icon: Icons.verified_user_outlined,
-                title: 'Privacy & Data',
-                onTap: () {},
               ),
               AccountPageTile(
                 icon: Icons.cloud_download_outlined,

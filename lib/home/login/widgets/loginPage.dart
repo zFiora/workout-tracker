@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:workout_tracker/auth/authViewModel.dart';
+import 'package:workout_tracker/common/AppManager.dart';
 import 'package:workout_tracker/common/navigation/mainNavigation.dart';
 import 'package:workout_tracker/home/login/widgets/gradiantPillButton.dart';
 import 'package:workout_tracker/home/login/widgets/registerPage.dart';
@@ -160,6 +161,8 @@ class _LoginPageState extends State<LoginPage>
                                     if (!_formKey.currentState!.validate()) {
                                       return;
                                     }
+                                    final appManager =
+                                        context.read<AppManager>();
                                     final ok = await context
                                         .read<AuthViewModel>()
                                         .login(
@@ -168,6 +171,7 @@ class _LoginPageState extends State<LoginPage>
                                         );
                                     if (!mounted) return;
                                     if (ok) {
+                                      appManager.setOnline();
                                       Navigator.pushReplacement(
                                         context,
                                         MaterialPageRoute(

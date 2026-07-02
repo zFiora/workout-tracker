@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:workout_tracker/common/widgets/myCustomeScaffoldView.dart';
 import 'package:workout_tracker/home/friends/friendModel.dart';
 import 'package:workout_tracker/home/friends/friendsViewModel.dart';
+import 'package:workout_tracker/home/friends/widgets/friendProfilePage.dart';
 
 class FriendsListPage extends StatefulWidget {
   const FriendsListPage({super.key});
@@ -88,6 +89,11 @@ class _FriendTile extends StatelessWidget {
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
       child: ListTile(
+        onTap: () => Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => FriendProfilePage(preview: user),
+          ),
+        ),
         contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
         leading: CircleAvatar(
           radius: 22,

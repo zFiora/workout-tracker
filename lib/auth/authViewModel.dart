@@ -58,4 +58,28 @@ class AuthViewModel extends ChangeNotifier {
     await _auth.logout();
     notifyListeners();
   }
+
+  /// Returns null on success, or an error message on failure.
+  Future<String?> changePassword({
+    required String currentPassword,
+    required String newPassword,
+  }) async {
+    _busy = true;
+    _error = null;
+    notifyListeners();
+    try {
+      await _auth.changePassword(
+        currentPassword: currentPassword,
+        newPassword: newPassword,
+      );
+      return null;
+    } catch (e) {
+      final message = e.toString().replaceFirst('Exception: ', '');
+      _error = message;
+      return message;
+    } finally {
+      _busy = false;
+      notifyListeners();
+    }
+  }
 }

@@ -1,3 +1,5 @@
+import 'dart:io';
+import 'package:dio/dio.dart';
 import 'package:workout_tracker/core/api/api_client.dart';
 import 'package:workout_tracker/core/api/api_result.dart';
 import 'package:workout_tracker/home/account/model/accountModel.dart';
@@ -25,6 +27,23 @@ class AccountRepository {
     final result = await _client.patch('/api/users/me', body);
     return switch (result) {
       ApiSuccess(:final data) => AccountModel.fromJson(data),
+      ApiError(:final message) => throw Exception(message),
+    };
+  }
+
+  Future<AccountModel> uploadAvatar(File file) async {
+    final formData = FormData.fromMap({
+      'file': await MultipartFile.fromFile(
+        file.path,
+        filename: 'avatar.jpg',
+      ),
+    });
+    final result = await _client.patchMultipart(
+      '/api/users/me/avatar',
+      formData,
+    );
+    return switch (result) {
+      ApiSuccess() => fetchMe(),
       ApiError(:final message) => throw Exception(message),
     };
   }

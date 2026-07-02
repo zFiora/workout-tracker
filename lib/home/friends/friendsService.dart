@@ -38,9 +38,15 @@ class FriendService {
     };
   }
 
-  Future<void> sendRequest(String addresseeId) async {
-    if (!_authed) return;
-    await _client.post('/api/friends/request', {'addresseeId': addresseeId});
+  Future<String?> sendRequest(String addresseeId) async {
+    if (!_authed) return 'Not signed in';
+    final result = await _client.post('/api/friends/request', {
+      'addresseeId': addresseeId,
+    });
+    return switch (result) {
+      ApiSuccess() => null,
+      ApiError(:final message) => message,
+    };
   }
 
   Future<void> accept(String friendshipId) async {
@@ -56,5 +62,15 @@ class FriendService {
   Future<void> remove(String friendshipId) async {
     if (!_authed) return;
     await _client.delete('/api/friends/$friendshipId');
+  }
+
+  /// Public profile lookup. Requires friendship with [userId] (or self).
+  Future<FriendUser?> fetchProfile(String userId) async {
+    if (!_authed) return null;
+    final result = await _client.get('/api/users/$userId');
+    return switch (result) {
+      ApiSuccess(:final data) => FriendUser.fromJson(data as Map<String, dynamic>),
+      ApiError() => null,
+    };
   }
 }

@@ -42,5 +42,26 @@ class AuthService {
     await AuthToken.I.save(token, userId);
   }
 
+  Future<void> refreshToken() async {
+    final result = await ApiClient.instance.postEmpty('/api/auth/refresh');
+    if (result is ApiError) throw Exception((result as ApiError).message);
+    final data = (result as ApiSuccess<Map<String, dynamic>>).data;
+    final token = data['token'] as String;
+    final userId =
+        (data['user'] as Map<String, dynamic>)['id'] as String;
+    await AuthToken.I.save(token, userId);
+  }
+
+  Future<void> changePassword({
+    required String currentPassword,
+    required String newPassword,
+  }) async {
+    final result = await ApiClient.instance.post('/api/auth/change-password', {
+      'currentPassword': currentPassword,
+      'newPassword': newPassword,
+    });
+    if (result is ApiError) throw Exception((result as ApiError).message);
+  }
+
   Future<void> logout() => AuthToken.I.clear();
 }

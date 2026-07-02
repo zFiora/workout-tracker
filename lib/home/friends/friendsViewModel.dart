@@ -20,9 +20,15 @@ class FriendsViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> send(String addresseeId) async {
-    await service.sendRequest(addresseeId);
-    await refresh();
+  final Set<String> sentRequestIds = {};
+
+  Future<String?> send(String addresseeId) async {
+    final error = await service.sendRequest(addresseeId);
+    if (error == null) {
+      sentRequestIds.add(addresseeId);
+      notifyListeners();
+    }
+    return error;
   }
 
   Future<void> accept(String friendshipId) async {
@@ -42,6 +48,19 @@ class FriendsViewModel extends ChangeNotifier {
 
   Future<void> search(String q) async {
     searchResults = q.trim().isEmpty ? [] : await service.searchUsers(q.trim());
+    notifyListeners();
+  }
+
+  Future<FriendUser?> fetchProfile(String userId) => service.fetchProfile(userId);
+
+  /// Resets cached state. Call on sign-out so the next sign-in (possibly
+  /// as a different user) doesn't briefly show the previous user's data.
+  void clear() {
+    loading = false;
+    friends = [];
+    incoming = [];
+    searchResults = [];
+    sentRequestIds.clear();
     notifyListeners();
   }
 }
