@@ -93,9 +93,7 @@ class _SplashPageState extends State<SplashPage>
       body: Container(
         width: size.width,
         height: size.height,
-        decoration: const BoxDecoration(
-          gradient: AppGradients.midnight,
-        ),
+        decoration: const BoxDecoration(gradient: AppGradients.midnight),
         child: SafeArea(
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -124,9 +122,7 @@ class _SplashPageState extends State<SplashPage>
                     const SizedBox(width: 10),
                     Text(
                       'Gym Tracker',
-                      style: Theme.of(context)
-                          .textTheme
-                          .headlineMedium
+                      style: Theme.of(context).textTheme.headlineMedium
                           ?.copyWith(color: Colors.white, letterSpacing: 0.5),
                     ),
                   ],
@@ -189,8 +185,9 @@ class _SplashPageState extends State<SplashPage>
                                 style: OutlinedButton.styleFrom(
                                   foregroundColor: Colors.white,
                                   side: BorderSide(
-                                    color: AppColors.volt
-                                        .withValues(alpha: 0.7),
+                                    color: AppColors.volt.withValues(
+                                      alpha: 0.7,
+                                    ),
                                     width: 1.5,
                                   ),
                                   shape: RoundedRectangleBorder(
@@ -229,10 +226,11 @@ class _SplashPageState extends State<SplashPage>
                                   borderRadius: BorderRadius.circular(14),
                                   boxShadow: [
                                     BoxShadow(
-                                      color: AppColors.voltDeep
-                                          .withValues(alpha: 0.4),
-                                      blurRadius: 18,
-                                      offset: const Offset(0, 6),
+                                      color: AppColors.voltDeep.withValues(
+                                        alpha: 0.1,
+                                      ),
+                                      blurRadius: 10,
+                                      offset: const Offset(0, 4),
                                     ),
                                   ],
                                 ),
@@ -290,4 +288,3 @@ class _SplashPageState extends State<SplashPage>
     );
   }
 }
-

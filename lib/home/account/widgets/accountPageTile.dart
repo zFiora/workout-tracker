@@ -18,7 +18,7 @@ class AccountPageTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     return Card(
-      elevation: 0,
+      elevation: 0, 
       margin: EdgeInsets.zero,
       color: scheme.surfaceContainer,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),

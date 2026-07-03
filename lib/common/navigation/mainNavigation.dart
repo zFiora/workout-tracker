@@ -101,10 +101,9 @@ class _MainNavigationState extends State<MainNavigation> {
         decoration: BoxDecoration(
           border: Border(
             top: BorderSide(
-              color: Theme.of(context)
-                  .colorScheme
-                  .outlineVariant
-                  .withValues(alpha: 0.7),
+              color: Theme.of(
+                context,
+              ).colorScheme.outlineVariant.withValues(alpha: 0.7),
             ),
           ),
         ),
@@ -141,9 +140,9 @@ class _SessionBanner extends StatelessWidget {
           gradient: AppGradients.volt,
           boxShadow: [
             BoxShadow(
-              color: AppColors.voltDeep.withValues(alpha: 0.35),
-              blurRadius: 16,
-              offset: const Offset(0, 4),
+              color: AppColors.voltDeep.withValues(alpha: 0.1),
+              blurRadius: 12,
+              offset: const Offset(0, 3),
             ),
           ],
         ),
@@ -190,9 +189,7 @@ class _SessionBanner extends StatelessWidget {
               decoration: BoxDecoration(
                 color: Colors.white.withValues(alpha: 0.16),
                 borderRadius: BorderRadius.circular(999),
-                border: Border.all(
-                  color: Colors.white.withValues(alpha: 0.25),
-                ),
+                border: Border.all(color: Colors.white.withValues(alpha: 0.25)),
               ),
               child: Text(
                 elapsed,
