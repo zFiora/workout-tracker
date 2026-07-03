@@ -85,7 +85,7 @@ class _AvatarPickerState extends State<AvatarPicker> {
             onTap: _showSourceSheet,
             child: CircleAvatar(
               radius: radius,
-              backgroundColor: const Color(0xFFE9EEF6),
+              backgroundColor: Theme.of(context).colorScheme.surfaceContainerHigh,
 
               backgroundImage: widget.placeholderAsset != null
                   ? AssetImage(widget.placeholderAsset!)

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:workout_tracker/common/theme/app_theme.dart';
 import 'package:provider/provider.dart';
 import 'package:workout_tracker/home/exercises/models/exerciseModel.dart';
 import 'package:workout_tracker/home/history/ViewModel/historyViewModel.dart';
@@ -364,7 +365,7 @@ class _ProgressDots extends StatelessWidget {
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               color: done
-                  ? const Color(0xFF10B981)
+                  ? context.tokens.success
                   : cs.outlineVariant,
             ),
           );
@@ -382,7 +383,7 @@ class _ProgressDots extends StatelessWidget {
           '$doneCount / ${planned.length}',
           style: TextStyle(
             color: doneCount == planned.length
-                ? const Color(0xFF10B981)
+                ? context.tokens.success
                 : cs.onSurfaceVariant,
             fontSize: 12,
             fontWeight: doneCount == planned.length
@@ -434,9 +435,9 @@ class _ExerciseThumb extends StatelessWidget {
             child: Container(
               width: 16,
               height: 16,
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: Color(0xFF10B981),
+                color: context.tokens.success,
               ),
               child: const Icon(
                 Icons.check_rounded,

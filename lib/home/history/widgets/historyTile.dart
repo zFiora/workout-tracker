@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:workout_tracker/common/formatters/dateTimeFormatter.dart';
+import 'package:workout_tracker/common/theme/app_theme.dart';
+import 'package:workout_tracker/common/widgets/uiKit.dart';
 import 'package:workout_tracker/home/history/utils/historyEnteryStats.dart';
 import 'package:workout_tracker/home/session/models/sessionModels.dart';
 
+/// A completed workout in the history feed: template icon, name, day chip
+/// and a row of session stats.
 class HistoryTile extends StatelessWidget {
   const HistoryTile({
     super.key,
@@ -19,139 +23,91 @@ class HistoryTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
+    final tokens = context.tokens;
 
     final dayText = dayLabel(entry.endedAt);
     final timeText = '${fmtTime(entry.startedAt)} – ${fmtTime(entry.endedAt)}';
 
     final stats = computeHistoryEntryStats(entry);
 
-    return InkWell(
-      borderRadius: BorderRadius.circular(16),
+    return Pressable(
       onTap: onTap,
       child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(16),
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              cs.surfaceVariant.withValues(alpha: 0.70),
-              cs.surfaceVariant.withValues(alpha: 0.35),
-            ],
-          ),
-          border: Border.all(color: cs.outline.withValues(alpha: 0.25), width: 1),
+          borderRadius: BorderRadius.circular(AppRadius.xl),
+          color: cs.surfaceContainer,
+          border: Border.all(color: tokens.cardBorder),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.06),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
+              color: tokens.cardShadow,
+              blurRadius: 14,
+              offset: const Offset(0, 5),
             ),
           ],
         ),
         child: Padding(
-          padding: const EdgeInsets.all(12),
-          child: Row(
+          padding: const EdgeInsets.all(14),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Leading icon
-              Container(
-                width: 56,
-                height: 56,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(14),
-                  color: cs.secondaryContainer.withValues(alpha: 0.6),
-                ),
-                clipBehavior: Clip.antiAlias,
-                child: Image.asset(
-                  entry.templateIcon,
-                  fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => Icon(
-                    Icons.fitness_center,
-                    color: cs.onSecondaryContainer.withValues(alpha: 0.8),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 12),
-
-              // Content
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            entry.templateName,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: theme.textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.w800,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        _Pill(
-                          icon: Icons.calendar_today_outlined,
-                          label: dayText,
-                          background: cs.tertiaryContainer,
-                          foreground: cs.onTertiaryContainer,
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 6),
-
-                    Text(
-                      timeText,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.textTheme.bodySmall?.color?.withValues(alpha: 0.75),
+              Row(
+                children: [
+                  // ── Leading icon ─────────────────────────────────
+                  Container(
+                    width: 48,
+                    height: 48,
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(AppRadius.md),
+                      gradient: RadialGradient(
+                        colors: [
+                          cs.primary.withValues(alpha: 0.20),
+                          cs.primary.withValues(alpha: 0.04),
+                        ],
+                      ),
+                      border: Border.all(
+                        color: cs.primary.withValues(alpha: 0.2),
                       ),
                     ),
+                    child: Image.asset(
+                      entry.templateIcon,
+                      fit: BoxFit.contain,
+                      errorBuilder: (_, _, _) => Icon(
+                        Icons.fitness_center_rounded,
+                        size: 22,
+                        color: cs.primary,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
 
-                    const SizedBox(height: 10),
-
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
+                  // ── Title + time ─────────────────────────────────
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        _Pill(
-                          icon: Icons.timer_outlined,
-                          label: durationLabel(entry.duration),
-                          background: cs.primaryContainer,
-                          foreground: cs.onPrimaryContainer,
+                        Text(
+                          entry.templateName,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.textTheme.titleLarge
+                              ?.copyWith(fontSize: 16),
                         ),
-                        _Pill(
-                          icon: Icons.list_alt_outlined,
-                          label: '${stats.exerciseCount} ex',
-                          background: cs.secondaryContainer,
-                          foreground: cs.onSecondaryContainer,
-                        ),
-                        _Pill(
-                          icon: Icons.repeat,
-                          label: '${stats.setCount} sets',
-                          background: cs.secondaryContainer,
-                          foreground: cs.onSecondaryContainer,
-                        ),
-                        _Pill(
-                          icon: Icons.scale_outlined,
-                          label: '${formatVolumeKg(stats.volume)} kg',
-                          background: cs.surface,
-                          foreground: cs.onSurface,
+                        const SizedBox(height: 3),
+                        Text(
+                          '$dayText · $timeText',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.textTheme.labelMedium?.copyWith(
+                            color: cs.onSurfaceVariant,
+                          ),
                         ),
                       ],
                     ),
-                  ],
-                ),
-              ),
+                  ),
 
-              const SizedBox(width: 8),
-
-              // Actions
-              Column(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
+                  // ── Menu ─────────────────────────────────────────
                   PopupMenuButton<String>(
                     tooltip: 'More',
                     onSelected: (v) {
@@ -168,7 +124,7 @@ class HistoryTile extends StatelessWidget {
                       PopupMenuItem(
                         value: 'open',
                         child: _MenuItem(
-                          icon: Icons.open_in_new,
+                          icon: Icons.open_in_new_rounded,
                           label: 'Open details',
                         ),
                       ),
@@ -176,68 +132,55 @@ class HistoryTile extends StatelessWidget {
                       PopupMenuItem(
                         value: 'delete',
                         child: _MenuItem(
-                          icon: Icons.delete_outline,
+                          icon: Icons.delete_outline_rounded,
                           label: 'Delete',
                           danger: true,
                         ),
                       ),
                     ],
-                    child: Icon(
-                      Icons.more_horiz,
-                      color: theme.iconTheme.color?.withValues(alpha: 0.9),
+                    child: Padding(
+                      padding: const EdgeInsets.all(4),
+                      child: Icon(
+                        Icons.more_horiz_rounded,
+                        color: cs.onSurfaceVariant,
+                      ),
                     ),
                   ),
-                  const SizedBox(height: 6),
-                  Icon(
-                    Icons.chevron_right,
-                    color: theme.iconTheme.color?.withValues(alpha: 0.6),
+                ],
+              ),
+
+              const SizedBox(height: 12),
+
+              // ── Stats row ────────────────────────────────────────
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  StatPill(
+                    icon: Icons.timer_outlined,
+                    label: durationLabel(entry.duration),
+                    color: cs.primary,
+                    filled: true,
+                  ),
+                  StatPill(
+                    icon: Icons.list_alt_rounded,
+                    label: '${stats.exerciseCount} ex',
+                  ),
+                  StatPill(
+                    icon: Icons.repeat_rounded,
+                    label: '${stats.setCount} sets',
+                  ),
+                  StatPill(
+                    icon: Icons.scale_outlined,
+                    label: '${formatVolumeKg(stats.volume)} kg',
+                    color: tokens.success,
+                    filled: true,
                   ),
                 ],
               ),
             ],
           ),
         ),
-      ),
-    );
-  }
-}
-
-class _Pill extends StatelessWidget {
-  const _Pill({
-    required this.icon,
-    required this.label,
-    required this.background,
-    required this.foreground,
-  });
-
-  final IconData icon;
-  final String label;
-  final Color background;
-  final Color foreground;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: 30,
-      padding: const EdgeInsets.symmetric(horizontal: 10),
-      decoration: BoxDecoration(
-        color: background,
-        borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: foreground.withValues(alpha: 0.18)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 16, color: foreground),
-          const SizedBox(width: 6),
-          Text(
-            label,
-            style: Theme.of(context).textTheme.labelMedium?.copyWith(
-              color: foreground,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-        ],
       ),
     );
   }
@@ -258,13 +201,16 @@ class _MenuItem extends StatelessWidget {
   Widget build(BuildContext context) {
     final color = danger
         ? Theme.of(context).colorScheme.error
-        : Theme.of(context).textTheme.bodyMedium?.color;
+        : Theme.of(context).colorScheme.onSurface;
 
     return Row(
       children: [
         Icon(icon, size: 18, color: color),
         const SizedBox(width: 10),
-        Text(label, style: TextStyle(color: color)),
+        Text(
+          label,
+          style: TextStyle(color: color, fontWeight: FontWeight.w600),
+        ),
       ],
     );
   }

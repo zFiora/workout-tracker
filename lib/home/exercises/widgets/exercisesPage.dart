@@ -1,19 +1,45 @@
 // ignore_for_file: file_names
 
 import 'package:flutter/material.dart';
+import 'package:workout_tracker/common/widgets/myCustomSearchField.dart';
 import 'package:workout_tracker/common/widgets/myCustomeScaffoldView.dart';
 import 'package:workout_tracker/home/exercises/exerciesesList.dart';
 import 'package:workout_tracker/home/exercises/widgets/exerciseFilterList.dart';
 
-class ExercisesPage extends StatelessWidget {
+class ExercisesPage extends StatefulWidget {
   const ExercisesPage({super.key});
 
   @override
+  State<ExercisesPage> createState() => _ExercisesPageState();
+}
+
+class _ExercisesPageState extends State<ExercisesPage> {
+  String _query = '';
+
+  @override
   Widget build(BuildContext context) {
-    final exercises = ExercisesViewModel.all;
+    final all = ExercisesViewModel.all;
+    final filtered = _query.trim().isEmpty
+        ? all
+        : all
+            .where(
+              (e) => e.name.toLowerCase().contains(_query.trim().toLowerCase()),
+            )
+            .toList();
+
     return MyCustomeScaffoldView(
       title: 'Exercises',
-      body: ExerciseFilterList(exercises: exercises),
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
+            child: MyCustomSearchField(
+              onChanged: (v) => setState(() => _query = v),
+            ),
+          ),
+          Expanded(child: ExerciseFilterList(exercises: filtered)),
+        ],
+      ),
     );
   }
 }

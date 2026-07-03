@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:workout_tracker/common/theme/app_theme.dart';
 
 enum SnackbarType { normal, success, warning }
 
+/// Themed feedback toast with a leading status icon and accent stripe.
 class Mycustomsnackbar {
   static void show(
     BuildContext context, {
@@ -9,28 +11,39 @@ class Mycustomsnackbar {
     Duration duration = const Duration(seconds: 2),
     SnackbarType type = SnackbarType.normal,
   }) {
-    final bgColor = _getColor(type);
+    final cs = Theme.of(context).colorScheme;
+    final tokens = context.tokens;
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message, style: const TextStyle(color: Colors.white)),
-        backgroundColor: bgColor,
-        duration: duration,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        margin: const EdgeInsets.all(12),
-      ),
-    );
-  }
+    final (Color accent, IconData icon) = switch (type) {
+      SnackbarType.success => (tokens.success, Icons.check_circle_rounded),
+      SnackbarType.warning => (cs.error, Icons.error_rounded),
+      SnackbarType.normal => (cs.primary, Icons.info_rounded),
+    };
 
-  static Color _getColor(SnackbarType type) {
-    switch (type) {
-      case SnackbarType.success:
-        return Colors.green;
-      case SnackbarType.warning:
-        return Colors.red;
-      case SnackbarType.normal:
-        return Colors.grey[800]!;
-    }
+    ScaffoldMessenger.of(context)
+      ..clearSnackBars()
+      ..showSnackBar(
+        SnackBar(
+          duration: duration,
+          behavior: SnackBarBehavior.floating,
+          margin: const EdgeInsets.all(12),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          content: Row(
+            children: [
+              Icon(icon, size: 20, color: accent),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  message,
+                  style: Theme.of(context)
+                      .snackBarTheme
+                      .contentTextStyle
+                      ?.copyWith(fontWeight: FontWeight.w600),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
   }
 }

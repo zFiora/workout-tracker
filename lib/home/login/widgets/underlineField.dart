@@ -29,9 +29,7 @@ class UnderlineField extends StatelessWidget {
       children: [
         Text(
           label,
-          style: Theme.of(
-            context,
-          ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
+          style: Theme.of(context).textTheme.titleSmall,
         ),
         const SizedBox(height: 6),
         TextFormField(
@@ -44,8 +42,11 @@ class UnderlineField extends StatelessWidget {
             hintText: hint,
             isDense: true,
             border: const UnderlineInputBorder(),
-            enabledBorder: const UnderlineInputBorder(
-              borderSide: BorderSide(color: Color(0xFFDDDDDD)),
+            filled: false,
+            enabledBorder: UnderlineInputBorder(
+              borderSide: BorderSide(
+                color: Theme.of(context).colorScheme.outlineVariant,
+              ),
             ),
             focusedBorder: UnderlineInputBorder(
               borderSide: BorderSide(color: primary, width: 2),

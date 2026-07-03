@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:workout_tracker/common/formatters/duarationFormatter.dart';
+import 'package:workout_tracker/common/theme/app_theme.dart';
+import 'package:workout_tracker/common/widgets/uiKit.dart';
 import 'package:workout_tracker/home/exercises/exerciesesList.dart';
 import 'package:workout_tracker/home/exercises/models/categoryModel.dart';
 import 'package:workout_tracker/home/history/ViewModel/historyViewModel.dart';
@@ -139,9 +141,7 @@ class _SessionBody extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 8),
                 child: Text(
                   'What do you want to do?',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
+                  style: Theme.of(context).textTheme.headlineSmall,
                 ),
               ),
               const SizedBox(height: 16),
@@ -283,10 +283,14 @@ class _SessionBody extends StatelessWidget {
                     vertical: 6,
                   ),
                   decoration: BoxDecoration(
-                    color: cs.surfaceContainerHighest.withValues(alpha: 0.6),
+                    color: session.isRunning
+                        ? cs.primary.withValues(alpha: 0.14)
+                        : cs.surfaceContainerHighest.withValues(alpha: 0.6),
                     borderRadius: BorderRadius.circular(999),
                     border: Border.all(
-                      color: cs.outlineVariant.withValues(alpha: 0.6),
+                      color: session.isRunning
+                          ? cs.primary.withValues(alpha: 0.4)
+                          : cs.outlineVariant.withValues(alpha: 0.6),
                     ),
                   ),
                   child: Row(
@@ -295,15 +299,21 @@ class _SessionBody extends StatelessWidget {
                       Icon(
                         Icons.timer_outlined,
                         size: 15,
-                        color: cs.onSurfaceVariant,
+                        color: session.isRunning
+                            ? cs.primary
+                            : cs.onSurfaceVariant,
                       ),
                       const SizedBox(width: 5),
                       Text(
                         hhmmss(session.elapsed),
                         style: TextStyle(
-                          fontWeight: FontWeight.w800,
+                          fontFamily: AppFonts.display,
+                          fontWeight: FontWeight.w700,
                           fontSize: 13,
-                          color: cs.onSurfaceVariant,
+                          letterSpacing: 0.6,
+                          color: session.isRunning
+                              ? cs.primary
+                              : cs.onSurfaceVariant,
                         ),
                       ),
                     ],
@@ -359,8 +369,11 @@ class _SessionBody extends StatelessWidget {
                     vertical: 8,
                   ),
                   decoration: BoxDecoration(
-                    color: cs.surfaceContainerHighest,
-                    borderRadius: BorderRadius.circular(10),
+                    color: cs.surfaceContainerHigh,
+                    borderRadius: BorderRadius.circular(AppRadius.md),
+                    border: Border.all(
+                      color: cs.outlineVariant.withValues(alpha: 0.7),
+                    ),
                   ),
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
@@ -368,15 +381,18 @@ class _SessionBody extends StatelessWidget {
                       Text(
                         '${session.totalWorkSets}',
                         style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w800,
+                          fontFamily: AppFonts.display,
+                          fontSize: 17,
+                          fontWeight: FontWeight.w700,
                           color: cs.primary,
                         ),
                       ),
                       Text(
-                        'sets',
+                        'SETS',
                         style: TextStyle(
-                          fontSize: 11,
+                          fontSize: 9,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 1.2,
                           color: cs.onSurfaceVariant,
                         ),
                       ),
@@ -385,29 +401,20 @@ class _SessionBody extends StatelessWidget {
                 ),
                 const SizedBox(width: 10),
                 Expanded(
-                  child: SizedBox(
-                    height: 50,
-                    child: FilledButton(
-                      style: FilledButton.styleFrom(
-                        backgroundColor: session.isRunning
-                            ? cs.error
-                            : cs.primary,
-                      ),
-                      onPressed: () async {
-                        if (!session.isRunning) {
-                          session.start();
-                          return;
-                        }
-                        await _endAndSaveSession(context);
-                      },
-                      child: Text(
-                        session.isRunning ? 'End & Save' : 'Start Session',
-                        style: const TextStyle(
-                          fontWeight: FontWeight.w700,
-                          fontSize: 15,
-                        ),
-                      ),
-                    ),
+                  child: VoltButton(
+                    height: 52,
+                    danger: session.isRunning,
+                    icon: session.isRunning
+                        ? Icons.stop_rounded
+                        : Icons.play_arrow_rounded,
+                    label: session.isRunning ? 'End & Save' : 'Start Session',
+                    onPressed: () async {
+                      if (!session.isRunning) {
+                        session.start();
+                        return;
+                      }
+                      await _endAndSaveSession(context);
+                    },
                   ),
                 ),
               ],
@@ -476,39 +483,12 @@ class _EmptyExercisesState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.playlist_add, size: 48, color: cs.onSurfaceVariant),
-            const SizedBox(height: 14),
-            Text(
-              'No exercises',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w800,
-                color: cs.onSurface,
-              ),
-            ),
-            const SizedBox(height: 6),
-            Text(
-              'Add exercises to "$templateName" to start tracking.',
-              textAlign: TextAlign.center,
-              style: TextStyle(color: cs.onSurfaceVariant),
-            ),
-            const SizedBox(height: 20),
-            FilledButton.icon(
-              onPressed: onAddExercise,
-              icon: const Icon(Icons.add),
-              label: const Text('Add exercises'),
-            ),
-          ],
-        ),
-      ),
+    return EmptyState(
+      icon: Icons.playlist_add_rounded,
+      title: 'No exercises',
+      message: 'Add exercises to "$templateName"\nto start tracking.',
+      actionLabel: 'Add exercises',
+      onAction: onAddExercise,
     );
   }
 }
@@ -545,47 +525,25 @@ class _AddExerciseSheetState extends State<_AddExerciseSheet> {
     return Container(
       margin: const EdgeInsets.fromLTRB(0, 60, 0, 0),
       decoration: BoxDecoration(
-        color: cs.surface,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        color: Theme.of(context).bottomSheetTheme.backgroundColor ?? cs.surface,
+        borderRadius: const BorderRadius.vertical(
+          top: Radius.circular(AppRadius.sheet),
+        ),
         border: Border(top: BorderSide(color: cs.outlineVariant)),
       ),
       child: Column(
         children: [
-          const SizedBox(height: 8),
-          Container(
-            width: 36,
-            height: 4,
-            decoration: BoxDecoration(
-              color: cs.outlineVariant,
-              borderRadius: BorderRadius.circular(2),
-            ),
-          ),
+          const SheetHeader(title: 'Exercises'),
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Exercises',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  autofocus: false,
-                  decoration: InputDecoration(
-                    hintText: 'Search exercises…',
-                    prefixIcon: const Icon(Icons.search, size: 20),
-                    isDense: true,
-                    contentPadding: const EdgeInsets.symmetric(vertical: 10),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  onChanged: (v) => setState(() => _search = v),
-                ),
-              ],
+            padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+            child: TextField(
+              autofocus: false,
+              decoration: const InputDecoration(
+                hintText: 'Search exercises…',
+                prefixIcon: Icon(Icons.search_rounded, size: 20),
+                isDense: true,
+              ),
+              onChanged: (v) => setState(() => _search = v),
             ),
           ),
           Expanded(

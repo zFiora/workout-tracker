@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:workout_tracker/common/theme/app_theme.dart';
+import 'package:workout_tracker/common/widgets/uiKit.dart';
 import 'package:workout_tracker/common/widgets/myCustomeScaffoldView.dart';
 import 'package:workout_tracker/core/api/api_result.dart';
 import 'package:workout_tracker/home/social/services/leaderboard_service.dart';
@@ -98,6 +100,7 @@ class _LeaderboardTile extends StatelessWidget {
                   : Text(
                       '#$rank',
                       style: TextStyle(
+                        fontFamily: AppFonts.display,
                         fontWeight: FontWeight.w700,
                         color: cs.onSurfaceVariant,
                       ),
@@ -187,31 +190,13 @@ class _EmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    return Center(
+    return const Center(
       child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.emoji_events_outlined, size: 56, color: cs.onSurfaceVariant),
-            const SizedBox(height: 16),
-            Text(
-              'No data yet',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Add friends and complete workouts\nto see the leaderboard.',
-              textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: cs.onSurfaceVariant,
-                height: 1.5,
-              ),
-            ),
-          ],
+        padding: EdgeInsets.all(16),
+        child: EmptyState(
+          icon: Icons.emoji_events_rounded,
+          title: 'No data yet',
+          message: 'Add friends and complete workouts\nto see the leaderboard.',
         ),
       ),
     );

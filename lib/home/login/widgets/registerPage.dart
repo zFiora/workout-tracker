@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:workout_tracker/common/theme/app_theme.dart';
 import 'package:provider/provider.dart';
 import 'package:workout_tracker/auth/authViewModel.dart';
 import 'package:workout_tracker/common/AppManager.dart';
@@ -80,11 +81,7 @@ class _RegisterPageState extends State<RegisterPage>
           // Background gradient
           Container(
             decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [Color(0xFF0D2B66), Color(0xFF0F172A)],
-              ),
+              gradient: AppGradients.midnight,
             ),
           ),
 
@@ -112,7 +109,6 @@ class _RegisterPageState extends State<RegisterPage>
               'Gym Tracker',
               style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                 color: Colors.white,
-                fontWeight: FontWeight.w700,
                 letterSpacing: 0.5,
               ),
             ),
@@ -128,17 +124,23 @@ class _RegisterPageState extends State<RegisterPage>
                 curve: Curves.easeOutCubic,
                 height: keyboardOpen ? size.height : size.height * 0.58,
                 width: double.infinity,
-                decoration: const BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.only(
-                    topLeft: Radius.circular(40),
-                    topRight: Radius.circular(40),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.surfaceContainerLow,
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(32),
+                    topRight: Radius.circular(32),
                   ),
-                  boxShadow: [
+                  border: Border.all(
+                    color: Theme.of(context)
+                        .colorScheme
+                        .outlineVariant
+                        .withValues(alpha: 0.7),
+                  ),
+                  boxShadow: const [
                     BoxShadow(
-                      color: Colors.black26,
-                      blurRadius: 16,
-                      offset: Offset(0, -6),
+                      color: Colors.black38,
+                      blurRadius: 24,
+                      offset: Offset(0, -8),
                     ),
                   ],
                 ),
@@ -307,7 +309,7 @@ class _RegisterPageState extends State<RegisterPage>
                               Text(
                                 'Already signed up? ',
                                 style: Theme.of(context).textTheme.bodyMedium
-                                    ?.copyWith(color: Colors.black54),
+                                    ?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
                               ),
                               GestureDetector(
                                 onTap: () => Navigator.pushReplacement(
@@ -320,8 +322,10 @@ class _RegisterPageState extends State<RegisterPage>
                                   'Sign In',
                                   style: Theme.of(context).textTheme.bodyMedium
                                       ?.copyWith(
-                                        fontWeight: FontWeight.w700,
-                                        color: Colors.black87,
+                                        fontWeight: FontWeight.w800,
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .primary,
                                       ),
                                 ),
                               ),

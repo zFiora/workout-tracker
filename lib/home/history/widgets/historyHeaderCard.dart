@@ -25,8 +25,8 @@ class HistoryHeaderCard extends StatelessWidget {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            cs.surfaceVariant.withValues(alpha: 0.75),
-            cs.surfaceVariant.withValues(alpha: 0.35),
+            cs.surfaceContainerHigh.withValues(alpha: 0.75),
+            cs.surfaceContainerHigh.withValues(alpha: 0.35),
           ],
         ),
         border: Border.all(color: cs.outline.withValues(alpha: 0.22)),

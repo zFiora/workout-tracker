@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:workout_tracker/common/theme/app_theme.dart';
+import 'package:workout_tracker/common/widgets/uiKit.dart';
 import 'package:provider/provider.dart';
 import 'package:workout_tracker/common/widgets/myCustomeScaffoldView.dart';
 import 'package:workout_tracker/home/friends/friendModel.dart';
@@ -51,28 +53,12 @@ class _EmptyFriendsState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 48, horizontal: 24),
-      child: Column(
-        children: [
-          Icon(Icons.group_outlined, size: 56, color: cs.onSurfaceVariant),
-          const SizedBox(height: 16),
-          Text(
-            'No friends yet',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Tap "Add Friends" from Account to search by username.',
-            textAlign: TextAlign.center,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: cs.onSurfaceVariant,
-            ),
-          ),
-        ],
+    return const Padding(
+      padding: EdgeInsets.symmetric(vertical: 24),
+      child: EmptyState(
+        icon: Icons.group_rounded,
+        title: 'No friends yet',
+        message: 'Tap "Add Friends" from Account\nto search by username.',
       ),
     );
   }
@@ -116,17 +102,28 @@ class _FriendTile extends StatelessWidget {
         trailing: Container(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
           decoration: BoxDecoration(
-            color: Colors.orange,
+            color: context.tokens.warning.withValues(alpha: 0.16),
             borderRadius: BorderRadius.circular(999),
+            border: Border.all(
+              color: context.tokens.warning.withValues(alpha: 0.4),
+            ),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.local_fire_department, size: 16, color: Colors.white),
+              Icon(
+                Icons.local_fire_department_rounded,
+                size: 15,
+                color: context.tokens.warning,
+              ),
               const SizedBox(width: 4),
               Text(
                 '${user.currentStreak}',
-                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
+                style: TextStyle(
+                  color: context.tokens.warning,
+                  fontWeight: FontWeight.w800,
+                  fontSize: 13,
+                ),
               ),
             ],
           ),

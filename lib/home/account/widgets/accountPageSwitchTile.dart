@@ -23,13 +23,12 @@ class _AccountPageSwitchTileState extends State<AccountPageSwitchTile> {
 
   @override
   Widget build(BuildContext context) {
-    const kDeepBlue = Color(0xFF0A2D73);
     final scheme = Theme.of(context).colorScheme;
 
     return Card(
       elevation: 0,
-      color: scheme.surface,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      color: scheme.surfaceContainer,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
       child: SwitchListTile.adaptive(
         value: value,
         onChanged: (v) {
@@ -41,9 +40,9 @@ class _AccountPageSwitchTileState extends State<AccountPageSwitchTile> {
           radius: 18,
           // ignore: deprecated_member_use
           backgroundColor: scheme.primary.withValues(alpha: .08),
-          child: Icon(widget.icon, color: kDeepBlue, size: 20),
+          child: Icon(widget.icon, color: scheme.primary, size: 20),
         ),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
       ),
     );
   }

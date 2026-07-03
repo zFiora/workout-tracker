@@ -14,8 +14,11 @@ class WeightLineChart extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (entries.length < 2) {
-      return const Center(
-        child: Text('Add at least 2 entries to see the graph'),
+      return Center(
+        child: Text(
+          'Add at least 2 entries to see the graph',
+          style: Theme.of(context).textTheme.bodyMedium,
+        ),
       );
     }
 
@@ -38,7 +41,10 @@ class WeightLineChart extends StatelessWidget {
           drawVerticalLine: false,
           horizontalInterval: 1,
           getDrawingHorizontalLine: (_) => FlLine(
-            color: Colors.grey.withValues(alpha: 0.15),
+            color: Theme.of(context)
+                .colorScheme
+                .outlineVariant
+                .withValues(alpha: 0.6),
             strokeWidth: 1,
           ),
         ),
@@ -80,7 +86,7 @@ class WeightLineChart extends StatelessWidget {
         lineTouchData: LineTouchData(
           handleBuiltInTouches: true,
           touchTooltipData: LineTouchTooltipData(
-            tooltipBgColor: Theme.of(context).colorScheme.surface,
+            tooltipBgColor: Theme.of(context).colorScheme.surfaceContainerHigh,
             getTooltipItems: (touchedSpots) {
               return touchedSpots.map((spot) {
                 final idx = spot.x.toInt();
@@ -88,7 +94,10 @@ class WeightLineChart extends StatelessWidget {
                 return LineTooltipItem(
                   '${e.weightKg.toStringAsFixed(1)} kg\n'
                   '${DateFormat('EEE, dd MMM').format(e.date.toLocal())}',
-                  const TextStyle(fontWeight: FontWeight.w600),
+                  TextStyle(
+                    fontWeight: FontWeight.w700,
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
                 );
               }).toList();
             },

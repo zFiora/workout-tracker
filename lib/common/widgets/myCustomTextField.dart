@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+/// Rounded filled text field that follows the app's input theme.
 class MyCustomTextField extends StatelessWidget {
   final TextEditingController? controller;
   final String hint;
@@ -16,29 +17,19 @@ class MyCustomTextField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final cs = Theme.of(context).colorScheme;
 
-    return Container(
-      margin: const EdgeInsets.symmetric(vertical: 8),
-      decoration: BoxDecoration(
-        color: theme.inputDecorationTheme.fillColor ?? Colors.grey.shade100,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.shade300,
-            blurRadius: 6,
-            offset: const Offset(0, 3),
-          ),
-        ],
-      ),
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
       child: TextField(
         controller: controller,
         onChanged: onChanged,
+        textInputAction: TextInputAction.search,
         decoration: InputDecoration(
-          prefixIcon: icon != null ? Icon(icon, color: theme.primaryColor) : null,
+          prefixIcon: icon != null
+              ? Icon(icon, size: 20, color: cs.onSurfaceVariant)
+              : null,
           hintText: hint,
-          border: InputBorder.none,
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
         ),
       ),
     );

@@ -16,17 +16,16 @@ class AccountPageTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const kDeepBlue = Color(0xFF0A2D73);
     final scheme = Theme.of(context).colorScheme;
     return Card(
       elevation: 0,
-      color: scheme.surface,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      color: scheme.surfaceContainer,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
       child: ListTile(
         leading: CircleAvatar(
           radius: 18,
           backgroundColor: scheme.primary.withValues(alpha: .08),
-          child: Icon(icon, color: kDeepBlue, size: 20),
+          child: Icon(icon, color: scheme.primary, size: 20),
         ),
         title: Text(title),
         subtitle: subtitle == null ? null : Text(subtitle!),
