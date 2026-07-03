@@ -43,9 +43,9 @@ class GradientPillButton extends StatelessWidget {
           ),
           boxShadow: [
             BoxShadow(
-              color: AppColors.voltDeep.withValues(alpha: 0.4),
-              blurRadius: 16,
-              offset: const Offset(0, 6),
+              color: AppColors.voltDeep.withValues(alpha: 0.1),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
             ),
           ],
         ),

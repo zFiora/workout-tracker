@@ -178,9 +178,9 @@ class StatPill extends StatelessWidget {
           Text(
             label,
             style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                  color: filled ? c : cs.onSurface,
-                  fontWeight: FontWeight.w700,
-                ),
+              color: filled ? c : cs.onSurface,
+              fontWeight: FontWeight.w700,
+            ),
           ),
         ],
       ),
@@ -220,10 +220,10 @@ class SectionHeader extends StatelessWidget {
           Text(
             title.toUpperCase(),
             style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                  letterSpacing: 1.6,
-                  fontWeight: FontWeight.w800,
-                  color: cs.onSurfaceVariant,
-                ),
+              letterSpacing: 1.6,
+              fontWeight: FontWeight.w800,
+              color: cs.onSurfaceVariant,
+            ),
           ),
           const Spacer(),
           if (trailing != null) trailing!,
@@ -279,9 +279,10 @@ class VoltButton extends StatelessWidget {
             boxShadow: [
               if (enabled)
                 BoxShadow(
-                  color: glow.withValues(alpha: 0.38),
-                  blurRadius: 18,
-                  offset: const Offset(0, 6),
+                  color: glow.withValues(alpha: 0.1),
+                  blurRadius: 10,
+                  spreadRadius: -6,
+                  offset: const Offset(0, 4),
                 ),
             ],
           ),
@@ -383,9 +384,9 @@ class EmptyState extends StatelessWidget {
               message,
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: cs.onSurfaceVariant,
-                    height: 1.55,
-                  ),
+                color: cs.onSurfaceVariant,
+                height: 1.55,
+              ),
             ),
             if (actionLabel != null && onAction != null) ...[
               const SizedBox(height: 28),
@@ -415,9 +416,9 @@ class Skeleton extends StatefulWidget {
   });
 
   const Skeleton.circle({super.key, double size = 40})
-      : width = size,
-        height = size,
-        radius = 999;
+    : width = size,
+      height = size,
+      radius = 999;
 
   final double width;
   final double height;
@@ -532,11 +533,7 @@ class FadeRiseIn extends StatelessWidget {
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0, end: 1),
       duration: Duration(milliseconds: 320 + delay),
-      curve: Interval(
-        delay / (320 + delay),
-        1,
-        curve: Curves.easeOutCubic,
-      ),
+      curve: Interval(delay / (320 + delay), 1, curve: Curves.easeOutCubic),
       builder: (context, t, child) => Opacity(
         opacity: t,
         child: Transform.translate(

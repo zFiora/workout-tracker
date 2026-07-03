@@ -32,7 +32,7 @@ class AccountPageHeader extends StatelessWidget {
       clipBehavior: Clip.none,
       children: [
         Container(
-          height: 260,
+          height: 290,
           decoration: const BoxDecoration(
             gradient: LinearGradient(
               colors: [AppColors.voltDeep, Color(0xFF0D1B4B)],
@@ -76,8 +76,8 @@ class AccountPageHeader extends StatelessWidget {
                         ),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.3),
-                            blurRadius: 16,
+                            color: Colors.black.withValues(alpha: 0.1),
+                            blurRadius: 12,
                             offset: const Offset(0, 6),
                           ),
                         ],
@@ -191,8 +191,8 @@ class _StatsCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.12),
-            blurRadius: 20,
+            color: Colors.black.withValues(alpha: 0.1),
+            blurRadius: 16,
             offset: const Offset(0, 6),
           ),
         ],

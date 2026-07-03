@@ -189,9 +189,10 @@ class _CategoryChip extends StatelessWidget {
             boxShadow: [
               if (isSelected)
                 BoxShadow(
-                  color: AppColors.voltDeep.withValues(alpha: 0.35),
-                  blurRadius: 10,
-                  offset: const Offset(0, 3),
+                  color: AppColors.voltDeep.withValues(alpha: 0.15),
+                  blurRadius: 6,
+                  spreadRadius: -6,
+                  offset: const Offset(0, 2),
                 ),
             ],
           ),

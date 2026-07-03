@@ -105,8 +105,9 @@ class PlannedSetRow extends StatelessWidget {
               controller: weightController,
               enabled: allowEdit,
               unit: 'kg',
-              keyboardType:
-                  const TextInputType.numberWithOptions(decimal: true),
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
             ),
           ),
 
@@ -137,10 +138,7 @@ class PlannedSetRow extends StatelessWidget {
           const SizedBox(width: 8),
 
           // ── PR tag (when this set hit a PR) ───────────────────
-          if (prVisible) ...[
-            const _PrTag(),
-            const SizedBox(width: 6),
-          ],
+          if (prVisible) ...[const _PrTag(), const SizedBox(width: 6)],
 
           // ── Secondary icon: delete / edit / cancel ───────────
           if (!p.done)
@@ -208,8 +206,7 @@ class _NumberField extends StatelessWidget {
         fillColor: enabled
             ? cs.surface
             : cs.surfaceContainerHighest.withValues(alpha: 0.2),
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 6, vertical: 9),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 6, vertical: 9),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
           borderSide: BorderSide(color: cs.outlineVariant),
@@ -267,7 +264,7 @@ class _LogButton extends StatelessWidget {
           color: context.tokens.success,
           boxShadow: [
             BoxShadow(
-              color: context.tokens.success.withValues(alpha: 0.35),
+              color: context.tokens.success.withValues(alpha: 0.15),
               blurRadius: 10,
               offset: const Offset(0, 3),
             ),
