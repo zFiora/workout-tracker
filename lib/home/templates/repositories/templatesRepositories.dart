@@ -7,6 +7,10 @@ abstract class TemplatesRepository {
 
   Future<void> add(WorkoutTemplateModel template);
 
+  /// Insert [template], or replace the existing one with the same id.
+  /// Used to apply server truth during a backend-authoritative pull.
+  Future<void> upsert(WorkoutTemplateModel template);
+
   Future<void> delete(WorkoutTemplateModel template);
 
   Future<void> rename(WorkoutTemplateModel template, String newName);

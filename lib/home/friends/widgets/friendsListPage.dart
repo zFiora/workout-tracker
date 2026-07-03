@@ -3,6 +3,7 @@ import 'package:workout_tracker/common/theme/app_theme.dart';
 import 'package:workout_tracker/common/widgets/uiKit.dart';
 import 'package:provider/provider.dart';
 import 'package:workout_tracker/common/widgets/myCustomeScaffoldView.dart';
+import 'package:workout_tracker/common/widgets/user_avatar.dart';
 import 'package:workout_tracker/home/friends/friendModel.dart';
 import 'package:workout_tracker/home/friends/friendsViewModel.dart';
 import 'package:workout_tracker/home/friends/widgets/friendProfilePage.dart';
@@ -81,15 +82,18 @@ class _FriendTile extends StatelessWidget {
           ),
         ),
         contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-        leading: CircleAvatar(
-          radius: 22,
-          backgroundColor: cs.primaryContainer,
-          backgroundImage: user.avatarUrl != null
-              ? NetworkImage(user.avatarUrl!)
-              : null,
-          child: user.avatarUrl == null
-              ? Icon(Icons.person, color: cs.onPrimaryContainer, size: 20)
-              : null,
+        leading: Builder(
+          builder: (_) {
+            final image = AvatarCache.image(user.avatarBase64);
+            return CircleAvatar(
+              radius: 22,
+              backgroundColor: cs.primaryContainer,
+              backgroundImage: image,
+              child: image == null
+                  ? Icon(Icons.person, color: cs.onPrimaryContainer, size: 20)
+                  : null,
+            );
+          },
         ),
         title: Text(
           user.name,

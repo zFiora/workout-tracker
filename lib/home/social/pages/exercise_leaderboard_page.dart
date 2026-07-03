@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:workout_tracker/common/theme/app_theme.dart';
 import 'package:workout_tracker/common/widgets/uiKit.dart';
+import 'package:workout_tracker/common/widgets/user_avatar.dart';
 import 'package:workout_tracker/common/widgets/myCustomeScaffoldView.dart';
 import 'package:workout_tracker/core/api/api_result.dart';
 import 'package:workout_tracker/home/exercises/models/exerciseModel.dart';
@@ -275,22 +276,10 @@ class _PodiumSpot extends StatelessWidget {
                 ),
               ],
             ),
-            child: CircleAvatar(
+            child: UserAvatar(
+              base64: entry.avatarBase64,
+              name: entry.displayName,
               radius: avatarRadius,
-              backgroundColor: cs.primaryContainer,
-              backgroundImage: entry.avatarUrl != null
-                  ? NetworkImage(entry.avatarUrl!)
-                  : null,
-              child: entry.avatarUrl == null
-                  ? Text(
-                      _initial(entry.displayName),
-                      style: TextStyle(
-                        color: cs.onPrimaryContainer,
-                        fontWeight: FontWeight.w800,
-                        fontSize: avatarRadius * 0.8,
-                      ),
-                    )
-                  : null,
             ),
           ),
           const SizedBox(height: 8),
@@ -348,9 +337,6 @@ class _PodiumSpot extends StatelessWidget {
       ),
     );
   }
-
-  static String _initial(String name) =>
-      name.isNotEmpty ? name[0].toUpperCase() : '?';
 }
 
 /// A row in the "everyone else" list.
@@ -380,23 +366,7 @@ class _RankTile extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 8),
-          CircleAvatar(
-            radius: 20,
-            backgroundColor: cs.primaryContainer,
-            backgroundImage:
-                entry.avatarUrl != null ? NetworkImage(entry.avatarUrl!) : null,
-            child: entry.avatarUrl == null
-                ? Text(
-                    entry.displayName.isNotEmpty
-                        ? entry.displayName[0].toUpperCase()
-                        : '?',
-                    style: TextStyle(
-                      color: cs.onPrimaryContainer,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  )
-                : null,
-          ),
+          UserAvatar(base64: entry.avatarBase64, name: entry.displayName),
           const SizedBox(width: 12),
           Expanded(
             child: Text(

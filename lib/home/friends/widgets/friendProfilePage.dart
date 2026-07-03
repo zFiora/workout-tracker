@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:workout_tracker/common/widgets/myCustomeScaffoldView.dart';
+import 'package:workout_tracker/common/widgets/user_avatar.dart';
 import 'package:workout_tracker/home/friends/friendModel.dart';
 import 'package:workout_tracker/home/friends/friendsViewModel.dart';
 import 'package:workout_tracker/home/friends/widgets/friendTemplatesPage.dart';
@@ -40,15 +41,19 @@ class _FriendProfilePageState extends State<FriendProfilePage> {
         padding: const EdgeInsets.all(24),
         children: [
           Center(
-            child: CircleAvatar(
-              radius: 48,
-              backgroundColor: cs.primaryContainer,
-              backgroundImage: _user.avatarUrl != null
-                  ? NetworkImage(_user.avatarUrl!)
-                  : null,
-              child: _user.avatarUrl == null
-                  ? Icon(Icons.person, size: 40, color: cs.onPrimaryContainer)
-                  : null,
+            child: Builder(
+              builder: (_) {
+                final image = AvatarCache.image(_user.avatarBase64);
+                return CircleAvatar(
+                  radius: 48,
+                  backgroundColor: cs.primaryContainer,
+                  backgroundImage: image,
+                  child: image == null
+                      ? Icon(Icons.person,
+                          size: 40, color: cs.onPrimaryContainer)
+                      : null,
+                );
+              },
             ),
           ),
           const SizedBox(height: 16),

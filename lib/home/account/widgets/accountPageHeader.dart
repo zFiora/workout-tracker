@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:workout_tracker/common/theme/app_theme.dart';
+import 'package:workout_tracker/common/widgets/user_avatar.dart';
 
 class AccountPageHeader extends StatelessWidget {
   const AccountPageHeader({
@@ -9,7 +10,7 @@ class AccountPageHeader extends StatelessWidget {
     required this.email,
     required this.streakCurrent,
     required this.streakBest,
-    required this.avatarUrl,
+    required this.avatarBase64,
     required this.onEditProfile,
     required this.onEditAvatar,
   });
@@ -19,7 +20,7 @@ class AccountPageHeader extends StatelessWidget {
   final String email;
   final int streakCurrent;
   final int streakBest;
-  final String? avatarUrl;
+  final String? avatarBase64;
   final VoidCallback onEditProfile;
   final VoidCallback onEditAvatar;
 
@@ -82,23 +83,25 @@ class AccountPageHeader extends StatelessWidget {
                           ),
                         ],
                       ),
-                      child: CircleAvatar(
-                        radius: 44,
-                        backgroundColor: cs.primaryContainer,
-                        backgroundImage:
-                            (avatarUrl != null && avatarUrl!.isNotEmpty)
-                            ? NetworkImage(avatarUrl!)
-                            : null,
-                        child: (avatarUrl == null || avatarUrl!.isEmpty)
-                            ? Text(
-                                initials,
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 32,
-                                  fontWeight: FontWeight.w800,
-                                ),
-                              )
-                            : null,
+                      child: Builder(
+                        builder: (_) {
+                          final image = AvatarCache.image(avatarBase64);
+                          return CircleAvatar(
+                            radius: 44,
+                            backgroundColor: cs.primaryContainer,
+                            backgroundImage: image,
+                            child: image == null
+                                ? Text(
+                                    initials,
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 32,
+                                      fontWeight: FontWeight.w800,
+                                    ),
+                                  )
+                                : null,
+                          );
+                        },
                       ),
                     ),
                     Positioned(

@@ -17,7 +17,7 @@ class AccountPageBody extends StatelessWidget {
     required this.email,
     required this.streakCurrent,
     required this.streakBest,
-    required this.avatarUrl,
+    required this.avatarBase64,
     required this.onEditProfile,
     required this.onEditAvatar,
     required this.onChangePassword,
@@ -31,7 +31,7 @@ class AccountPageBody extends StatelessWidget {
   final String email;
   final int streakCurrent;
   final int streakBest;
-  final String? avatarUrl;
+  final String? avatarBase64;
   final VoidCallback onEditProfile;
   final VoidCallback onEditAvatar;
   final VoidCallback onChangePassword;
@@ -50,7 +50,7 @@ class AccountPageBody extends StatelessWidget {
             email: email,
             streakCurrent: streakCurrent,
             streakBest: streakBest,
-            avatarUrl: avatarUrl,
+            avatarBase64: avatarBase64,
             onEditProfile: onEditProfile,
             onEditAvatar: onEditAvatar,
           ),

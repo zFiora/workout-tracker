@@ -1,17 +1,20 @@
 // lib/home/account/widgets/streak_badge.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:workout_tracker/home/history/ViewModel/historyViewModel.dart';
+import 'package:workout_tracker/home/account/accountViewModel.dart';
 
 class StreakBadge extends StatelessWidget {
   const StreakBadge({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final streak = context.select<HistoryViewModel, int>(
-      (vm) => vm.streak.current,
+    // Streak is server-owned; read it from the backend-backed account.
+    final streak = context.select<AccountViewModel, int>(
+      (vm) => vm.account?.currentStreak ?? 0,
     );
-    final best = context.select<HistoryViewModel, int>((vm) => vm.streak.best);
+    final best = context.select<AccountViewModel, int>(
+      (vm) => vm.account?.bestStreak ?? 0,
+    );
 
     // Your brand colors here
     return Container(

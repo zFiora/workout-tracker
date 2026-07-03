@@ -1,28 +1,24 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 
-import 'package:workout_tracker/home/account/model/streakCalculator.dart';
-import 'package:workout_tracker/home/account/model/streakSyncService.dart';
+import 'package:workout_tracker/core/services/synced_sessions_store.dart';
 import 'package:workout_tracker/home/history/repos/PREventRepository.dart';
 import 'package:workout_tracker/home/history/repos/historyRepository.dart';
 import 'package:workout_tracker/home/history/repos/hiveHistoryRepository.dart';
 import 'package:workout_tracker/home/history/repos/hivePREventRepo.dart';
 import 'package:workout_tracker/home/history/services/historyService.dart';
-import 'package:workout_tracker/home/history/services/pr_events_api_service.dart';
-import 'package:workout_tracker/home/history/services/workouts_api_service.dart';
+import 'package:workout_tracker/home/history/services/workout_sessions_api_service.dart';
 import 'package:workout_tracker/home/session/models/sessionModels.dart';
 
 class HistoryViewModel extends ChangeNotifier {
   HistoryViewModel({
-    StreakSyncService? sync,
     HistoryRepository? historyRepo,
     PrEventsRepository? prRepo,
     HistoryService? service,
-    WorkoutsApiService? api,
-    PrEventsApiService? prApi,
-  }) : _sync = sync,
-       _api = api ?? WorkoutsApiService(),
-       _prApi = prApi ?? PrEventsApiService() {
+    WorkoutSessionsApiService? api,
+    SyncedSessionsStore? syncedStore,
+  }) : _api = api ?? WorkoutSessionsApiService(),
+       _synced = syncedStore ?? SyncedSessionsStore() {
     _historyRepo = historyRepo ?? HiveHistoryRepository();
     _prRepo = prRepo ?? HivePrEventsRepository();
     _service =
@@ -35,7 +31,6 @@ class HistoryViewModel extends ChangeNotifier {
     _sub = _historyRepo.watch((_) {
       _recomputeDerived();
       notifyListeners();
-      _maybeSync();
     });
 
     _pullFromApi();
@@ -44,62 +39,72 @@ class HistoryViewModel extends ChangeNotifier {
   late final HistoryRepository _historyRepo;
   late final PrEventsRepository _prRepo;
   late final HistoryService _service;
-  final WorkoutsApiService _api;
-  final PrEventsApiService _prApi;
+  final WorkoutSessionsApiService _api;
+  final SyncedSessionsStore _synced;
 
-  StreakSyncService? _sync;
   StreamSubscription? _sub;
 
   // Cached derived state
   late List<HistoryItem> _historyItems;
   late List<WorkoutHistoryEntry> _history;
-  late StreakInfo _streak;
   late Map<DateTime, List<WorkoutHistoryEntry>> _groupedByDay;
-
-  void setSync(StreakSyncService? sync) => _sync = sync;
 
   List<HistoryItem> get historyItems => _historyItems;
   List<WorkoutHistoryEntry> get history => _history;
   HistoryService get service => _service;
-  StreakInfo get streak => _streak;
 
   Map<DateTime, List<WorkoutHistoryEntry>> get groupedByDay => _groupedByDay;
 
   Future<void> save(WorkoutHistoryEntry entry) async {
     await _service.save(entry);
     // No notify here. The repo watch will fire and update everything.
-    _api.pushEntry(entry).catchError((_) {});
+    _pushOne(entry);
   }
 
   Future<void> saveWithPrEvents(
     WorkoutHistoryEntry entry, {
     required List<Map<String, dynamic>> prEvents,
   }) async {
+    // prEvents are kept locally for in-session PR detection; the backend
+    // derives PRs from the synced session itself, so they aren't pushed.
     await _service.saveWithPrEvents(entry, prEvents: prEvents);
     // No notify here. Watch will handle it.
-    _api.pushEntry(entry).catchError((_) {});
-    _prApi.pushEvents(prEvents).catchError((_) {});
+    _pushOne(entry);
   }
 
-  /// Best-effort pull of remote workouts not yet present locally (e.g.
-  /// recorded on another device). Never blocks or fails the UI.
+  /// Pushes a single freshly-saved session; marks it synced on success.
+  void _pushOne(WorkoutHistoryEntry entry) {
+    _api.pushSessions([entry]).then(_synced.markSynced).catchError((_) {});
+  }
+
+  /// Reconciles history with the backend. Sessions are identified by their
+  /// client UUID and upserted, so nothing ever duplicates. Server sessions the
+  /// device lacks are pulled in; local sessions not yet confirmed synced (e.g.
+  /// a workout finished offline) are pushed. Runs only after a successful
+  /// fetch — offline leaves the cache untouched.
   Future<void> _pullFromApi() async {
     try {
-      final remote = await _api.fetchAll();
-      final local = _history;
-      bool existsLocally(WorkoutHistoryEntry r) => local.any(
-        (e) =>
-            e.templateId == r.templateId &&
-            e.startedAt.isAtSameMomentAs(r.startedAt),
-      );
+      final remote = await _api.fetchRecent(sinceDays: 7);
+      final localIds = _history.map((e) => e.id).toSet();
 
+      // Pull down sessions recorded on other devices (new ids only).
       for (final entry in remote) {
-        if (!existsLocally(entry)) {
+        if (entry.id.isNotEmpty && !localIds.contains(entry.id)) {
           await _historyRepo.add(entry);
         }
       }
+      // Everything the server returned is, by definition, already synced.
+      await _synced.markSynced(remote.map((e) => e.id));
+
+      // Push local sessions the server hasn't confirmed yet.
+      final unsynced =
+          _history.where((e) => e.id.isNotEmpty && !_synced.isSynced(e.id)).toList();
+      if (unsynced.isNotEmpty) {
+        final saved = await _api.pushSessions(unsynced);
+        await _synced.markSynced(saved);
+      }
     } catch (_) {
-      // offline or auth error — local history is still shown
+      // offline or auth error — cached history is still shown
     }
   }
 
@@ -116,18 +121,7 @@ class HistoryViewModel extends ChangeNotifier {
   void _recomputeDerived() {
     _historyItems = _service.historyItems;
     _history = List.unmodifiable(_historyItems.map((e) => e.entry));
-    _streak = StreakCalculator.compute(_history.map((e) => e.endedAt));
     _groupedByDay = _service.groupedByDay();
-  }
-
-  void _maybeSync() {
-    // Keep it optional and non-blocking for UI.
-    // If you want strict sync guarantees, we can await in writes instead.
-    final s = _sync;
-    if (s == null) return;
-
-    // Uncomment when ready:
-    // unawaited(s.sync(_streak));
   }
 
   @override

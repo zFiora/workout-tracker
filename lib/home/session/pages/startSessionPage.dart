@@ -3,6 +3,8 @@ import 'package:provider/provider.dart';
 import 'package:workout_tracker/common/formatters/duarationFormatter.dart';
 import 'package:workout_tracker/common/theme/app_theme.dart';
 import 'package:workout_tracker/common/widgets/uiKit.dart';
+import 'package:workout_tracker/core/auth_token.dart';
+import 'package:workout_tracker/home/account/accountViewModel.dart';
 import 'package:workout_tracker/home/exercises/exerciesesList.dart';
 import 'package:workout_tracker/home/exercises/models/categoryModel.dart';
 import 'package:workout_tracker/home/history/ViewModel/historyViewModel.dart';
@@ -217,6 +219,12 @@ class _SessionBody extends StatelessWidget {
         .saveWithPrEvents(entry, prEvents: prEvents);
 
     if (!context.mounted) return;
+
+    // The backend bumps the streak when the workout is pushed; re-pull the
+    // account so the streak badge reflects the new value immediately.
+    if (AuthToken.I.isValid) {
+      context.read<AccountViewModel>().refresh();
+    }
 
     // Prompt to update template if exercises were modified
     if (exercisesModified && templateId != null) {

@@ -32,6 +32,24 @@ class TemplatesApiService {
     };
   }
 
+  /// Ids of the caller's own templates that were soft-deleted within the last
+  /// [sinceDays]. Lets a reconcile tell a server-side delete apart from a
+  /// template created locally while offline (which must be pushed, not dropped).
+  Future<Set<String>> fetchDeletedIds({int sinceDays = 30}) async {
+    final result = await _client.get('/api/templates', params: {
+      'includeDeleted': true,
+      'sinceDays': sinceDays,
+    });
+    return switch (result) {
+      ApiSuccess(:final data) => (data as List<dynamic>)
+          .cast<Map<String, dynamic>>()
+          .where((j) => j['deletedAt'] != null)
+          .map((j) => j['id'] as String)
+          .toSet(),
+      ApiError(:final message) => throw Exception(message),
+    };
+  }
+
   Future<List<WorkoutTemplateModel>> fetchFriendTemplates(String userId) async {
     final result = await _client.get('/api/templates/friend/$userId');
     return switch (result) {

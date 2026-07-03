@@ -5,6 +5,7 @@ import 'package:hive/hive.dart';
 import 'package:workout_tracker/home/history/models/PRModels.dart';
 import 'package:workout_tracker/home/history/models/exNote.dart';
 import 'package:workout_tracker/home/history/repos/exHistoryRepo.dart';
+import 'package:workout_tracker/home/history/services/exercise_notes_api_service.dart';
 import 'package:workout_tracker/home/history/utils/strengthUtils.dart';
 
 import '../../session/models/sessionModels.dart';
@@ -14,17 +15,20 @@ class ExerciseDetailViewModel extends ChangeNotifier {
     required this.exerciseId,
     required this.historyRepo,
     required this.notesBox,
-  }) {
+    ExerciseNotesApiService? notesApi,
+  }) : _notesApi = notesApi ?? ExerciseNotesApiService() {
     _refresh();
     _notesSub = notesBox.watch().listen((_) {
       _refreshNotes();
       notifyListeners();
     });
+    _loadNotesFromApi();
   }
 
   final int exerciseId;
   final ExerciseHistoryRepository historyRepo;
   final Box<ExerciseNote> notesBox;
+  final ExerciseNotesApiService _notesApi;
 
   late final StreamSubscription _notesSub;
 
@@ -49,11 +53,39 @@ class ExerciseDetailViewModel extends ChangeNotifier {
     final t = text.trim();
     if (t.isEmpty) return;
 
-    await notesBox.add(ExerciseNote(
-      exerciseId: exerciseId,
-      createdAt: DateTime.now(),
-      text: t,
-    ));
+    try {
+      // Backend is the source of truth; cache the server's note.
+      final created = await _notesApi.create(exerciseId, t);
+      await notesBox.add(created);
+    } catch (_) {
+      // Offline — keep the note locally so it isn't lost this session.
+      await notesBox.add(ExerciseNote(
+        exerciseId: exerciseId,
+        createdAt: DateTime.now(),
+        text: t,
+      ));
+    }
+  }
+
+  /// Backend-authoritative pull: replaces this exercise's cached notes with
+  /// the server's. Runs only after a successful fetch, so offline keeps cache.
+  Future<void> _loadNotesFromApi() async {
+    try {
+      final remote = await _notesApi.fetch(exerciseId);
+      final staleKeys = notesBox.keys.where((k) {
+        final n = notesBox.get(k);
+        return n != null && n.exerciseId == exerciseId;
+      }).toList();
+      for (final k in staleKeys) {
+        await notesBox.delete(k);
+      }
+      for (final n in remote) {
+        await notesBox.add(n);
+      }
+      // notesBox.watch() refreshes the list + notifies.
+    } catch (_) {
+      // offline or auth error — cached notes stay visible
+    }
   }
 
   void _refresh() {

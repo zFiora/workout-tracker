@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:provider/provider.dart';
+import 'package:uuid/uuid.dart';
 
 import 'package:workout_tracker/core/auth_token.dart';
 import 'package:workout_tracker/auth/authService.dart';
@@ -8,7 +9,6 @@ import 'package:workout_tracker/auth/authViewModel.dart';
 
 import 'package:workout_tracker/home/account/accountReposirtry.dart';
 import 'package:workout_tracker/home/account/accountViewModel.dart';
-import 'package:workout_tracker/home/account/model/streakSyncService.dart';
 import 'package:workout_tracker/home/friends/friendsService.dart';
 import 'package:workout_tracker/home/friends/friendsViewModel.dart';
 import 'package:workout_tracker/common/AppManager.dart';
@@ -43,11 +43,21 @@ Future<void> main() async {
 
   await Hive.openBox<ExerciseNote>('exerciseNotesBox');
   await Hive.openBox<WorkoutTemplateModel>('templatesBox');
-  await Hive.openBox<WorkoutHistoryEntry>('historyBox');
+  final historyBox = await Hive.openBox<WorkoutHistoryEntry>('historyBox');
   await Hive.openBox<MeasurementEntry>('measurementsBox');
   await Hive.openBox<MeasureProfile>('measureProfileBox');
   await Hive.openBox<MacroProfile>('macrosProfileBox');
   await Hive.openBox('prEventsBox');
+  await Hive.openBox<bool>('syncedSessionsBox');
+
+  // Backfill a stable sync id onto any pre-sync history rows so they can be
+  // pushed to the backend without duplicating.
+  for (final key in historyBox.keys.toList()) {
+    final entry = historyBox.get(key);
+    if (entry != null && entry.id.isEmpty) {
+      await historyBox.put(key, entry.copyWith(id: const Uuid().v4()));
+    }
+  }
 
   await AuthToken.I.load();
 
@@ -70,22 +80,9 @@ Future<void> main() async {
           create: (ctx) => FriendsViewModel(ctx.read<FriendService>()),
         ),
 
-        ProxyProvider<AccountViewModel, StreakSyncService?>(
-          update: (_, accountVM, prev) {
-            final userId = AuthToken.I.userId;
-            if (userId == null) return null;
-            return StreakSyncService(userId: userId);
-          },
-        ),
-
-        ChangeNotifierProxyProvider<StreakSyncService?, HistoryViewModel>(
-          create: (_) => HistoryViewModel(),
-          update: (_, sync, vm) {
-            vm ??= HistoryViewModel();
-            vm.setSync(sync);
-            return vm;
-          },
-        ),
+        // Streak is server-owned; the client reads it from AccountViewModel
+        // (backed by /api/users/me) rather than computing it locally.
+        ChangeNotifierProvider(create: (_) => HistoryViewModel()),
 
         ChangeNotifierProvider(create: (_) => TemplatesViewModel()),
         ChangeNotifierProvider(create: (_) => ActiveSessionManager()),

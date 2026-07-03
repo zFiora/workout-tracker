@@ -86,14 +86,16 @@ class LeaderboardEntry {
   const LeaderboardEntry({
     required this.userId,
     required this.displayName,
-    required this.avatarUrl,
+    required this.avatarBase64,
     required this.currentStreak,
     required this.bestStreak,
   });
 
   final String userId;
   final String displayName;
-  final String? avatarUrl;
+
+  /// Raw base64-encoded avatar image (no data-URI prefix), or null.
+  final String? avatarBase64;
   final int currentStreak;
   final int bestStreak;
 
@@ -103,7 +105,7 @@ class LeaderboardEntry {
     return LeaderboardEntry(
       userId: json['id'] as String? ?? '',
       displayName: (display?.isNotEmpty == true) ? display! : (username ?? ''),
-      avatarUrl: json['avatarUrl'] as String?,
+      avatarBase64: json['avatarBase64'] as String?,
       currentStreak: (json['currentStreak'] as num?)?.toInt() ?? 0,
       bestStreak: (json['bestStreak'] as num?)?.toInt() ?? 0,
     );
@@ -144,7 +146,7 @@ class ExerciseLeaderboardEntry {
   const ExerciseLeaderboardEntry({
     required this.userId,
     required this.displayName,
-    required this.avatarUrl,
+    required this.avatarBase64,
     required this.weightKg,
     required this.reps,
     required this.oneRepMax,
@@ -154,7 +156,9 @@ class ExerciseLeaderboardEntry {
 
   final String userId;
   final String displayName;
-  final String? avatarUrl;
+
+  /// Raw base64-encoded avatar image (no data-URI prefix), or null.
+  final String? avatarBase64;
   final double weightKg;
   final int reps;
 
@@ -182,7 +186,7 @@ class ExerciseLeaderboardEntry {
       displayName: (display?.isNotEmpty == true)
           ? display!
           : (username?.isNotEmpty == true ? username! : 'Unknown'),
-      avatarUrl: json['avatarUrl'] as String?,
+      avatarBase64: json['avatarBase64'] as String?,
       weightKg: weight,
       reps: reps,
       // Epley: weight * (1 + reps/30). A single rep returns the weight itself.

@@ -7,7 +7,6 @@ import 'package:workout_tracker/home/account/model/accountModel.dart';
 import 'package:workout_tracker/auth/authViewModel.dart';
 import 'package:workout_tracker/home/account/widgets/accountPageBody.dart';
 import 'package:workout_tracker/home/friends/friendsViewModel.dart';
-import 'package:workout_tracker/home/history/ViewModel/historyViewModel.dart';
 import 'package:workout_tracker/common/AppManager.dart';
 import 'package:workout_tracker/common/splash/splashLoading.dart';
 import 'package:workout_tracker/core/auth_token.dart';
@@ -102,9 +101,6 @@ class _AccountPageState extends State<AccountPage> {
     }
 
     final a = vm.account!;
-    final streak = context.select<HistoryViewModel, ({int current, int best})>(
-      (hvm) => (current: hvm.streak.current, best: hvm.streak.best),
-    );
     final isDark = context.select<AppManager, bool>((m) => m.isDark);
 
     return Scaffold(
@@ -115,9 +111,9 @@ class _AccountPageState extends State<AccountPage> {
           name: a.displayName,
           username: a.username,
           email: a.email,
-          streakCurrent: streak.current,
-          streakBest: streak.best,
-          avatarUrl: a.avatarUrl,
+          streakCurrent: a.currentStreak,
+          streakBest: a.bestStreak,
+          avatarBase64: a.avatarBase64,
           isDarkMode: isDark,
           onDarkModeChanged: (v) =>
               context.read<AppManager>().toggleDarkMode(v),

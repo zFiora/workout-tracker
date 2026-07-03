@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:collection';
 import 'package:flutter/foundation.dart';
+import 'package:uuid/uuid.dart';
 import 'package:workout_tracker/common/formatters/duarationFormatter.dart';
 import 'package:workout_tracker/home/exercises/exerciesesList.dart';
 import 'package:workout_tracker/home/exercises/models/exerciseModel.dart';
@@ -134,6 +135,7 @@ class WorkoutSessionViewModel extends ChangeNotifier {
     _elapsed = _endedAt!.difference(start);
 
     final entry = WorkoutHistoryEntry(
+      id: const Uuid().v4(),
       templateIcon: templateIcon,
       templateId: templateId,
       templateName: templateName,

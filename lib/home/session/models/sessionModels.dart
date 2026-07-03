@@ -210,6 +210,13 @@ class ExerciseLog {
 
 @HiveType(typeId: 4)
 class WorkoutHistoryEntry {
+  /// Client-generated stable id (UUID). This is the sync identity — the
+  /// backend upserts sessions by it, so replaying a push never duplicates.
+  /// `defaultValue` keeps pre-sync Hive rows (which lack this field) readable;
+  /// a startup migration backfills a real id for any that are empty.
+  @HiveField(7, defaultValue: '')
+  final String id;
+
   @HiveField(0)
   final String templateId;
 
@@ -232,6 +239,7 @@ class WorkoutHistoryEntry {
   final List<ExerciseLog> logs;
 
   const WorkoutHistoryEntry({
+    required this.id,
     required this.templateIcon,
     required this.templateId,
     required this.templateName,
@@ -241,7 +249,19 @@ class WorkoutHistoryEntry {
     required this.logs,
   });
 
+  WorkoutHistoryEntry copyWith({String? id}) => WorkoutHistoryEntry(
+        id: id ?? this.id,
+        templateIcon: templateIcon,
+        templateId: templateId,
+        templateName: templateName,
+        startedAt: startedAt,
+        endedAt: endedAt,
+        duration: duration,
+        logs: logs,
+      );
+
   Map<String, dynamic> toJson() => {
+        'id': id,
         'templateId': templateId,
         'templateName': templateName,
         'templateIcon': templateIcon,
@@ -253,7 +273,8 @@ class WorkoutHistoryEntry {
 
   factory WorkoutHistoryEntry.fromJson(Map<String, dynamic> json) {
     return WorkoutHistoryEntry(
-      templateId: json['templateId'] as String,
+      id: json['id'] as String? ?? '',
+      templateId: json['templateId'] as String? ?? '',
       templateName: json['templateName'] as String? ?? '',
       templateIcon: json['templateIcon'] as String? ?? '',
       startedAt: DateTime.parse(json['startedAt'] as String),

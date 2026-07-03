@@ -118,18 +118,33 @@ class MeasuresViewModel extends ChangeNotifier {
     }
   }
 
+  /// Backend-authoritative sync: the server's measurement set replaces the
+  /// local cache. Runs only after a successful fetch, so offline/failed
+  /// requests leave the cache untouched.
   Future<void> _syncFromApi() async {
     try {
       final remote = await _api.fetchMeasurements();
+      final remoteIds = remote.map((e) => e.id).toSet();
+
+      // Drop cached entries the server no longer has (deleted elsewhere).
+      final localAll = await _repo.getAll();
+      for (final e in localAll) {
+        if (!remoteIds.contains(e.id)) {
+          await _repo.deleteById(e.id);
+        }
+      }
       for (final e in remote) {
         await _repo.upsert(e);
       }
       _entries = await _repo.getAll();
       _sortEntries();
 
-      final remoteMacro = await _api.fetchMacroProfile();
-      _macroProfile = remoteMacro;
-      await _macrosRepo.saveProfile(remoteMacro);
+      // Macro profile + height come from one backend resource.
+      final profile = await _api.fetchProfile();
+      _macroProfile = profile.macro;
+      await _macrosRepo.saveProfile(profile.macro);
+      _profile = MeasureProfile(heightCm: profile.heightCm);
+      await _profileRepo.saveProfile(_profile);
 
       notifyListeners();
     } catch (_) {
@@ -138,18 +153,22 @@ class MeasuresViewModel extends ChangeNotifier {
   }
 
   // ===== Profile setters =====
+  // Height and macro inputs share one backend row, so every setter pushes the
+  // whole profile (a PUT is a full replace) via [_pushProfile].
   Future<void> setHeightCm(double? height) async {
     final clean = (height == null || height <= 0) ? null : height;
-    _profile = _profile.copyWith(heightCm: clean);
+    // Construct directly — copyWith can't set heightCm back to null.
+    _profile = MeasureProfile(heightCm: clean);
     await _profileRepo.saveProfile(_profile);
     notifyListeners();
+    _pushProfile();
   }
 
   Future<void> setIsMale(bool isMale) async {
     _macroProfile = _macroProfile.copyWith(isMale: isMale);
     await _macrosRepo.saveProfile(_macroProfile);
     notifyListeners();
-    _api.putMacroProfile(_macroProfile).ignore();
+    _pushProfile();
   }
 
   Future<void> setAge(int age) async {
@@ -157,14 +176,21 @@ class MeasuresViewModel extends ChangeNotifier {
     _macroProfile = _macroProfile.copyWith(age: clean);
     await _macrosRepo.saveProfile(_macroProfile);
     notifyListeners();
-    _api.putMacroProfile(_macroProfile).ignore();
+    _pushProfile();
   }
 
   Future<void> setActivityFactor(double factor) async {
     _macroProfile = _macroProfile.copyWith(activityFactor: factor);
     await _macrosRepo.saveProfile(_macroProfile);
     notifyListeners();
-    _api.putMacroProfile(_macroProfile).ignore();
+    _pushProfile();
+  }
+
+  /// Pushes the combined macro + height profile to the backend (best-effort).
+  void _pushProfile() {
+    _api
+        .putProfile(macro: _macroProfile, heightCm: _profile.heightCm)
+        .ignore();
   }
 
   // ===== Weight stats =====

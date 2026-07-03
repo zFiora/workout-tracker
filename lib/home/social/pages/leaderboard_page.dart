@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:workout_tracker/common/theme/app_theme.dart';
 import 'package:workout_tracker/common/widgets/uiKit.dart';
+import 'package:workout_tracker/common/widgets/user_avatar.dart';
 import 'package:workout_tracker/common/widgets/myCustomeScaffoldView.dart';
 import 'package:workout_tracker/core/api/api_result.dart';
 import 'package:workout_tracker/home/social/services/leaderboard_service.dart';
@@ -109,23 +110,10 @@ class _LeaderboardTile extends StatelessWidget {
             const SizedBox(width: 12),
 
             // Avatar
-            CircleAvatar(
+            UserAvatar(
+              base64: entry.avatarBase64,
+              name: entry.displayName,
               radius: 22,
-              backgroundColor: cs.primaryContainer,
-              backgroundImage: entry.avatarUrl != null
-                  ? NetworkImage(entry.avatarUrl!)
-                  : null,
-              child: entry.avatarUrl == null
-                  ? Text(
-                      entry.displayName.isNotEmpty
-                          ? entry.displayName[0].toUpperCase()
-                          : '?',
-                      style: TextStyle(
-                        color: cs.onPrimaryContainer,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    )
-                  : null,
             ),
             const SizedBox(width: 12),
 

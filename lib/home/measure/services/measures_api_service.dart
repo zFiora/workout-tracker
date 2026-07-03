@@ -35,24 +35,33 @@ class MeasuresApiService {
     if (result is ApiError) throw Exception((result as ApiError).message);
   }
 
-  // ── Macro Profile ────────────────────────────────────────────────────────
+  // ── Macro Profile (also holds body height) ───────────────────────────────
+  //
+  // The backend keeps heightCm on the same macro-profile row as the BMR
+  // inputs, so both travel together. GET returns 404 when no profile exists
+  // yet; PUT is a full replace, so every write must include heightCm or it
+  // would be nulled — callers pass the current value.
 
-  Future<MacroProfile> fetchMacroProfile() async {
+  Future<({MacroProfile macro, double? heightCm})> fetchProfile() async {
     final result = await _client.get('/api/macro-profile');
     return switch (result) {
-      ApiSuccess(:final data) => _macroFromJson(data as Map<String, dynamic>),
+      ApiSuccess(:final data) => _profileFromJson(data as Map<String, dynamic>),
       ApiError(:final message) => throw Exception(message),
     };
   }
 
-  Future<MacroProfile> putMacroProfile(MacroProfile profile) async {
+  Future<({MacroProfile macro, double? heightCm})> putProfile({
+    required MacroProfile macro,
+    required double? heightCm,
+  }) async {
     final result = await _client.put('/api/macro-profile', {
-      'isMale': profile.isMale,
-      'age': profile.age,
-      'activityFactor': profile.activityFactor,
+      'isMale': macro.isMale,
+      'age': macro.age,
+      'activityFactor': macro.activityFactor,
+      'heightCm': heightCm,
     });
     return switch (result) {
-      ApiSuccess(:final data) => _macroFromJson(data),
+      ApiSuccess(:final data) => _profileFromJson(data),
       ApiError(:final message) => throw Exception(message),
     };
   }
@@ -65,9 +74,15 @@ class MeasuresApiService {
         weightKg: (j['weightKg'] as num).toDouble(),
       );
 
-  MacroProfile _macroFromJson(Map<String, dynamic> j) => MacroProfile(
-        isMale: j['isMale'] as bool,
-        age: (j['age'] as num).toInt(),
-        activityFactor: (j['activityFactor'] as num).toDouble(),
+  ({MacroProfile macro, double? heightCm}) _profileFromJson(
+    Map<String, dynamic> j,
+  ) =>
+      (
+        macro: MacroProfile(
+          isMale: j['isMale'] as bool? ?? true,
+          age: (j['age'] as num?)?.toInt() ?? 25,
+          activityFactor: (j['activityFactor'] as num?)?.toDouble() ?? 1.375,
+        ),
+        heightCm: (j['heightCm'] as num?)?.toDouble(),
       );
 }

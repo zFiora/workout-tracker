@@ -38,6 +38,16 @@ class HiveTemplatesRepository implements TemplatesRepository {
   }
 
   @override
+  Future<void> upsert(WorkoutTemplateModel template) async {
+    final key = _keyOfId(template.id);
+    if (key == null) {
+      await _box.add(template);
+    } else {
+      await _box.put(key, template);
+    }
+  }
+
+  @override
   Future<void> delete(WorkoutTemplateModel template) async {
     final key = _keyOfId(template.id);
     if (key == null) return;

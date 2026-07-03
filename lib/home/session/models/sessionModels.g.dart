@@ -149,6 +149,7 @@ class WorkoutHistoryEntryAdapter extends TypeAdapter<WorkoutHistoryEntry> {
       for (int i = 0; i < numOfFields; i++) reader.readByte(): reader.read(),
     };
     return WorkoutHistoryEntry(
+      id: fields[7] == null ? '' : fields[7] as String,
       templateIcon: fields[2] as String,
       templateId: fields[0] as String,
       templateName: fields[1] as String,
@@ -162,7 +163,9 @@ class WorkoutHistoryEntryAdapter extends TypeAdapter<WorkoutHistoryEntry> {
   @override
   void write(BinaryWriter writer, WorkoutHistoryEntry obj) {
     writer
+      ..writeByte(8)
       ..writeByte(7)
+      ..write(obj.id)
       ..writeByte(0)
       ..write(obj.templateId)
       ..writeByte(1)

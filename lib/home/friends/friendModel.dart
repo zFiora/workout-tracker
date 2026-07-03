@@ -3,7 +3,9 @@ class FriendUser {
   final String email;
   final String username;
   final String? displayName;
-  final String? avatarUrl;
+
+  /// Raw base64-encoded avatar image (no data-URI prefix), or null.
+  final String? avatarBase64;
   final int currentStreak;
   final int bestStreak;
 
@@ -12,7 +14,7 @@ class FriendUser {
     required this.email,
     required this.username,
     this.displayName,
-    this.avatarUrl,
+    this.avatarBase64,
     this.currentStreak = 0,
     this.bestStreak = 0,
   });
@@ -25,7 +27,7 @@ class FriendUser {
     email: json['email'] as String? ?? '',
     username: json['username'] as String? ?? '',
     displayName: json['displayName'] as String?,
-    avatarUrl: json['avatarUrl'] as String?,
+    avatarBase64: json['avatarBase64'] as String?,
     currentStreak: (json['currentStreak'] as num?)?.toInt() ?? 0,
     bestStreak: (json['bestStreak'] as num?)?.toInt() ?? 0,
   );
