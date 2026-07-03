@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:workout_tracker/common/theme/app_theme.dart';
 import 'package:workout_tracker/common/widgets/myCustomeScaffoldView.dart';
+import 'package:workout_tracker/common/widgets/uiKit.dart';
 import 'package:workout_tracker/home/history/ViewModel/historyViewModel.dart';
 import 'package:workout_tracker/home/history/pages/historySessionDetailedPage.dart';
 import 'package:workout_tracker/home/history/widgets/historyTile.dart';
@@ -14,9 +16,13 @@ class HistoryPage extends StatelessWidget {
     final items = vm.historyItems;
 
     if (items.isEmpty) {
-      return MyCustomeScaffoldView(
+      return const MyCustomeScaffoldView(
         title: 'History',
-        body: _EmptyHistoryState(),
+        body: EmptyState(
+          icon: Icons.history_rounded,
+          title: 'No workouts yet',
+          message: 'Finish your first session and it will\nshow up here with all its stats.',
+        ),
       );
     }
 
@@ -54,84 +60,49 @@ class HistoryPage extends StatelessWidget {
             direction: DismissDirection.endToStart,
             confirmDismiss: (_) async => true,
             background: Container(
-              margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              padding: const EdgeInsets.only(right: 18),
+              margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+              padding: const EdgeInsets.only(right: 20),
               alignment: Alignment.centerRight,
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(16),
-                color: Theme.of(context).colorScheme.errorContainer,
+                borderRadius: BorderRadius.circular(AppRadius.xl),
+                color: Theme.of(context)
+                    .colorScheme
+                    .error
+                    .withValues(alpha: 0.16),
+                border: Border.all(
+                  color: Theme.of(context)
+                      .colorScheme
+                      .error
+                      .withValues(alpha: 0.4),
+                ),
               ),
               child: Icon(
-                Icons.delete_outline,
-                color: Theme.of(context).colorScheme.onErrorContainer,
+                Icons.delete_outline_rounded,
+                color: Theme.of(context).colorScheme.error,
               ),
             ),
             onDismissed: (_) => deleteWithUndo(),
-            child: HistoryTile(
-              entry: entry,
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => HistorySessionDetailPage(
-                      entry: item.entry,
-                      historyKey: item.key,
-                      historyService: vm.service,
+            child: FadeRiseIn(
+              index: i,
+              child: HistoryTile(
+                entry: entry,
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => HistorySessionDetailPage(
+                        entry: item.entry,
+                        historyKey: item.key,
+                        historyService: vm.service,
+                      ),
                     ),
-                  ),
-                );
-              },
-              onDelete: deleteWithUndo,
+                  );
+                },
+                onDelete: deleteWithUndo,
+              ),
             ),
           );
         },
-      ),
-    );
-  }
-}
-
-class _EmptyHistoryState extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              width: 80,
-              height: 80,
-              decoration: BoxDecoration(
-                color: cs.primaryContainer.withValues(alpha: 0.4),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                Icons.history_rounded,
-                size: 40,
-                color: cs.primary,
-              ),
-            ),
-            const SizedBox(height: 20),
-            Text(
-              'No workouts yet',
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.w800,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Complete your first session to\nsee your history here.',
-              textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: cs.onSurfaceVariant,
-                height: 1.5,
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }

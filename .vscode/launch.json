@@ -2,16 +2,7 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "workout_tracker (ngrok)",
-      "request": "launch",
-      "type": "dart",
-      "program": "lib/main.dart",
-      "args": [
-        "--dart-define=API_BASE_URL=http://10.0.2.2:5289"
-      ]
-    },
-    {
-      "name": "workout_tracker (local emulator)",
+      "name": "workout_tracker",
       "request": "launch",
       "type": "dart",
       "program": "lib/main.dart"

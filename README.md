@@ -7,7 +7,6 @@ A new Flutter project.
 ### Prerequisites
 
 - Flutter SDK ≥ 3.8.1 — verify with `flutter --version`
-- A running [PocketBase](https://pocketbase.io) instance (local or hosted)
 
 ### Clone & install
 
@@ -19,14 +18,10 @@ flutter pub get
 
 ### Configure the backend URL
 
-The default URL targets the Android emulator's localhost. Change it without touching source code using `--dart-define`:
+The default URL is the production backend on Railway. Override it without touching source code using `--dart-define`, e.g. to point at a local dev server:
 
 ```bash
-# Real Android device on your LAN
-flutter run --dart-define=API_BASE_URL=http://192.168.1.100:8090
-
-# Production build
-flutter build apk --release --dart-define=API_BASE_URL=https://api.yourapp.com
+flutter run --dart-define=API_BASE_URL=http://192.168.1.100:5289
 ```
 
 The constant is in [lib/core/api/api_config.dart](lib/core/api/api_config.dart):
@@ -34,7 +29,7 @@ The constant is in [lib/core/api/api_config.dart](lib/core/api/api_config.dart):
 ```dart
 static const String baseUrl = String.fromEnvironment(
   'API_BASE_URL',
-  defaultValue: 'http://10.0.2.2:8090',
+  defaultValue: 'https://workout-tracker-api-production-99ed.up.railway.app',
 );
 ```
 

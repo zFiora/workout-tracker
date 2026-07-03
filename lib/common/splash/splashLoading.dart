@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:workout_tracker/common/AppManager.dart';
+import 'package:workout_tracker/common/theme/app_theme.dart';
 import 'package:workout_tracker/common/navigation/mainNavigation.dart';
 import 'package:workout_tracker/core/auth_token.dart';
 import 'package:workout_tracker/home/login/widgets/loginPage.dart';
@@ -93,11 +94,7 @@ class _SplashPageState extends State<SplashPage>
         width: size.width,
         height: size.height,
         decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [Color(0xFF0D2B66), Color(0xFF0F172A)],
-          ),
+          gradient: AppGradients.midnight,
         ),
         child: SafeArea(
           child: Padding(
@@ -112,26 +109,25 @@ class _SplashPageState extends State<SplashPage>
                     Container(
                       padding: const EdgeInsets.all(7),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF3B82F6).withValues(alpha: 0.15),
+                        color: AppColors.volt.withValues(alpha: 0.15),
                         borderRadius: BorderRadius.circular(10),
                         border: Border.all(
-                          color: const Color(0xFF3B82F6).withValues(alpha: 0.3),
+                          color: AppColors.volt.withValues(alpha: 0.3),
                         ),
                       ),
                       child: const Icon(
                         Icons.fitness_center_rounded,
-                        color: Color(0xFF3B82F6),
+                        color: AppColors.volt,
                         size: 18,
                       ),
                     ),
                     const SizedBox(width: 10),
                     Text(
                       'Gym Tracker',
-                      style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: 0.5,
-                      ),
+                      style: Theme.of(context)
+                          .textTheme
+                          .headlineMedium
+                          ?.copyWith(color: Colors.white, letterSpacing: 0.5),
                     ),
                   ],
                 ),
@@ -154,11 +150,12 @@ class _SplashPageState extends State<SplashPage>
                 FadeTransition(
                   opacity: _heroOpacity,
                   child: const Text(
-                    'Track. Progress. Dominate.',
+                    'TRACK · PROGRESS · DOMINATE',
                     style: TextStyle(
-                      color: Color(0xFF8B949E),
-                      fontSize: 13,
-                      letterSpacing: 1.4,
+                      fontFamily: AppFonts.display,
+                      color: AppColors.textMid,
+                      fontSize: 12,
+                      letterSpacing: 3.2,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
@@ -172,7 +169,7 @@ class _SplashPageState extends State<SplashPage>
                       ? const Padding(
                           padding: EdgeInsets.only(bottom: 28),
                           child: CircularProgressIndicator(
-                            color: Color(0xFF3B82F6),
+                            color: AppColors.volt,
                             strokeWidth: 2,
                           ),
                         )
@@ -191,8 +188,9 @@ class _SplashPageState extends State<SplashPage>
                                 ),
                                 style: OutlinedButton.styleFrom(
                                   foregroundColor: Colors.white,
-                                  side: const BorderSide(
-                                    color: Color(0xFF3B82F6),
+                                  side: BorderSide(
+                                    color: AppColors.volt
+                                        .withValues(alpha: 0.7),
                                     width: 1.5,
                                   ),
                                   shape: RoundedRectangleBorder(
@@ -211,9 +209,9 @@ class _SplashPageState extends State<SplashPage>
                                     ),
                                     SizedBox(width: 8),
                                     Icon(
-                                      Icons.construction_rounded,
-                                      size: 15,
-                                      color: Color(0xFF3B82F6),
+                                      Icons.arrow_forward_rounded,
+                                      size: 16,
+                                      color: AppColors.volt,
                                     ),
                                   ],
                                 ),
@@ -227,16 +225,11 @@ class _SplashPageState extends State<SplashPage>
                               height: 52,
                               child: DecoratedBox(
                                 decoration: BoxDecoration(
-                                  gradient: const LinearGradient(
-                                    colors: [
-                                      Color(0xFF3B82F6),
-                                      Color(0xFF1D3B7A),
-                                    ],
-                                  ),
+                                  gradient: AppGradients.volt,
                                   borderRadius: BorderRadius.circular(14),
                                   boxShadow: [
                                     BoxShadow(
-                                      color: const Color(0xFF3B82F6)
+                                      color: AppColors.voltDeep
                                           .withValues(alpha: 0.4),
                                       blurRadius: 18,
                                       offset: const Offset(0, 6),
@@ -278,8 +271,8 @@ class _SplashPageState extends State<SplashPage>
                                 child: Text(
                                   'Continue without account →',
                                   style: TextStyle(
-                                    color: Color(0xFF8B949E),
-                                    fontWeight: FontWeight.w500,
+                                    color: AppColors.textMid,
+                                    fontWeight: FontWeight.w600,
                                     fontSize: 14,
                                   ),
                                 ),

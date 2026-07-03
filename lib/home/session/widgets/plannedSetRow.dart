@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:workout_tracker/common/theme/app_theme.dart';
 import 'package:workout_tracker/home/exercises/models/exerciseModel.dart';
 import 'package:workout_tracker/home/session/models/sessionModels.dart';
 
@@ -49,8 +50,8 @@ class PlannedSetRow extends StatelessWidget {
   Color _typeColor(BuildContext ctx, SetType type) {
     final cs = Theme.of(ctx).colorScheme;
     if (type == SetType.work) return cs.primary;
-    if (type == SetType.warmup) return const Color(0xFFF59E0B);
-    return const Color(0xFF8B5CF6); // dropset = purple
+    if (type == SetType.warmup) return ctx.tokens.warning;
+    return ctx.tokens.dropset;
   }
 
   @override
@@ -77,11 +78,11 @@ class PlannedSetRow extends StatelessWidget {
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(14),
         color: p.done
-            ? const Color(0xFF10B981).withValues(alpha: 0.07)
+            ? context.tokens.success.withValues(alpha: 0.07)
             : cs.surfaceContainerHighest.withValues(alpha: 0.3),
         border: Border.all(
           color: p.done
-              ? const Color(0xFF10B981).withValues(alpha: 0.3)
+              ? context.tokens.success.withValues(alpha: 0.3)
               : cs.outlineVariant.withValues(alpha: 0.5),
           width: 1.2,
         ),
@@ -261,9 +262,16 @@ class _LogButton extends StatelessWidget {
       return Container(
         width: 42,
         height: 42,
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           shape: BoxShape.circle,
-          color: Color(0xFF10B981),
+          color: context.tokens.success,
+          boxShadow: [
+            BoxShadow(
+              color: context.tokens.success.withValues(alpha: 0.35),
+              blurRadius: 10,
+              offset: const Offset(0, 3),
+            ),
+          ],
         ),
         child: const Icon(Icons.check_rounded, color: Colors.white, size: 22),
       );

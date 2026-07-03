@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:workout_tracker/common/widgets/myCustomeScaffoldView.dart';
+import 'package:workout_tracker/common/widgets/uiKit.dart';
 import 'package:workout_tracker/home/exercises/models/categoryModel.dart';
 import 'package:workout_tracker/home/exercises/models/exerciseModel.dart';
 import 'package:workout_tracker/home/templates/models/workout_template.dart';
@@ -80,14 +81,10 @@ class _EditTemplatePageState extends State<EditTemplatePage> {
             child: Column(
               children: [
                 TextField(
-                  decoration: InputDecoration(
+                  decoration: const InputDecoration(
                     hintText: 'Search exercises…',
-                    prefixIcon: const Icon(Icons.search, size: 20),
+                    prefixIcon: Icon(Icons.search_rounded, size: 20),
                     isDense: true,
-                    contentPadding: const EdgeInsets.symmetric(vertical: 10),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
                   ),
                   onChanged: (v) => setState(() => _search = v),
                 ),
@@ -192,21 +189,10 @@ class _EditTemplatePageState extends State<EditTemplatePage> {
             top: false,
             child: Padding(
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-              child: SizedBox(
-                width: double.infinity,
-                height: 52,
-                child: FilledButton.icon(
-                  onPressed: _save,
-                  icon: const Icon(Icons.check_rounded),
-                  label: Text(
-                    'Save Changes (${_selectedIds.length} exercises)',
-                  ),
-                  style: FilledButton.styleFrom(
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                  ),
-                ),
+              child: VoltButton(
+                onPressed: _save,
+                icon: Icons.check_rounded,
+                label: 'Save Changes (${_selectedIds.length} exercises)',
               ),
             ),
           ),

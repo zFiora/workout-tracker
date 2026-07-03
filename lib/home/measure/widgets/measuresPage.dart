@@ -3,7 +3,10 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:workout_tracker/common/theme/app_theme.dart';
+import 'package:workout_tracker/common/widgets/myCustomSnackBar.dart';
 import 'package:workout_tracker/common/widgets/myCustomeScaffoldView.dart';
+import 'package:workout_tracker/common/widgets/uiKit.dart';
 import 'package:workout_tracker/home/measure/measures_viewmodel.dart';
 import 'package:workout_tracker/home/measure/models/macroResults.dart';
 import 'package:workout_tracker/home/measure/repositeries/macros_profile_repository.dart';
@@ -54,23 +57,23 @@ class _MeasuresViewState extends State<_MeasuresView> {
       body: vm.loading
           ? const Center(child: CircularProgressIndicator())
           : SingleChildScrollView(
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  _summaryCard(context, vm),
+                  FadeRiseIn(index: 0, child: _summaryCard(context, vm)),
                   const SizedBox(height: 12),
 
-                  _chartCard(vm),
+                  FadeRiseIn(index: 1, child: _chartCard(vm)),
                   const SizedBox(height: 12),
 
-                  _addEntryCard(context, df, vm),
+                  FadeRiseIn(index: 2, child: _addEntryCard(context, df, vm)),
                   const SizedBox(height: 12),
 
-                  _macrosCard(context, vm),
+                  FadeRiseIn(index: 3, child: _macrosCard(context, vm)),
                   const SizedBox(height: 12),
 
-                  _historyCard(df, vm),
+                  FadeRiseIn(index: 4, child: _historyCard(df, vm)),
                 ],
               ),
             ),
@@ -79,6 +82,9 @@ class _MeasuresViewState extends State<_MeasuresView> {
 
   // ===== Summary (weight + deltas + height + BMI) =====
   Widget _summaryCard(BuildContext context, MeasuresViewModel vm) {
+    final cs = Theme.of(context).colorScheme;
+    final tt = Theme.of(context).textTheme;
+
     final latest = vm.latestWeight;
     final d7 = vm.deltaDays(7);
     final d30 = vm.deltaDays(30);
@@ -86,74 +92,83 @@ class _MeasuresViewState extends State<_MeasuresView> {
     final h = vm.heightCm;
     final bmi = vm.bmi;
 
-    String fmtDelta(double? d) {
-      if (d == null) return '—';
-      final sign = d >= 0 ? '+' : '';
-      return '$sign${d.toStringAsFixed(1)} kg';
+    Widget deltaPill(String period, double? d) {
+      final IconData icon;
+      if (d == null || d == 0) {
+        icon = Icons.remove_rounded;
+      } else if (d > 0) {
+        icon = Icons.trending_up_rounded;
+      } else {
+        icon = Icons.trending_down_rounded;
+      }
+      final label = d == null
+          ? '$period —'
+          : '$period ${d >= 0 ? "+" : ""}${d.toStringAsFixed(1)} kg';
+      return StatPill(icon: icon, label: label, color: cs.primary);
     }
 
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(14),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Current weight',
-                        style: TextStyle(fontSize: 13),
-                      ),
-                      const SizedBox(height: 6),
-                      Text(
-                        latest == null
-                            ? '—'
-                            : '${latest.toStringAsFixed(1)} kg',
-                        style: const TextStyle(
-                          fontSize: 28,
-                          fontWeight: FontWeight.w800,
-                        ),
-                      ),
-                    ],
-                  ),
+    return AppCard(
+      radius: AppRadius.xl,
+      padding: const EdgeInsets.all(18),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const SectionHeader(title: 'Current weight', padding: EdgeInsets.zero),
+          const SizedBox(height: 10),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                latest == null ? '—' : latest.toStringAsFixed(1),
+                style: tt.displayMedium?.copyWith(color: cs.onSurface),
+              ),
+              const SizedBox(width: 6),
+              Padding(
+                padding: const EdgeInsets.only(bottom: 7),
+                child: Text(
+                  'kg',
+                  style: tt.titleMedium?.copyWith(color: cs.onSurfaceVariant),
                 ),
-                const SizedBox(width: 12),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Text('7d: ${fmtDelta(d7)}'),
-                    const SizedBox(height: 6),
-                    Text('30d: ${fmtDelta(d30)}'),
-                  ],
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [deltaPill('7d', d7), deltaPill('30d', d30)],
+          ),
+          const SizedBox(height: 16),
+          const Divider(),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: _MiniStat(
+                  label: 'Height',
+                  value: h == null ? '—' : h.toStringAsFixed(0),
+                  unit: h == null ? '' : 'cm',
                 ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            const Divider(height: 1),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    'Height: ${h == null ? "Not set" : "${h.toStringAsFixed(0)} cm"}',
-                  ),
+              ),
+              Container(
+                width: 1,
+                height: 34,
+                color: Theme.of(context).dividerTheme.color,
+              ),
+              Expanded(
+                child: _MiniStat(
+                  label: 'BMI',
+                  value: bmi == null ? '—' : bmi.toStringAsFixed(1),
+                  unit: '',
                 ),
-                TextButton(
-                  onPressed: () => _showHeightDialog(context, vm),
-                  child: Text(h == null ? 'Set' : 'Edit'),
-                ),
-              ],
-            ),
-            const SizedBox(height: 6),
-            Text(
-              'BMI: ${bmi == null ? "— (need height + weight)" : bmi.toStringAsFixed(1)}',
-            ),
-          ],
-        ),
+              ),
+              TextButton(
+                onPressed: () => _showHeightDialog(context, vm),
+                child: Text(h == null ? 'Set height' : 'Edit'),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
@@ -174,10 +189,7 @@ class _MeasuresViewState extends State<_MeasuresView> {
           content: TextField(
             controller: controller,
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
-            decoration: const InputDecoration(
-              hintText: 'e.g. 175',
-              border: OutlineInputBorder(),
-            ),
+            decoration: const InputDecoration(hintText: 'e.g. 175'),
           ),
           actions: [
             TextButton(
@@ -188,7 +200,7 @@ class _MeasuresViewState extends State<_MeasuresView> {
               onPressed: () => Navigator.pop(ctx, -1),
               child: const Text('Clear'),
             ),
-            ElevatedButton(
+            FilledButton(
               onPressed: () {
                 final raw = controller.text.trim().replaceAll(',', '.');
                 final h = double.tryParse(raw);
@@ -209,9 +221,13 @@ class _MeasuresViewState extends State<_MeasuresView> {
     }
 
     if (res <= 0 || res > 260) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Enter a valid height (cm)')),
-      );
+      if (context.mounted) {
+        Mycustomsnackbar.show(
+          context,
+          message: 'Enter a valid height (cm)',
+          type: SnackbarType.warning,
+        );
+      }
       return;
     }
 
@@ -222,10 +238,14 @@ class _MeasuresViewState extends State<_MeasuresView> {
   Widget _chartCard(MeasuresViewModel vm) {
     final entries = vm.entries;
 
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(14),
-        child: SizedBox(height: 220, child: WeightLineChart(entries: entries)),
+    return AppCard(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const SectionHeader(title: 'Trend', padding: EdgeInsets.only(bottom: 12)),
+          SizedBox(height: 210, child: WeightLineChart(entries: entries)),
+        ],
       ),
     );
   }
@@ -236,80 +256,89 @@ class _MeasuresViewState extends State<_MeasuresView> {
     DateFormat df,
     MeasuresViewModel vm,
   ) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(14),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            const Text(
-              'Add today’s weight',
-              style: TextStyle(fontWeight: FontWeight.w700),
+    final cs = Theme.of(context).colorScheme;
+
+    return AppCard(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const SectionHeader(title: 'Log weight', padding: EdgeInsets.only(bottom: 12)),
+          TextField(
+            controller: _weightController,
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            decoration: const InputDecoration(
+              labelText: 'Weight (kg)',
+              prefixIcon: Icon(Icons.monitor_weight_outlined, size: 20),
             ),
-            const SizedBox(height: 10),
-            TextField(
-              controller: _weightController,
-              keyboardType: const TextInputType.numberWithOptions(
-                decimal: true,
+          ),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              Icon(
+                Icons.event_rounded,
+                size: 18,
+                color: cs.onSurfaceVariant,
               ),
-              decoration: const InputDecoration(
-                labelText: 'Weight (kg)',
-                border: OutlineInputBorder(),
-              ),
-            ),
-            const SizedBox(height: 10),
-            Row(
-              children: [
-                Expanded(child: Text(df.format(_selectedDate))),
-                TextButton(
-                  onPressed: () async {
-                    final picked = await showDatePicker(
-                      context: context,
-                      firstDate: DateTime(2000),
-                      lastDate: DateTime.now().add(const Duration(days: 1)),
-                      initialDate: _selectedDate,
-                    );
-                    if (picked != null) {
-                      setState(() => _selectedDate = picked);
-                    }
-                  },
-                  child: const Text('Pick date'),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  df.format(_selectedDate),
+                  style: Theme.of(context).textTheme.bodyLarge,
                 ),
-              ],
-            ),
-            const SizedBox(height: 10),
-            ElevatedButton(
-              onPressed: () async {
-                final raw = _weightController.text.trim().replaceAll(',', '.');
-                final w = double.tryParse(raw);
-                if (w == null || w <= 0) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Enter a valid weight')),
+              ),
+              TextButton(
+                onPressed: () async {
+                  final picked = await showDatePicker(
+                    context: context,
+                    firstDate: DateTime(2000),
+                    lastDate: DateTime.now().add(const Duration(days: 1)),
+                    initialDate: _selectedDate,
                   );
-                  return;
-                }
-
-                await vm.addOrReplaceEntry(
-                  weightKg: w,
-                  dateLocal: DateTime(
-                    _selectedDate.year,
-                    _selectedDate.month,
-                    _selectedDate.day,
-                  ),
+                  if (picked != null) {
+                    setState(() => _selectedDate = picked);
+                  }
+                },
+                child: const Text('Pick date'),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          VoltButton(
+            label: 'Save entry',
+            icon: Icons.check_rounded,
+            height: 48,
+            onPressed: () async {
+              final raw = _weightController.text.trim().replaceAll(',', '.');
+              final w = double.tryParse(raw);
+              if (w == null || w <= 0) {
+                Mycustomsnackbar.show(
+                  context,
+                  message: 'Enter a valid weight',
+                  type: SnackbarType.warning,
                 );
+                return;
+              }
 
-                _weightController.clear();
-                setState(() => _selectedDate = DateTime.now());
-              },
-              child: const Text('Save'),
-            ),
-            const SizedBox(height: 6),
-            const Text(
-              'Note: one entry per day. Saving again replaces the same day.',
-              style: TextStyle(fontSize: 12),
-            ),
-          ],
-        ),
+              await vm.addOrReplaceEntry(
+                weightKg: w,
+                dateLocal: DateTime(
+                  _selectedDate.year,
+                  _selectedDate.month,
+                  _selectedDate.day,
+                ),
+              );
+
+              _weightController.clear();
+              setState(() => _selectedDate = DateTime.now());
+            },
+          ),
+          const SizedBox(height: 10),
+          Text(
+            'One entry per day — saving again replaces the same day.',
+            style: Theme.of(context).textTheme.bodySmall,
+          ),
+        ],
       ),
     );
   }
@@ -318,65 +347,96 @@ class _MeasuresViewState extends State<_MeasuresView> {
   Widget _macrosCard(BuildContext context, MeasuresViewModel vm) {
     final pack = vm.macrosPack;
 
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(14),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Row(
-              children: [
-                const Expanded(
-                  child: Text(
-                    'Macros',
-                    style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
-                  ),
-                ),
-                TextButton(
-                  onPressed: () => _showMacrosSettings(context, vm),
-                  child: const Text('Edit'),
-                ),
-              ],
+    return AppCard(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          SectionHeader(
+            title: 'Macros',
+            padding: const EdgeInsets.only(bottom: 4),
+            trailing: TextButton(
+              onPressed: () => _showMacrosSettings(context, vm),
+              style: TextButton.styleFrom(
+                visualDensity: VisualDensity.compact,
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+              ),
+              child: const Text('Edit'),
             ),
-            const SizedBox(height: 6),
+          ),
+          Text(
+            'Maintenance / Cutting / Bulking based on TDEE.',
+            style: Theme.of(context).textTheme.bodySmall,
+          ),
+          const SizedBox(height: 12),
+          if (pack == null)
             Text(
-              'Maintenance / Cutting / Bulking based on TDEE.',
-              style: Theme.of(context).textTheme.bodySmall,
-            ),
-            const SizedBox(height: 12),
-            if (pack == null)
-              const Text(
-                'Set height and add a weight entry to calculate macros.',
-              )
-            else ...[
-              _macroRow('Maintenance', pack.maintenance),
-              const Divider(),
-              _macroRow('Cutting', pack.cutting),
-              const Divider(),
-              _macroRow('Bulking', pack.bulking),
-            ],
+              'Set height and add a weight entry to calculate macros.',
+              style: Theme.of(context).textTheme.bodyMedium,
+            )
+          else ...[
+            _macroRow(context, 'Maintenance', pack.maintenance,
+                Icons.balance_rounded, Theme.of(context).colorScheme.primary),
+            const SizedBox(height: 8),
+            _macroRow(context, 'Cutting', pack.cutting,
+                Icons.trending_down_rounded, context.tokens.warning),
+            const SizedBox(height: 8),
+            _macroRow(context, 'Bulking', pack.bulking,
+                Icons.trending_up_rounded, context.tokens.success),
           ],
-        ),
+        ],
       ),
     );
   }
 
-  Widget _macroRow(String title, MacroResult r) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+  Widget _macroRow(
+    BuildContext context,
+    String title,
+    MacroResult r,
+    IconData icon,
+    Color color,
+  ) {
+    final cs = Theme.of(context).colorScheme;
+    final tt = Theme.of(context).textTheme;
+
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: cs.surfaceContainerHigh.withValues(alpha: 0.45),
+        borderRadius: BorderRadius.circular(AppRadius.md),
+        border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.7)),
+      ),
+      child: Row(
         children: [
-          Text(title, style: const TextStyle(fontWeight: FontWeight.w700)),
-          const SizedBox(height: 6),
-          Row(
+          IconBadge(icon: icon, color: color, size: 36),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title, style: tt.titleSmall),
+                const SizedBox(height: 2),
+                Text(
+                  'P ${r.proteinG}g · C ${r.carbsG}g · F ${r.fatG}g',
+                  style: tt.labelMedium?.copyWith(color: cs.onSurfaceVariant),
+                ),
+              ],
+            ),
+          ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Expanded(child: Text('${r.calories} kcal')),
-              Text('P ${r.proteinG}g'),
-              const SizedBox(width: 10),
-              Text('C ${r.carbsG}g'),
-              const SizedBox(width: 10),
-              Text('F ${r.fatG}g'),
+              Text(
+                '${r.calories}',
+                style: tt.titleLarge?.copyWith(
+                  fontFamily: AppFonts.display,
+                  color: color,
+                ),
+              ),
+              Text(
+                'kcal',
+                style: tt.labelSmall?.copyWith(color: cs.onSurfaceVariant),
+              ),
             ],
           ),
         ],
@@ -415,10 +475,7 @@ class _MeasuresViewState extends State<_MeasuresView> {
                       Expanded(
                         child: DropdownButtonFormField<bool>(
                           value: isMale,
-                          decoration: const InputDecoration(
-                            labelText: 'Sex',
-                            border: OutlineInputBorder(),
-                          ),
+                          decoration: const InputDecoration(labelText: 'Sex'),
                           items: const [
                             DropdownMenuItem(value: true, child: Text('Male')),
                             DropdownMenuItem(
@@ -434,10 +491,7 @@ class _MeasuresViewState extends State<_MeasuresView> {
                         child: TextFormField(
                           initialValue: age.toString(),
                           keyboardType: TextInputType.number,
-                          decoration: const InputDecoration(
-                            labelText: 'Age',
-                            border: OutlineInputBorder(),
-                          ),
+                          decoration: const InputDecoration(labelText: 'Age'),
                           onChanged: (v) {
                             final parsed = int.tryParse(v.trim());
                             if (parsed != null) setLocal(() => age = parsed);
@@ -449,10 +503,7 @@ class _MeasuresViewState extends State<_MeasuresView> {
                   const SizedBox(height: 12),
                   DropdownButtonFormField<double>(
                     value: activity,
-                    decoration: const InputDecoration(
-                      labelText: 'Activity',
-                      border: OutlineInputBorder(),
-                    ),
+                    decoration: const InputDecoration(labelText: 'Activity'),
                     items: activities
                         .map(
                           (a) =>
@@ -475,7 +526,7 @@ class _MeasuresViewState extends State<_MeasuresView> {
               onPressed: () => Navigator.pop(ctx),
               child: const Text('Cancel'),
             ),
-            ElevatedButton(
+            FilledButton(
               onPressed: () async {
                 await vm.setIsMale(isMale);
                 await vm.setAge(age);
@@ -494,34 +545,86 @@ class _MeasuresViewState extends State<_MeasuresView> {
   Widget _historyCard(DateFormat df, MeasuresViewModel vm) {
     final entries = vm.entries.reversed.toList();
 
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(14),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            const Text(
-              'History',
-              style: TextStyle(fontWeight: FontWeight.w700),
-            ),
-            const SizedBox(height: 10),
-            if (entries.isEmpty)
-              const Text('No entries yet. Add your weight above.')
-            else
-              ...entries.map(
-                (e) => ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  title: Text('${e.weightKg.toStringAsFixed(1)} kg'),
-                  subtitle: Text(df.format(e.date.toLocal())),
-                  trailing: IconButton(
-                    icon: const Icon(Icons.delete_outline),
-                    onPressed: () => vm.deleteEntry(e.id),
+    return AppCard(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const SectionHeader(title: 'History', padding: EdgeInsets.only(bottom: 8)),
+          if (entries.isEmpty)
+            Text(
+              'No entries yet. Add your weight above.',
+              style: Theme.of(context).textTheme.bodyMedium,
+            )
+          else
+            ...entries.map(
+              (e) => ListTile(
+                contentPadding: EdgeInsets.zero,
+                dense: true,
+                leading: Icon(
+                  Icons.monitor_weight_outlined,
+                  size: 20,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+                title: Text(
+                  '${e.weightKg.toStringAsFixed(1)} kg',
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        fontFamily: AppFonts.display,
+                        fontSize: 15,
+                      ),
+                ),
+                subtitle: Text(
+                  df.format(e.date.toLocal()),
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+                trailing: IconButton(
+                  icon: Icon(
+                    Icons.delete_outline_rounded,
+                    size: 20,
+                    color: Theme.of(context).colorScheme.error,
                   ),
+                  onPressed: () => vm.deleteEntry(e.id),
                 ),
               ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MiniStat extends StatelessWidget {
+  const _MiniStat({required this.label, required this.value, required this.unit});
+
+  final String label;
+  final String value;
+  final String unit;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final tt = Theme.of(context).textTheme;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: tt.labelSmall),
+        const SizedBox(height: 2),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.baseline,
+          textBaseline: TextBaseline.alphabetic,
+          children: [
+            Text(
+              value,
+              style: tt.titleLarge?.copyWith(fontFamily: AppFonts.display),
+            ),
+            if (unit.isNotEmpty) ...[
+              const SizedBox(width: 3),
+              Text(unit, style: tt.labelMedium?.copyWith(color: cs.onSurfaceVariant)),
+            ],
           ],
         ),
-      ),
+      ],
     );
   }
 }

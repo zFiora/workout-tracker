@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
-import 'package:workout_tracker/common/widgets/myCustomeButton.dart';
+import 'package:workout_tracker/common/widgets/myCustomSnackBar.dart';
+import 'package:workout_tracker/common/widgets/uiKit.dart';
 import 'package:workout_tracker/home/exercises/models/exerciseModel.dart';
 import 'package:workout_tracker/home/templates/constants/templateIcons.dart';
 import 'package:workout_tracker/home/templates/models/workout_template.dart';
@@ -31,8 +32,10 @@ class _TemplateSaveSheetState extends State<TemplateSaveSheet> {
     final icon = _selectedIconPath;
 
     if (name.isEmpty || icon == null) {
-      ScaffoldMessenger.of(sheetCtx).showSnackBar(
-        const SnackBar(content: Text('Enter a name and pick an icon.')),
+      Mycustomsnackbar.show(
+        sheetCtx,
+        message: 'Enter a name and pick an icon.',
+        type: SnackbarType.warning,
       );
       return;
     }
@@ -70,18 +73,11 @@ class _TemplateSaveSheetState extends State<TemplateSaveSheet> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Text(
-                "Review & Save",
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-              const Spacer(),
-              IconButton(
-                onPressed: () => Navigator.pop(context, false),
-                icon: const Icon(Icons.close),
-              ),
-            ],
+          Center(
+            child: SheetHeader(
+              title: 'Review & Save',
+              onClose: () => Navigator.pop(context, false),
+            ),
           ),
           const SizedBox(height: 8),
 
@@ -94,8 +90,10 @@ class _TemplateSaveSheetState extends State<TemplateSaveSheet> {
           ),
           const SizedBox(height: 12),
 
-          Text("Pick an Icon", style: Theme.of(context).textTheme.bodyMedium),
-          const SizedBox(height: 8),
+          const SectionHeader(
+            title: 'Pick an icon',
+            padding: EdgeInsets.only(bottom: 8),
+          ),
 
           SizedBox(
             height: 72,
@@ -115,8 +113,12 @@ class _TemplateSaveSheetState extends State<TemplateSaveSheet> {
                     height: 72,
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(14),
+                      color: selected
+                          ? cs.primary.withValues(alpha: 0.12)
+                          : cs.surfaceContainerHigh,
                       border: Border.all(
-                        color: selected ? cs.primary : cs.outlineVariant,
+                        color: selected ? cs.primary : Colors.transparent,
+                        width: selected ? 1.6 : 1,
                       ),
                     ),
                     padding: const EdgeInsets.all(8),
@@ -128,11 +130,10 @@ class _TemplateSaveSheetState extends State<TemplateSaveSheet> {
           ),
           const SizedBox(height: 12),
 
-          Text(
-            "Selected Exercises (${widget.selectedExercises.length})",
-            style: Theme.of(context).textTheme.bodyMedium,
+          SectionHeader(
+            title: 'Selected exercises (${widget.selectedExercises.length})',
+            padding: const EdgeInsets.only(bottom: 8),
           ),
-          const SizedBox(height: 8),
 
           ConstrainedBox(
             constraints: const BoxConstraints(maxHeight: 220),
@@ -149,12 +150,10 @@ class _TemplateSaveSheetState extends State<TemplateSaveSheet> {
 
           const SizedBox(height: 16),
 
-          SizedBox(
-            width: double.infinity,
-            child: MyCustomButton(
-              label: "Confirm Save",
-              onPressed: () => _save(context),
-            ),
+          VoltButton(
+            label: 'Confirm Save',
+            icon: Icons.check_rounded,
+            onPressed: () => _save(context),
           ),
         ],
       ),

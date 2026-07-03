@@ -1,6 +1,8 @@
 // ignore_for_file: file_names
 import 'package:flutter/material.dart';
 
+/// Shared page scaffold: flat surface app bar with a bold Space Grotesk
+/// title, safe-area body and optional pull-to-refresh.
 class MyCustomeScaffoldView extends StatefulWidget {
   final String? title;
   final Widget body;
@@ -65,28 +67,12 @@ class _MyCustomeScaffoldView extends State<MyCustomeScaffoldView> {
       appBar: widget.showAppBar
           ? (widget.customAppBar ??
                 AppBar(
-                  title: Text(
-                    widget.title ?? "",
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w600,
-                      fontSize: 20,
-                    ),
-                  ),
-                  centerTitle: true, // centers text, looks cleaner
-                  backgroundColor:
-                      widget.appBarColor ??
-                      Theme.of(context).colorScheme.primary,
+                  title: Text(widget.title ?? ""),
+                  centerTitle: true,
+                  backgroundColor: widget.appBarColor ?? scaffoldBackground,
                   automaticallyImplyLeading: !widget.isMainPage,
-                  elevation: 4, // subtle shadow
-                  shadowColor: Colors.black.withValues(alpha: 0.3),
-                  shape: const RoundedRectangleBorder(
-                    borderRadius: BorderRadius.vertical(
-                      bottom: Radius.circular(16), // round bottom corners
-                    ),
-                  ),
                 ))
           : null,
-
       body: SafeArea(child: pageBody),
       bottomNavigationBar: widget.showNavigationBar
           ? widget.navigationBar

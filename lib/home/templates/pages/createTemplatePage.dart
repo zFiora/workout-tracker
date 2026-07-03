@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:workout_tracker/common/widgets/myCustomSearchField.dart';
-import 'package:workout_tracker/common/widgets/myCustomeButton.dart';
+import 'package:workout_tracker/common/theme/app_theme.dart';
+import 'package:workout_tracker/common/widgets/myCustomSnackBar.dart';
 import 'package:workout_tracker/common/widgets/myCustomeScaffoldView.dart';
+import 'package:workout_tracker/common/widgets/uiKit.dart';
 import 'package:workout_tracker/home/exercises/models/exerciseModel.dart';
 import 'package:workout_tracker/home/exercises/widgets/exerciseFilterList.dart';
 import 'package:workout_tracker/home/templates/widgets/templateSaveSheet.dart';
@@ -21,8 +23,10 @@ class _CreateTemplatePageState extends State<CreateTemplatePage> {
 
   Future<void> _openSaveSummarySheet() async {
     if (_selectedExercises.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Select at least one exercise first.')),
+      Mycustomsnackbar.show(
+        context,
+        message: 'Select at least one exercise first.',
+        type: SnackbarType.warning,
       );
       return;
     }
@@ -30,9 +34,10 @@ class _CreateTemplatePageState extends State<CreateTemplatePage> {
     final saved = await showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Theme.of(context).colorScheme.surface,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(18)),
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(AppRadius.sheet),
+        ),
       ),
       builder: (_) => TemplateSaveSheet(selectedExercises: _selectedExercises),
     );
@@ -114,13 +119,11 @@ class _CreateTemplatePageState extends State<CreateTemplatePage> {
               const SizedBox(height: saveButtonGap),
 
               Padding(
-                padding: const EdgeInsets.all(8),
-                child: MyCustomButton(
+                padding: const EdgeInsets.symmetric(horizontal: 4),
+                child: VoltButton(
                   onPressed: _openSaveSummarySheet,
-                  fullWidth: true,
                   label: 'Save Template',
-                  icon: Icons.add,
-                  iconPosition: IconPosition.right,
+                  icon: Icons.arrow_forward_rounded,
                 ),
               ),
 

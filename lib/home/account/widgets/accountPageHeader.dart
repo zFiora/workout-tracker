@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:workout_tracker/common/theme/app_theme.dart';
 
 class AccountPageHeader extends StatelessWidget {
   const AccountPageHeader({
@@ -34,7 +35,7 @@ class AccountPageHeader extends StatelessWidget {
           height: 260,
           decoration: const BoxDecoration(
             gradient: LinearGradient(
-              colors: [Color(0xFF1565C0), Color(0xFF0D1B4B)],
+              colors: [AppColors.voltDeep, Color(0xFF0D1B4B)],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),

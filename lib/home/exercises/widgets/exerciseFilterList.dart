@@ -1,17 +1,21 @@
 // ignore_for_file: file_names
 
 import 'package:flutter/material.dart';
+import 'package:workout_tracker/common/theme/app_theme.dart';
+import 'package:workout_tracker/common/widgets/uiKit.dart';
 import 'package:workout_tracker/home/exercises/models/exerciseModel.dart';
 import 'package:workout_tracker/home/exercises/models/categoryModel.dart';
 import 'package:workout_tracker/home/exercises/widgets/exerciseTile.dart';
 
+/// Filterable exercise list: a horizontal category chip rail on top,
+/// followed by either a grouped ("All") or filtered list of exercises.
 class ExerciseFilterList extends StatefulWidget {
   final List<ExerciseModel> exercises;
   final Set<ExerciseModel>? selectedExercises;
   final Function(ExerciseModel)? onExerciseTap;
 
-  /// Extra space at the bottom of the scroll list so the last item isn't hidden
-  /// behind any fixed UI (e.g., Save button / bottom bar).
+  /// Extra space at the bottom of the scroll list so the last item isn't
+  /// hidden behind fixed UI (e.g., a save button).
   final double bottomPadding;
 
   const ExerciseFilterList({
@@ -46,32 +50,32 @@ class _ExerciseFilterListState extends State<ExerciseFilterList> {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        // FILTER TILES ROW
+        // ── Category chip rail ─────────────────────────────────────
         SizedBox(
-          height: 100,
+          height: 44,
           child: ListView(
             scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
             children: [
-              _buildFilterTile(
-                label: "All",
-                icon: Icons.all_inclusive,
+              _CategoryChip(
+                label: 'All',
                 isSelected: _selectedCategory == null,
                 onTap: () => setState(() => _selectedCategory = null),
               ),
-              ...categories.map((cat) {
-                return _buildFilterTile(
+              ...categories.map(
+                (cat) => _CategoryChip(
                   label: cat.displayName,
                   iconAsset: cat.icon,
                   isSelected: _selectedCategory == cat,
                   onTap: () => setState(() => _selectedCategory = cat),
-                );
-              }),
+                ),
+              ),
             ],
           ),
         ),
+        const SizedBox(height: 4),
 
-        // EXERCISES LIST
+        // ── Exercise list ──────────────────────────────────────────
         Expanded(
           child: _selectedCategory == null
               ? _buildGroupedList()
@@ -81,69 +85,20 @@ class _ExerciseFilterListState extends State<ExerciseFilterList> {
     );
   }
 
-  Widget _buildFilterTile({
-    required String label,
-    String? iconAsset,
-    IconData? icon,
-    required bool isSelected,
-    required VoidCallback onTap,
-  }) {
-    final primary = Theme.of(context).colorScheme.primary;
-    final surfaceVariant = Theme.of(context).colorScheme.surfaceContainerHighest;
-
-    return Padding(
-      padding: const EdgeInsets.only(right: 8),
-      child: GestureDetector(
-        onTap: onTap,
-        child: Container(
-          width: 80,
-          decoration: BoxDecoration(
-            color: isSelected ? primary : surfaceVariant,
-            borderRadius: BorderRadius.circular(12),
-            boxShadow: [
-              if (isSelected)
-                const BoxShadow(
-                  color: Colors.black26,
-                  blurRadius: 4,
-                  offset: Offset(0, 2),
-                ),
-            ],
-          ),
-          padding: const EdgeInsets.all(8),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              if (iconAsset != null)
-                Image.asset(iconAsset, width: 32, height: 32)
-              else if (icon != null)
-                Icon(
-                  icon,
-                  size: 32,
-                  color: isSelected ? Colors.white : Colors.black54,
-                ),
-              const SizedBox(height: 6),
-              Text(
-                label,
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w500,
-                  color: isSelected ? Colors.white : Colors.black87,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
   Widget _buildFilteredList() {
+    final list = filteredExercises;
+    if (list.isEmpty) {
+      return const EmptyState(
+        icon: Icons.search_off_rounded,
+        title: 'No matches',
+        message: 'No exercises fit the current search\nand category filter.',
+      );
+    }
     return ListView.builder(
-      padding: EdgeInsets.only(bottom: widget.bottomPadding),
-      itemCount: filteredExercises.length,
+      padding: EdgeInsets.only(top: 4, bottom: widget.bottomPadding + 8),
+      itemCount: list.length,
       itemBuilder: (context, index) {
-        final ex = filteredExercises[index];
+        final ex = list[index];
         return ExerciseTile(
           exercise: ex,
           isSelected: widget.selectedExercises?.contains(ex) ?? false,
@@ -154,26 +109,34 @@ class _ExerciseFilterListState extends State<ExerciseFilterList> {
   }
 
   Widget _buildGroupedList() {
+    if (widget.exercises.isEmpty) {
+      return const EmptyState(
+        icon: Icons.search_off_rounded,
+        title: 'No matches',
+        message: 'No exercises fit the current search.',
+      );
+    }
+
     final grouped = <WorkoutCategory, List<ExerciseModel>>{};
     for (var ex in widget.exercises) {
       grouped.putIfAbsent(ex.category, () => []).add(ex);
     }
 
     return ListView(
-      padding: EdgeInsets.only(bottom: widget.bottomPadding),
+      padding: EdgeInsets.only(top: 4, bottom: widget.bottomPadding + 8),
       children: grouped.entries.map((entry) {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              child: Text(
-                entry.key.displayName,
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: Theme.of(context).colorScheme.primary,
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 2),
+              child: SectionHeader(
+                title: entry.key.displayName,
+                trailing: Text(
+                  '${entry.value.length}',
+                  style: Theme.of(context).textTheme.labelSmall,
                 ),
+                padding: EdgeInsets.zero,
               ),
             ),
             ...entry.value.map(
@@ -186,6 +149,84 @@ class _ExerciseFilterListState extends State<ExerciseFilterList> {
           ],
         );
       }).toList(),
+    );
+  }
+}
+
+class _CategoryChip extends StatelessWidget {
+  const _CategoryChip({
+    required this.label,
+    required this.isSelected,
+    required this.onTap,
+    this.iconAsset,
+  });
+
+  final String label;
+  final String? iconAsset;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+
+    return Padding(
+      padding: const EdgeInsets.only(right: 8),
+      child: Pressable(
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 160),
+          padding: const EdgeInsets.symmetric(horizontal: 14),
+          decoration: BoxDecoration(
+            gradient: isSelected ? AppGradients.volt : null,
+            color: isSelected ? null : cs.surfaceContainerHigh,
+            borderRadius: BorderRadius.circular(999),
+            border: Border.all(
+              color: isSelected
+                  ? Colors.transparent
+                  : cs.outlineVariant.withValues(alpha: 0.9),
+            ),
+            boxShadow: [
+              if (isSelected)
+                BoxShadow(
+                  color: AppColors.voltDeep.withValues(alpha: 0.35),
+                  blurRadius: 10,
+                  offset: const Offset(0, 3),
+                ),
+            ],
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (iconAsset != null) ...[
+                Image.asset(
+                  iconAsset!,
+                  width: 18,
+                  height: 18,
+                  errorBuilder: (_, _, _) => const SizedBox.shrink(),
+                ),
+                const SizedBox(width: 6),
+              ] else ...[
+                Icon(
+                  Icons.all_inclusive_rounded,
+                  size: 15,
+                  color: isSelected ? Colors.white : cs.onSurfaceVariant,
+                ),
+                const SizedBox(width: 6),
+              ],
+              Text(
+                label,
+                style: TextStyle(
+                  fontFamily: AppFonts.body,
+                  fontSize: 13,
+                  fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+                  color: isSelected ? Colors.white : cs.onSurface,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:workout_tracker/common/theme/app_theme.dart';
 import 'package:workout_tracker/common/widgets/myCustomeButton.dart';
 
 class GradientPillButton extends StatelessWidget {
@@ -38,16 +39,13 @@ class GradientPillButton extends StatelessWidget {
                     Color.fromARGB(255, 255, 255, 255),
                     Color.fromARGB(172, 172, 170, 170),
                   ]
-                : [
-                    Color(0xFF0B4DD7),
-                    Color(0xFF0A2D73),
-                  ], // adjust to match Figma
+                : [AppColors.volt, AppColors.voltDeep],
           ),
-          boxShadow: const [
+          boxShadow: [
             BoxShadow(
-              color: Colors.black26,
-              blurRadius: 8,
-              offset: Offset(0, 4),
+              color: AppColors.voltDeep.withValues(alpha: 0.4),
+              blurRadius: 16,
+              offset: const Offset(0, 6),
             ),
           ],
         ),

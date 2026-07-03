@@ -9,8 +9,8 @@ class MyCustomSearchField extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MyCustomTextField(
-      hint: "Search Exercises",
-      icon: Icons.search,
+      hint: "Search exercises",
+      icon: Icons.search_rounded,
       onChanged: onChanged,
     );
   }
