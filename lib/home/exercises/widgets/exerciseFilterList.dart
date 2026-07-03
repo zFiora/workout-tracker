@@ -12,7 +12,14 @@ import 'package:workout_tracker/home/exercises/widgets/exerciseTile.dart';
 class ExerciseFilterList extends StatefulWidget {
   final List<ExerciseModel> exercises;
   final Set<ExerciseModel>? selectedExercises;
+
+  /// Selection-mode tap (template builder): toggles the exercise in/out of
+  /// [selectedExercises] and shows a check indicator.
   final Function(ExerciseModel)? onExerciseTap;
+
+  /// Browse-mode tap: opens the exercise (e.g. its leaderboard). Shows a
+  /// chevron and, unlike [onExerciseTap], does not put tiles in selection UI.
+  final Function(ExerciseModel)? onExerciseOpen;
 
   /// Extra space at the bottom of the scroll list so the last item isn't
   /// hidden behind fixed UI (e.g., a save button).
@@ -23,6 +30,7 @@ class ExerciseFilterList extends StatefulWidget {
     required this.exercises,
     this.selectedExercises,
     this.onExerciseTap,
+    this.onExerciseOpen,
     this.bottomPadding = 0,
   });
 
@@ -103,6 +111,9 @@ class _ExerciseFilterListState extends State<ExerciseFilterList> {
           exercise: ex,
           isSelected: widget.selectedExercises?.contains(ex) ?? false,
           onSelected: widget.onExerciseTap,
+          onTap: widget.onExerciseOpen == null
+              ? null
+              : () => widget.onExerciseOpen!(ex),
         );
       },
     );
@@ -144,6 +155,9 @@ class _ExerciseFilterListState extends State<ExerciseFilterList> {
                 exercise: ex,
                 isSelected: widget.selectedExercises?.contains(ex) ?? false,
                 onSelected: widget.onExerciseTap,
+                onTap: widget.onExerciseOpen == null
+                    ? null
+                    : () => widget.onExerciseOpen!(ex),
               ),
             ),
           ],

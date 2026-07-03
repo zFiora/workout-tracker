@@ -16,6 +16,7 @@ class AccountPageDangerTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return Card(
       elevation: 0,
+      margin: EdgeInsets.zero,
       color: Theme.of(context).colorScheme.surface,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: ListTile(

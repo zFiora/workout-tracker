@@ -27,6 +27,7 @@ class _AccountPageSwitchTileState extends State<AccountPageSwitchTile> {
 
     return Card(
       elevation: 0,
+      margin: EdgeInsets.zero,
       color: scheme.surfaceContainer,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
       child: SwitchListTile.adaptive(

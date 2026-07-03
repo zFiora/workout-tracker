@@ -4,7 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:workout_tracker/common/widgets/myCustomSearchField.dart';
 import 'package:workout_tracker/common/widgets/myCustomeScaffoldView.dart';
 import 'package:workout_tracker/home/exercises/exerciesesList.dart';
+import 'package:workout_tracker/home/exercises/models/exerciseModel.dart';
 import 'package:workout_tracker/home/exercises/widgets/exerciseFilterList.dart';
+import 'package:workout_tracker/home/social/pages/exercise_leaderboard_page.dart';
 
 class ExercisesPage extends StatefulWidget {
   const ExercisesPage({super.key});
@@ -15,6 +17,14 @@ class ExercisesPage extends StatefulWidget {
 
 class _ExercisesPageState extends State<ExercisesPage> {
   String _query = '';
+
+  void _openLeaderboard(ExerciseModel exercise) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => ExerciseLeaderboardPage(exercise: exercise),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -37,7 +47,12 @@ class _ExercisesPageState extends State<ExercisesPage> {
               onChanged: (v) => setState(() => _query = v),
             ),
           ),
-          Expanded(child: ExerciseFilterList(exercises: filtered)),
+          Expanded(
+            child: ExerciseFilterList(
+              exercises: filtered,
+              onExerciseOpen: _openLeaderboard,
+            ),
+          ),
         ],
       ),
     );

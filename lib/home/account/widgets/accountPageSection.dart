@@ -22,7 +22,12 @@ class AccountPageSection extends StatelessWidget {
             title: title,
             padding: const EdgeInsets.only(left: 2, bottom: 8),
           ),
-          ...children,
+          // Even 10px gaps between tiles; spacing lives here rather than on
+          // each tile's Card margin so every section aligns identically.
+          for (var i = 0; i < children.length; i++) ...[
+            if (i > 0) const SizedBox(height: 10),
+            children[i],
+          ],
         ],
       ),
     );
