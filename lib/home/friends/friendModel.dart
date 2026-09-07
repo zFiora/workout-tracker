@@ -1,6 +1,5 @@
 class FriendUser {
   final String id;
-  final String email;
   final String username;
   final String? displayName;
 
@@ -11,7 +10,6 @@ class FriendUser {
 
   const FriendUser({
     required this.id,
-    required this.email,
     required this.username,
     this.displayName,
     this.avatarBase64,
@@ -22,9 +20,10 @@ class FriendUser {
   String get name =>
       (displayName?.isNotEmpty == true) ? displayName! : username;
 
+  // Note: another user's email is deliberately NOT modelled — it must not be
+  // exposed to other users (the backend FriendUserDto should not send it).
   factory FriendUser.fromJson(Map<String, dynamic> json) => FriendUser(
     id: json['id'] as String? ?? '',
-    email: json['email'] as String? ?? '',
     username: json['username'] as String? ?? '',
     displayName: json['displayName'] as String?,
     avatarBase64: json['avatarBase64'] as String?,

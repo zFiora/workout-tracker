@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:workout_tracker/common/AppManager.dart';
 import 'package:workout_tracker/common/formatters/dateTimeFormatter.dart';
+import 'package:workout_tracker/common/units/weight_unit.dart';
 import 'package:workout_tracker/common/widgets/myCustomeScaffoldView.dart';
 import 'package:workout_tracker/home/history/ViewModel/historySessionDetailedVM.dart';
 import 'package:workout_tracker/home/history/exDetail/exDetailPage.dart';
@@ -53,6 +56,7 @@ class _HistorySessionDetailPageState extends State<HistorySessionDetailPage> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
+    final unit = context.select<AppManager, WeightUnit>((m) => m.weightUnit);
 
     final entry = widget.entry;
 
@@ -139,7 +143,7 @@ class _HistorySessionDetailPageState extends State<HistorySessionDetailPage> {
                           badgeText: _setTypeShort(s.type),
                           badgeBg: _badgeBg(cs, s.type),
                           badgeFg: _badgeFg(cs, s.type),
-                          mainText: '${s.weight} kg × ${s.reps}',
+                          mainText: '${unit.formatWithUnit(s.weight)} × ${s.reps}',
                           subText: fmtTime(s.timestamp),
                           showPr: isPr,
                         ),

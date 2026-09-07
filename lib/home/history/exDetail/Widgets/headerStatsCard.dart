@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:workout_tracker/common/AppManager.dart';
+import 'package:workout_tracker/common/units/weight_unit.dart';
 import 'package:workout_tracker/home/history/exDetail/exDetailViewModel.dart';
-import 'package:workout_tracker/home/history/utils/strengthUtils.dart';
 
 class HeaderStatsCard extends StatelessWidget {
   const HeaderStatsCard({super.key, required this.vm});
@@ -8,13 +10,16 @@ class HeaderStatsCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final unit = context.select<AppManager, WeightUnit>((m) => m.weightUnit);
     final best = vm.bestSet;
     final pr = vm.prs;
 
-    final bestSetText =
-        best == null ? "No data yet" : "${round1(best.weight)} kg × ${best.reps}";
-    final bestMetricText =
-        best == null ? "-" : "est 1RM ${round1(vm.bestSetEstimated1RM)} kg";
+    final bestSetText = best == null
+        ? "No data yet"
+        : "${unit.formatWithUnit(best.weight)} × ${best.reps}";
+    final bestMetricText = best == null
+        ? "-"
+        : "est 1RM ${unit.formatWithUnit(vm.bestSetEstimated1RM)}";
 
     return Card(
       child: Padding(

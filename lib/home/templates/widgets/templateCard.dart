@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:workout_tracker/common/theme/app_theme.dart';
+import 'package:workout_tracker/common/theme/workout_icons.dart';
 import 'package:workout_tracker/common/widgets/uiKit.dart';
 import 'package:workout_tracker/home/templates/models/workout_template.dart';
 
@@ -55,9 +56,9 @@ class TemplateCard extends StatelessWidget {
                     color: cs.primary.withValues(alpha: 0.22),
                   ),
                 ),
-                child: Image.asset(
+                child: WorkoutIconImage(
                   template.iconPath,
-                  errorBuilder: (_, _, _) => Icon(
+                  fallback: Icon(
                     Icons.fitness_center_rounded,
                     size: 36,
                     color: cs.primary,

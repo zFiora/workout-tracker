@@ -4,11 +4,17 @@ import 'package:workout_tracker/common/AppManager.dart';
 import 'package:workout_tracker/common/theme/app_theme.dart';
 import 'package:workout_tracker/common/navigation/mainNavigation.dart';
 import 'package:workout_tracker/core/auth_token.dart';
+import 'package:workout_tracker/home/login/widgets/forgotPasswordPage.dart';
 import 'package:workout_tracker/home/login/widgets/loginPage.dart';
 import 'package:workout_tracker/home/login/widgets/registerPage.dart';
 
 class SplashPage extends StatefulWidget {
-  const SplashPage({super.key});
+  const SplashPage({super.key, this.initialResetToken});
+
+  /// When the app is cold-started from a `workouttracker://reset-password`
+  /// deep link, this carries the token and the splash routes straight to the
+  /// reset screen instead of the normal login/main decision.
+  final String? initialResetToken;
 
   @override
   State<SplashPage> createState() => _SplashPageState();
@@ -64,6 +70,22 @@ class _SplashPageState extends State<SplashPage>
 
   Future<void> _decide() async {
     if (_navigated) return;
+
+    // Cold-started from a password-reset deep link → go straight to the
+    // reset screen, bypassing the usual auth-based routing. A short delay
+    // lets the first frame settle so the transition isn't abrupt.
+    final resetToken = widget.initialResetToken;
+    if (resetToken != null && resetToken.isNotEmpty) {
+      _navigated = true;
+      await Future.delayed(const Duration(milliseconds: 300));
+      if (!mounted) return;
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+          builder: (_) => ResetPasswordScreen(token: resetToken),
+        ),
+      );
+      return;
+    }
 
     // AuthToken.I.load() was called in main() — token already in memory
     final authed = AuthToken.I.isValid;

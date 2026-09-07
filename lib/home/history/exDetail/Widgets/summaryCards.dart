@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:workout_tracker/common/AppManager.dart';
+import 'package:workout_tracker/common/units/weight_unit.dart';
 import 'package:workout_tracker/home/history/exDetail/Widgets/simpleCard.dart';
 import 'package:workout_tracker/home/history/exDetail/exDetailViewModel.dart';
 import 'package:workout_tracker/home/history/utils/strengthUtils.dart';
@@ -9,10 +12,11 @@ class SummaryCards extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final unit = context.select<AppManager, WeightUnit>((m) => m.weightUnit);
     final best = vm.bestSet;
     final bestText = best == null
         ? "No data yet"
-        : "${round1(best.weight)} kg × ${best.reps}  •  est 1RM ${round1(vm.bestSetEstimated1RM)} kg";
+        : "${unit.formatWithUnit(best.weight)} × ${best.reps}  •  est 1RM ${unit.formatWithUnit(vm.bestSetEstimated1RM)}";
 
     return Column(
       children: [
@@ -27,7 +31,7 @@ class SummaryCards extends StatelessWidget {
             Expanded(
               child: SimpleCard(
                 title: "Weight PR",
-                value: "${round1(vm.prs.bestWeight)} kg",
+                value: unit.formatWithUnit(vm.prs.bestWeight),
               ),
             ),
             const SizedBox(width: 10),

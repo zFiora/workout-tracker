@@ -1,13 +1,80 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:workout_tracker/common/AppManager.dart';
+import 'package:workout_tracker/common/units/weight_unit.dart';
+import 'package:workout_tracker/common/widgets/myCustomSnackBar.dart';
+import 'package:workout_tracker/home/session/rest_timer_manager.dart';
 import 'package:workout_tracker/home/account/widgets/accountPageDangerTile.dart';
 import 'package:workout_tracker/home/account/widgets/accountPageHeader.dart';
 import 'package:workout_tracker/home/account/widgets/accountPageSection.dart';
 import 'package:workout_tracker/home/account/widgets/accountPageSwitchTile.dart';
 import 'package:workout_tracker/home/account/widgets/accountPageTile.dart';
+import 'package:workout_tracker/home/account/widgets/personalDetailsSheet.dart';
+import 'package:workout_tracker/home/account/widgets/profileStatsGrid.dart';
 import 'package:workout_tracker/home/friends/widgets/addFriendPage.dart';
 import 'package:workout_tracker/home/friends/widgets/friendsListPage.dart';
 import 'package:workout_tracker/home/friends/widgets/manageFriendsPage.dart';
 import 'package:workout_tracker/home/social/pages/leaderboard_page.dart';
+
+/// Small, honest placeholder for a feature that isn't implemented yet — a
+/// silent no-op `onTap` looks broken (nothing visibly happens), which reads
+/// worse than admitting the feature isn't there yet.
+void _notYetAvailable(BuildContext context) {
+  Mycustomsnackbar.show(context, message: 'Coming soon');
+}
+
+Future<void> _showRestPicker(BuildContext context) async {
+  final rest = context.read<RestTimerManager>();
+  const options = [60, 90, 120, 150, 180, 240]; // seconds
+  await showModalBottomSheet<void>(
+    context: context,
+    showDragHandle: true,
+    builder: (sheetCtx) => SafeArea(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          for (final s in options)
+            RadioListTile<int>(
+              value: s,
+              groupValue: rest.defaultSeconds,
+              onChanged: (v) {
+                if (v != null) rest.setDefaultSeconds(v);
+                Navigator.pop(sheetCtx);
+              },
+              title: Text(s % 60 == 0 ? '${s ~/ 60} min' : '${s ~/ 60} min ${s % 60}s'),
+            ),
+          const SizedBox(height: 8),
+        ],
+      ),
+    ),
+  );
+}
+
+Future<void> _showUnitPicker(BuildContext context) async {
+  final app = context.read<AppManager>();
+  await showModalBottomSheet<void>(
+    context: context,
+    showDragHandle: true,
+    builder: (sheetCtx) => SafeArea(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          for (final u in WeightUnit.values)
+            RadioListTile<WeightUnit>(
+              value: u,
+              groupValue: app.weightUnit,
+              onChanged: (v) {
+                if (v != null) app.setWeightUnit(v);
+                Navigator.pop(sheetCtx);
+              },
+              title: Text(u == WeightUnit.kg ? 'Kilograms (kg)' : 'Pounds (lb)'),
+            ),
+          const SizedBox(height: 8),
+        ],
+      ),
+    ),
+  );
+}
 
 class AccountPageBody extends StatelessWidget {
   const AccountPageBody({
@@ -22,6 +89,7 @@ class AccountPageBody extends StatelessWidget {
     required this.onEditAvatar,
     required this.onChangePassword,
     required this.onSignOut,
+    required this.onDeleteAccount,
     required this.isDarkMode,
     required this.onDarkModeChanged,
   });
@@ -36,6 +104,7 @@ class AccountPageBody extends StatelessWidget {
   final VoidCallback onEditAvatar;
   final VoidCallback onChangePassword;
   final VoidCallback onSignOut;
+  final VoidCallback onDeleteAccount;
   final bool isDarkMode;
   final ValueChanged<bool> onDarkModeChanged;
 
@@ -48,16 +117,47 @@ class AccountPageBody extends StatelessWidget {
             name: name,
             username: username,
             email: email,
-            streakCurrent: streakCurrent,
-            streakBest: streakBest,
             avatarBase64: avatarBase64,
             onEditProfile: onEditProfile,
             onEditAvatar: onEditAvatar,
           ),
         ),
-        const SliverToBoxAdapter(child: SizedBox(height: 64)),
 
-        // Social section
+        // Real, computed workout stats (nothing fabricated).
+        SliverToBoxAdapter(
+          child: ProfileStatsGrid(
+            currentStreak: streakCurrent,
+            bestStreak: streakBest,
+          ),
+        ),
+
+        // ACCOUNT
+        SliverToBoxAdapter(
+          child: AccountPageSection(
+            title: 'Account',
+            children: [
+              AccountPageTile(
+                icon: Icons.person_outline,
+                title: 'Edit Profile',
+                subtitle: 'Name & username',
+                onTap: onEditProfile,
+              ),
+              AccountPageTile(
+                icon: Icons.badge_outlined,
+                title: 'Personal Details',
+                subtitle: 'Sex & date of birth',
+                onTap: () => PersonalDetailsSheet.show(context),
+              ),
+              AccountPageTile(
+                icon: Icons.lock_outline,
+                title: 'Change Password',
+                onTap: onChangePassword,
+              ),
+            ],
+          ),
+        ),
+
+        // SOCIAL
         SliverToBoxAdapter(
           child: AccountPageSection(
             title: 'Social',
@@ -98,30 +198,10 @@ class AccountPageBody extends StatelessWidget {
           ),
         ),
 
-        // Account section
+        // PREFERENCES
         SliverToBoxAdapter(
           child: AccountPageSection(
-            title: 'Account',
-            children: [
-              AccountPageTile(
-                icon: Icons.person_outline,
-                title: 'Edit Profile',
-                subtitle: 'Name & username',
-                onTap: onEditProfile,
-              ),
-              AccountPageTile(
-                icon: Icons.lock_outline,
-                title: 'Change Password',
-                onTap: onChangePassword,
-              ),
-            ],
-          ),
-        ),
-
-        // App section
-        SliverToBoxAdapter(
-          child: AccountPageSection(
-            title: 'App',
+            title: 'Preferences',
             children: [
               AccountPageSwitchTile(
                 icon: Icons.dark_mode_outlined,
@@ -129,47 +209,80 @@ class AccountPageBody extends StatelessWidget {
                 initialValue: isDarkMode,
                 onChanged: onDarkModeChanged,
               ),
-              AccountPageTile(
-                icon: Icons.cloud_download_outlined,
-                title: 'Export Data',
-                onTap: () {},
+              Builder(
+                builder: (ctx) {
+                  final unit = ctx.select<AppManager, WeightUnit>(
+                    (m) => m.weightUnit,
+                  );
+                  return AccountPageTile(
+                    icon: Icons.scale_outlined,
+                    title: 'Units',
+                    subtitle:
+                        unit == WeightUnit.kg ? 'Kilograms (kg)' : 'Pounds (lb)',
+                    onTap: () => _showUnitPicker(ctx),
+                  );
+                },
+              ),
+              Builder(
+                builder: (ctx) {
+                  final secs = ctx.select<RestTimerManager, int>(
+                    (m) => m.defaultSeconds,
+                  );
+                  final m = secs ~/ 60;
+                  final s = secs % 60;
+                  final label = s == 0 ? '${m}m' : '${m}m ${s}s';
+                  return AccountPageTile(
+                    icon: Icons.timer_outlined,
+                    title: 'Default rest',
+                    subtitle: 'Auto-starts after each set · $label',
+                    onTap: () => _showRestPicker(ctx),
+                  );
+                },
               ),
             ],
           ),
         ),
 
-        // Help + Danger
+        // DATA
+        SliverToBoxAdapter(
+          child: AccountPageSection(
+            title: 'Data',
+            children: [
+              AccountPageTile(
+                icon: Icons.cloud_download_outlined,
+                title: 'Export Data',
+                subtitle: 'Download your workouts',
+                onTap: () => _notYetAvailable(context),
+              ),
+            ],
+          ),
+        ),
+
+        // DANGER ZONE
         SliverToBoxAdapter(
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+            padding: const EdgeInsets.fromLTRB(16, 20, 16, 24),
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                AccountPageSection(
-                  title: 'Help',
-                  children: [
-                    AccountPageTile(
-                      icon: Icons.help_outline,
-                      title: 'FAQ & Support',
-                      onTap: () {},
-                    ),
-                    AccountPageTile(
-                      icon: Icons.star_border_rounded,
-                      title: 'Rate the App',
-                      onTap: () {},
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
                 AccountPageDangerTile(
                   icon: Icons.logout_rounded,
                   title: 'Sign out',
                   onTap: onSignOut,
                 ),
+                const SizedBox(height: 10),
+                AccountPageDangerTile(
+                  icon: Icons.delete_forever_rounded,
+                  title: 'Delete account',
+                  onTap: onDeleteAccount,
+                ),
                 const SizedBox(height: 24),
-                Text(
-                  'v1.0.0',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Theme.of(context).colorScheme.outline,
+                Center(
+                  child: Text(
+                    'v1.0.0',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: Theme.of(context).colorScheme.outline,
+                        ),
                   ),
                 ),
               ],

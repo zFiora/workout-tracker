@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:workout_tracker/common/formatters/dateTimeFormatter.dart';
 import 'package:workout_tracker/common/theme/app_theme.dart';
+import 'package:workout_tracker/common/theme/workout_icons.dart';
 import 'package:workout_tracker/common/widgets/uiKit.dart';
 import 'package:workout_tracker/home/history/utils/historyEnteryStats.dart';
 import 'package:workout_tracker/home/session/models/sessionModels.dart';
@@ -70,10 +71,10 @@ class HistoryTile extends StatelessWidget {
                         color: cs.primary.withValues(alpha: 0.2),
                       ),
                     ),
-                    child: Image.asset(
+                    child: WorkoutIconImage(
                       entry.templateIcon,
                       fit: BoxFit.contain,
-                      errorBuilder: (_, _, _) => Icon(
+                      fallback: Icon(
                         Icons.fitness_center_rounded,
                         size: 22,
                         color: cs.primary,

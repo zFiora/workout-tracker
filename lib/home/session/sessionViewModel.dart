@@ -19,10 +19,15 @@ class WorkoutSessionViewModel extends ChangeNotifier {
     List<ExerciseModel>? exerciseCatalog,
     WorkoutSessionPrService? prService,
     PlannedSetMappingService? mappingService,
+    Map<int, ExerciseLog>? restoredLogs,
   }) : allExercises = exerciseCatalog ?? ExercisesViewModel.all,
        _prService = prService ?? WorkoutSessionPrService(),
        _mappingService = mappingService ?? PlannedSetMappingService() {
-    _initLogs();
+    if (restoredLogs != null) {
+      _logs.addAll(restoredLogs);
+    } else {
+      _initLogs();
+    }
   }
 
   final String templateId;
@@ -82,7 +87,17 @@ class WorkoutSessionViewModel extends ChangeNotifier {
 
   void _initLogs() {
     for (final id in exerciseIds) {
-      final ex = allExercises.firstWhere((e) => e.id == id);
+      // Defensive: a template may reference a custom exercise that was later
+      // deleted. Skip unresolved ids rather than crashing (firstWhere with no
+      // orElse threw). Callers already filter these out, this is a safety net.
+      ExerciseModel? ex;
+      for (final e in allExercises) {
+        if (e.id == id) {
+          ex = e;
+          break;
+        }
+      }
+      if (ex == null) continue;
 
       _logs[id] = ExerciseLog(
         exerciseId: id,
@@ -107,12 +122,17 @@ class WorkoutSessionViewModel extends ChangeNotifier {
 
   // ------------------- lifecycle -------------------
 
-  void start() {
+  /// Starts (or resumes) the session timer.
+  ///
+  /// Pass [resumeFrom] when restoring a session that was already running
+  /// before the app was killed, so the elapsed time keeps counting from the
+  /// original start rather than resetting to zero.
+  void start({DateTime? resumeFrom}) {
     if (isRunning) return;
 
-    _startedAt = DateTime.now();
+    _startedAt = resumeFrom ?? DateTime.now();
     _endedAt = null;
-    _elapsed = Duration.zero;
+    _elapsed = DateTime.now().difference(_startedAt!);
 
     _ticker = Timer.periodic(const Duration(seconds: 1), (_) {
       final start = _startedAt;
@@ -255,6 +275,28 @@ class WorkoutSessionViewModel extends ChangeNotifier {
         ),
       );
 
+    notifyListeners();
+  }
+
+  /// Applies progressive-overload targets to the not-yet-done planned rows of
+  /// [exerciseId], in order. Replaces each row with a fresh instance so its
+  /// text controllers reset to the new values. Done rows are never touched,
+  /// and the user can still edit any suggested value afterwards.
+  void applyProgressionTargets({
+    required int exerciseId,
+    required List<({double weightKg, int reps})> targets,
+  }) {
+    final log = _logs[exerciseId];
+    if (log == null || targets.isEmpty) return;
+
+    var t = 0;
+    for (var i = 0; i < log.plannedSets.length && t < targets.length; i++) {
+      final p = log.plannedSets[i];
+      if (p.done) continue;
+      log.plannedSets[i] =
+          p.copyWith(weight: targets[t].weightKg, reps: targets[t].reps);
+      t++;
+    }
     notifyListeners();
   }
 

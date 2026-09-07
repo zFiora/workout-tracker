@@ -89,7 +89,16 @@ class _CreateTemplatePageState extends State<CreateTemplatePage> {
                                 .map(
                                   (ex) => Padding(
                                     padding: const EdgeInsets.only(right: 6),
-                                    child: Chip(label: Text(ex.name)),
+                                    child: Chip(
+                                      label: Text(ex.name),
+                                      deleteIcon: const Icon(
+                                        Icons.close,
+                                        size: 14,
+                                      ),
+                                      onDeleted: () => setState(
+                                        () => _selectedExercises.remove(ex),
+                                      ),
+                                    ),
                                   ),
                                 )
                                 .toList(),

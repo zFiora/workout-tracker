@@ -49,5 +49,23 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<!-- Password-reset deep link: workouttracker://reset-password?token=...
+	     Custom URL scheme; the app_links plugin receives it via the standard
+	     application:openURL:options: path (no AppDelegate changes needed).
+	     Universal Links (https://) would additionally require an Associated
+	     Domains entitlement + apple-app-site-association file. -->
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>com.workouttracker.reset</string>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>workouttracker</string>
+			</array>
+		</dict>
+	</array>
 </dict>
 </plist>

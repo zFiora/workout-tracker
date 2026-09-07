@@ -92,4 +92,23 @@ class HiveTemplatesRepository implements TemplatesRepository {
     );
     await _box.put(key, updated);
   }
+
+  @override
+  Future<void> update(
+    WorkoutTemplateModel template, {
+    String? name,
+    String? iconPath,
+    List<int>? exerciseIds,
+  }) async {
+    final key = _keyOfId(template.id);
+    if (key == null) return;
+
+    final updated = template.copyWith(
+      name: name,
+      iconPath: iconPath,
+      exerciseIds: exerciseIds,
+      updatedAt: DateTime.now(),
+    );
+    await _box.put(key, updated);
+  }
 }

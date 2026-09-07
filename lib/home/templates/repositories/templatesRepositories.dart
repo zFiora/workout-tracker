@@ -24,4 +24,15 @@ abstract class TemplatesRepository {
     WorkoutTemplateModel template,
     List<int> newExerciseIds,
   );
+
+  /// Combined edit (name/icon/exercise list+order) in one write, for the
+  /// full template-editor screen — avoids three separate Hive writes (and
+  /// three separate backend pushes) for what is, from the user's point of
+  /// view, a single save. Pass only the fields that changed.
+  Future<void> update(
+    WorkoutTemplateModel template, {
+    String? name,
+    String? iconPath,
+    List<int>? exerciseIds,
+  });
 }

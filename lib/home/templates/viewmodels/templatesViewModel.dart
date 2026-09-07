@@ -116,6 +116,24 @@ class TemplatesViewModel extends ChangeNotifier {
     _pushUpdated(template.id);
   }
 
+  /// One combined save for the full template-editor screen — name, icon,
+  /// and exercise list/order together. Pass only what changed.
+  Future<void> updateTemplate(
+    WorkoutTemplateModel template, {
+    String? name,
+    String? iconPath,
+    List<int>? exerciseIds,
+  }) async {
+    await _repo.update(
+      template,
+      name: name,
+      iconPath: iconPath,
+      exerciseIds: exerciseIds,
+    );
+    notifyListeners();
+    _pushUpdated(template.id);
+  }
+
   void _pushUpdated(String id) {
     final updated = _repo.byId(id);
     if (updated != null) _api.pushUpsert(updated).catchError((_) {});

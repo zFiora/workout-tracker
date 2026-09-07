@@ -19,12 +19,14 @@ class PlannedSetRow extends StatelessWidget {
     required this.onRemove,
     required this.onAddOrSave,
     required this.onCancelEdit,
+    this.weightUnitLabel = 'kg',
   });
 
   final ExerciseModel exercise;
   final List<PlannedSet> planned;
   final int index;
   final String rowKey;
+  final String weightUnitLabel;
 
   final TextEditingController weightController;
   final TextEditingController repsController;
@@ -104,7 +106,7 @@ class PlannedSetRow extends StatelessWidget {
             child: _NumberField(
               controller: weightController,
               enabled: allowEdit,
-              unit: 'kg',
+              unit: weightUnitLabel,
               keyboardType: const TextInputType.numberWithOptions(
                 decimal: true,
               ),

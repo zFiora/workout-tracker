@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
+import 'package:workout_tracker/common/theme/workout_icons.dart';
 import 'package:workout_tracker/common/widgets/myCustomSnackBar.dart';
 import 'package:workout_tracker/common/widgets/uiKit.dart';
 import 'package:workout_tracker/home/exercises/models/exerciseModel.dart';
-import 'package:workout_tracker/home/templates/constants/templateIcons.dart';
 import 'package:workout_tracker/home/templates/models/workout_template.dart';
 import 'package:workout_tracker/home/templates/viewmodels/templatesViewModel.dart';
 
@@ -19,7 +19,9 @@ class TemplateSaveSheet extends StatefulWidget {
 
 class _TemplateSaveSheetState extends State<TemplateSaveSheet> {
   final _nameController = TextEditingController();
-  String? _selectedIconPath;
+  // Stores the logical icon *key* (e.g. "chest"); resolved to a gendered
+  // asset at render time.
+  String? _selectedIconKey;
 
   @override
   void dispose() {
@@ -29,7 +31,7 @@ class _TemplateSaveSheetState extends State<TemplateSaveSheet> {
 
   Future<void> _save(BuildContext sheetCtx) async {
     final name = _nameController.text.trim();
-    final icon = _selectedIconPath;
+    final icon = _selectedIconKey;
 
     if (name.isEmpty || icon == null) {
       Mycustomsnackbar.show(
@@ -99,15 +101,15 @@ class _TemplateSaveSheetState extends State<TemplateSaveSheet> {
             height: 72,
             child: ListView.separated(
               scrollDirection: Axis.horizontal,
-              itemCount: TemplateIcons.icons.length,
+              itemCount: WorkoutIcons.pickerKeys.length,
               separatorBuilder: (_, __) => const SizedBox(width: 10),
               itemBuilder: (_, i) {
-                final path = TemplateIcons.icons[i];
-                final selected = path == _selectedIconPath;
+                final key = WorkoutIcons.pickerKeys[i];
+                final selected = key == _selectedIconKey;
                 final cs = Theme.of(context).colorScheme;
 
                 return GestureDetector(
-                  onTap: () => setState(() => _selectedIconPath = path),
+                  onTap: () => setState(() => _selectedIconKey = key),
                   child: Container(
                     width: 72,
                     height: 72,
@@ -122,7 +124,7 @@ class _TemplateSaveSheetState extends State<TemplateSaveSheet> {
                       ),
                     ),
                     padding: const EdgeInsets.all(8),
-                    child: Image.asset(path),
+                    child: WorkoutIconImage(key),
                   ),
                 );
               },

@@ -14,6 +14,7 @@ class AccountPageDangerTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final error = Theme.of(context).colorScheme.error;
     return Card(
       elevation: 0,
       margin: EdgeInsets.zero,
@@ -22,15 +23,12 @@ class AccountPageDangerTile extends StatelessWidget {
       child: ListTile(
         leading: CircleAvatar(
           radius: 18,
-          backgroundColor: Colors.red.withValues(alpha: .08),
-          child: Icon(icon, color: Colors.red, size: 20),
+          backgroundColor: error.withValues(alpha: .08),
+          child: Icon(icon, color: error, size: 20),
         ),
         title: Text(
           title,
-          style: TextStyle(
-            color: Colors.red.shade700,
-            fontWeight: FontWeight.w600,
-          ),
+          style: TextStyle(color: error, fontWeight: FontWeight.w600),
         ),
         onTap: onTap,
       ),

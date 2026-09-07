@@ -53,8 +53,8 @@ class _AddFriendPageState extends State<AddFriendPage> {
               final alreadySent = vm.sentRequestIds.contains(u.id);
               return ListTile(
                 leading: const CircleAvatar(child: Icon(Icons.person)),
-                title: Text(u.username),
-                subtitle: Text(u.email),
+                title: Text(u.name),
+                subtitle: Text('@${u.username}'),
                 trailing: TextButton(
                   onPressed: alreadySent
                       ? null

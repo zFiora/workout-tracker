@@ -2,9 +2,11 @@
 
 import 'package:flutter/material.dart';
 import 'package:workout_tracker/common/theme/app_theme.dart';
+import 'package:workout_tracker/common/theme/workout_icons.dart';
 import 'package:workout_tracker/common/widgets/uiKit.dart';
 import 'package:workout_tracker/home/exercises/models/exerciseModel.dart';
 import 'package:workout_tracker/home/exercises/models/categoryModel.dart';
+import 'package:workout_tracker/home/exercises/widgets/exercise_image.dart';
 
 /// List tile for an exercise. Fully theme-aware (works in both dark and
 /// light mode), with a press scale micro-interaction and an animated
@@ -65,19 +67,15 @@ class ExerciseTile extends StatelessWidget {
               children: [
                 ClipRRect(
                   borderRadius: BorderRadius.circular(AppRadius.md),
-                  child: Image.asset(
-                    exercise.workoutImage,
+                  child: Container(
                     width: 72,
                     height: 72,
-                    fit: BoxFit.cover,
-                    errorBuilder: (_, _, _) => Container(
+                    color: cs.surfaceContainerHigh,
+                    child: ExerciseImage(
+                      path: exercise.workoutImage,
                       width: 72,
                       height: 72,
-                      color: cs.surfaceContainerHigh,
-                      child: Icon(
-                        Icons.fitness_center_rounded,
-                        color: cs.onSurfaceVariant,
-                      ),
+                      fit: BoxFit.cover,
                     ),
                   ),
                 ),
@@ -123,11 +121,11 @@ class ExerciseTile extends StatelessWidget {
                   const SizedBox(height: 5),
                   Row(
                     children: [
-                      Image.asset(
-                        exercise.category.icon,
+                      WorkoutIconImage(
+                        exercise.category.iconKey,
                         width: 15,
                         height: 15,
-                        errorBuilder: (_, _, _) => const SizedBox.shrink(),
+                        fallback: const SizedBox.shrink(),
                       ),
                       const SizedBox(width: 5),
                       Text(

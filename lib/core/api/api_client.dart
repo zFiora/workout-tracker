@@ -65,6 +65,7 @@ class ApiClient {
             bodyMessage ?? 'Invalid credentials.',
             statusCode: 401,
             cause: e,
+            reason: NetworkReason.requestFailed,
           );
         }
         await AuthToken.I.clear();
@@ -72,20 +73,65 @@ class ApiClient {
           bodyMessage ?? 'Session expired. Please sign in again.',
           statusCode: 401,
           cause: e,
+          reason: NetworkReason.unauthorized,
         );
       }
-      final msg = bodyMessage ??
-          'Request failed (${e.response?.statusCode ?? e.type.name})';
-      return ApiError(msg, statusCode: e.response?.statusCode, cause: e);
+
+      // Connection-level failures (no response ever came back) vs the server
+      // actively responding with an error status.
+      switch (e.type) {
+        case DioExceptionType.connectionError:
+          return ApiError(
+            "Can't reach the server. Check your connection.",
+            cause: e,
+            reason: NetworkReason.noConnection,
+          );
+        case DioExceptionType.connectionTimeout:
+        case DioExceptionType.sendTimeout:
+        case DioExceptionType.receiveTimeout:
+          return ApiError(
+            'The server is taking too long to respond.',
+            cause: e,
+            reason: NetworkReason.timeout,
+          );
+        default:
+          break;
+      }
+
+      final status = e.response?.statusCode;
+      if (status != null && status >= 500) {
+        return ApiError(
+          bodyMessage ?? 'Something went wrong on our end. Please try again.',
+          statusCode: status,
+          cause: e,
+          reason: NetworkReason.serverError,
+        );
+      }
+
+      final msg = bodyMessage ?? 'Request failed (${status ?? e.type.name})';
+      return ApiError(
+        msg,
+        statusCode: status,
+        cause: e,
+        reason: NetworkReason.requestFailed,
+      );
     } catch (e, st) {
       debugPrint('[ApiClient] unexpected error: $e\n$st');
       final s = e.toString();
       if (s.contains('SocketException') ||
           s.contains('Connection refused') ||
           s.contains('TimeoutException')) {
-        return ApiError('No connection. Check your internet.', cause: e);
+        return ApiError(
+          "Can't reach the server. Check your connection.",
+          cause: e,
+          reason: NetworkReason.noConnection,
+        );
       }
-      return ApiError('Unexpected error. Please try again.', cause: e);
+      return ApiError(
+        'Unexpected error. Please try again.',
+        cause: e,
+        reason: NetworkReason.unknown,
+      );
     }
   }
 
@@ -144,8 +190,11 @@ class ApiClient {
     return _normalize(r.data);
   });
 
-  Future<ApiResult<bool>> delete(String path) => guard(() async {
-    await _dio.delete(path, options: _auth);
+  Future<ApiResult<bool>> delete(
+    String path, {
+    Map<String, dynamic>? body,
+  }) => guard(() async {
+    await _dio.delete(path, data: body, options: _auth);
     return true;
   });
 

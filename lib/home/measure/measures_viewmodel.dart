@@ -8,6 +8,8 @@ import 'package:workout_tracker/home/measure/models/measure_profile.dart';
 import 'package:workout_tracker/home/measure/repositeries/macros_profile_repository.dart';
 import 'package:workout_tracker/home/measure/repositeries/measures_profile_repository.dart';
 import 'package:workout_tracker/home/measure/repositeries/measures_repository.dart';
+import 'package:workout_tracker/home/measure/repositeries/pending_measurement_deletes_store.dart';
+import 'package:workout_tracker/home/measure/repositeries/synced_measurements_store.dart';
 
 import 'models/measurement_entry.dart';
 
@@ -17,12 +19,18 @@ class MeasuresViewModel extends ChangeNotifier {
     this._profileRepo,
     this._macrosRepo, {
     MeasuresApiService? apiService,
-  }) : _api = apiService ?? MeasuresApiService();
+    SyncedMeasurementsStore? syncedStore,
+    PendingMeasurementDeletesStore? pendingDeletesStore,
+  }) : _api = apiService ?? MeasuresApiService(),
+       _synced = syncedStore ?? SyncedMeasurementsStore(),
+       _pendingDeletes = pendingDeletesStore ?? PendingMeasurementDeletesStore();
 
   final MeasuresRepository _repo;
   final MeasuresProfileRepository _profileRepo;
   final MacrosProfileRepository _macrosRepo;
   final MeasuresApiService _api;
+  final SyncedMeasurementsStore _synced;
+  final PendingMeasurementDeletesStore _pendingDeletes;
 
   bool _loading = false;
   bool get loading => _loading;
@@ -118,29 +126,66 @@ class MeasuresViewModel extends ChangeNotifier {
     }
   }
 
-  /// Backend-authoritative sync: the server's measurement set replaces the
-  /// local cache. Runs only after a successful fetch, so offline/failed
-  /// requests leave the cache untouched.
+  /// Reconciles with the backend. Runs only after a successful fetch, so
+  /// offline/failed requests leave the cache untouched.
+  ///
+  /// A local entry is only dropped when the server has *confirmed* deleting
+  /// it (i.e. it was synced before and is now missing remotely) — an
+  /// offline-created entry that hasn't been pushed yet is never mistaken for
+  /// a server-side delete and wiped out from under the user.
   Future<void> _syncFromApi() async {
     try {
-      final remote = await _api.fetchMeasurements();
+      // Flush any deletes that couldn't reach the server last time, before
+      // pulling — otherwise a still-present remote row would get re-added.
+      for (final id in await _pendingDeletes.all()) {
+        try {
+          await _api.deleteMeasurement(id);
+          await _pendingDeletes.remove(id);
+          await _synced.forget(id);
+        } catch (_) {}
+      }
+      final stillPendingDelete = await _pendingDeletes.all();
+
+      final remote = (await _api.fetchMeasurements())
+          .where((e) => !stillPendingDelete.contains(e.id))
+          .toList();
       final remoteIds = remote.map((e) => e.id).toSet();
 
-      // Drop cached entries the server no longer has (deleted elsewhere).
       final localAll = await _repo.getAll();
       for (final e in localAll) {
-        if (!remoteIds.contains(e.id)) {
+        if (!remoteIds.contains(e.id) && _synced.isSynced(e.id)) {
           await _repo.deleteById(e.id);
+          await _synced.forget(e.id);
         }
       }
       for (final e in remote) {
         await _repo.upsert(e);
+        await _synced.markSynced(e.id);
       }
+
+      // Push local entries the server doesn't have yet (offline-created).
+      final stillLocal = await _repo.getAll();
+      for (final e in stillLocal) {
+        if (remoteIds.contains(e.id)) continue;
+        try {
+          final saved = await _api.postMeasurement(e);
+          if (saved.id != e.id) {
+            await _repo.deleteById(e.id);
+          }
+          await _repo.upsert(saved);
+          await _synced.markSynced(saved.id);
+        } catch (_) {
+          // still offline/failed — leave it pending for next sync
+        }
+      }
+
       _entries = await _repo.getAll();
       _sortEntries();
 
-      // Macro profile + height come from one backend resource.
-      final profile = await _api.fetchProfile();
+      // Macro profile + height come from one backend resource. Sex/DOB
+      // aren't backend fields yet, so the current local profile is passed
+      // as a fallback the fetch can't accidentally null out.
+      final profile = await _api.fetchProfile(fallback: _macroProfile);
       _macroProfile = profile.macro;
       await _macrosRepo.saveProfile(profile.macro);
       _profile = MeasureProfile(heightCm: profile.heightCm);
@@ -164,14 +209,29 @@ class MeasuresViewModel extends ChangeNotifier {
     _pushProfile();
   }
 
-  Future<void> setIsMale(bool isMale) async {
-    _macroProfile = _macroProfile.copyWith(isMale: isMale);
+  /// Sets sex for profile/theming/BMR purposes (the source of truth going
+  /// forward — [MacroProfile.isMale] is kept as an internal mirror only for
+  /// backend/BMR compatibility, see [MacroProfile.withSex]).
+  Future<void> setSex(Sex sex) async {
+    _macroProfile = _macroProfile.withSex(sex);
     await _macrosRepo.saveProfile(_macroProfile);
     notifyListeners();
     _pushProfile();
   }
 
-  Future<void> setAge(int age) async {
+  /// Primary way to set age going forward — [MacroProfile.age] is always
+  /// computed from this once set, never manually re-entered.
+  Future<void> setDateOfBirth(DateTime dobLocal) async {
+    _macroProfile = _macroProfile.withDateOfBirth(dobLocal);
+    await _macrosRepo.saveProfile(_macroProfile);
+    notifyListeners();
+    _pushProfile();
+  }
+
+  /// Legacy manual-age fallback, only meaningful for accounts that haven't
+  /// set a date of birth yet — once a DOB exists, [MacroProfile.age] ignores
+  /// this and this setter is unreachable from the UI.
+  Future<void> setAgeFallback(int age) async {
     final clean = age.clamp(10, 90);
     _macroProfile = _macroProfile.copyWith(age: clean);
     await _macrosRepo.saveProfile(_macroProfile);
@@ -229,10 +289,12 @@ class MeasuresViewModel extends ChangeNotifier {
       weightKg: weightKg,
     );
 
-    // Push to API and use server-assigned id if available
+    // Push to API and use server-assigned id if available. Left unsynced
+    // (and so still shown, still pending) on failure — never dropped.
     try {
       final saved = await _api.postMeasurement(entry);
       entry = saved;
+      await _synced.markSynced(saved.id);
     } catch (_) {}
 
     await _repo.upsert(entry);
@@ -249,14 +311,20 @@ class MeasuresViewModel extends ChangeNotifier {
   }
 
   Future<void> deleteEntry(String id) async {
-    try {
-      await _api.deleteMeasurement(id);
-    } catch (_) {}
-
+    // Remove locally first — the user's intent is honored immediately
+    // regardless of connectivity.
     await _repo.deleteById(id);
     _entries.removeWhere((e) => e.id == id);
     _sortEntries();
     notifyListeners();
+
+    try {
+      await _api.deleteMeasurement(id);
+      await _synced.forget(id);
+    } catch (_) {
+      // Remembered so the next sync doesn't pull this id back down.
+      await _pendingDeletes.add(id);
+    }
   }
 
   // ===== Helpers =====

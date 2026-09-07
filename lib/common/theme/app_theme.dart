@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:workout_tracker/common/models/sex.dart';
 
 /// ─────────────────────────────────────────────────────────────────────────
 ///  GYM TRACKER DESIGN SYSTEM — "Midnight Steel / Volt Azure"
@@ -40,6 +41,45 @@ abstract final class AppColors {
   static const inkOnPaper = Color(0xFF10182B);
   static const voltOnPaper = Color(0xFF2563EB);
 }
+
+/// A themeable accent — everything that changes when the user's selected
+/// [Sex] switches the app's accent color. Kept to the accent only (not a
+/// second full palette) so the "Midnight Steel" design language stays
+/// intact; only the primary hue shifts.
+class _Accent {
+  const _Accent({
+    required this.primary,
+    required this.primaryDeep,
+    required this.onPaper,
+  });
+
+  final Color primary; // dark theme
+  final Color primaryDeep; // dark theme, gradient end / pressed
+  final Color onPaper; // light theme
+
+  static const neutral = _Accent(
+    primary: AppColors.volt,
+    primaryDeep: AppColors.voltDeep,
+    onPaper: AppColors.voltOnPaper,
+  );
+
+  static const male = neutral;
+
+  static const female = _Accent(
+    primary: Color(0xFFB07CFF),
+    primaryDeep: Color(0xFF8B4FE0),
+    onPaper: Color(0xFF8B3FE0),
+  );
+}
+
+/// Single place a sex selection maps to a concrete accent. Nothing outside
+/// this file (or [AppGradients.accent]) should branch on [Sex] for styling —
+/// add new accents here, not as scattered conditionals in widgets.
+_Accent _accentFor(Sex sex) => switch (sex) {
+      Sex.male => _Accent.male,
+      Sex.female => _Accent.female,
+      Sex.unspecified => _Accent.neutral,
+    };
 
 abstract final class AppFonts {
   static const display = 'SpaceGrotesk';
@@ -232,13 +272,14 @@ TextTheme _textTheme(Color hi, Color mid, Color low) {
 
 // ───────────────────────────── DARK THEME ──────────────────────────────
 
-ThemeData buildDarkTheme() {
-  const scheme = ColorScheme(
+ThemeData buildDarkTheme({Sex sex = Sex.unspecified}) {
+  final accent = _accentFor(sex);
+  final scheme = ColorScheme(
     brightness: Brightness.dark,
-    primary: AppColors.volt,
+    primary: accent.primary,
     onPrimary: Colors.white,
-    primaryContainer: Color(0xFF1B316B),
-    onPrimaryContainer: Color(0xFFBFD6FF),
+    primaryContainer: const Color(0xFF1B316B),
+    onPrimaryContainer: const Color(0xFFBFD6FF),
     secondary: AppColors.mint,
     onSecondary: Color(0xFF04120C),
     secondaryContainer: Color(0xFF0D3D2E),
@@ -289,8 +330,8 @@ ThemeData buildDarkTheme() {
         TargetPlatform.windows: FadeThroughPageTransitionsBuilder(),
       },
     ),
-    splashColor: AppColors.volt.withValues(alpha: 0.08),
-    highlightColor: AppColors.volt.withValues(alpha: 0.05),
+    splashColor: accent.primary.withValues(alpha: 0.08),
+    highlightColor: accent.primary.withValues(alpha: 0.05),
     appBarTheme: AppBarTheme(
       backgroundColor: AppColors.ink,
       foregroundColor: AppColors.textHi,
@@ -302,7 +343,7 @@ ThemeData buildDarkTheme() {
     ),
     navigationBarTheme: NavigationBarThemeData(
       backgroundColor: AppColors.surface1,
-      indicatorColor: AppColors.volt.withValues(alpha: 0.16),
+      indicatorColor: accent.primary.withValues(alpha: 0.16),
       height: 68,
       elevation: 0,
       labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
@@ -310,7 +351,7 @@ ThemeData buildDarkTheme() {
         (states) => IconThemeData(
           size: 24,
           color: states.contains(WidgetState.selected)
-              ? AppColors.volt
+              ? accent.primary
               : AppColors.textLow,
         ),
       ),
@@ -322,14 +363,14 @@ ThemeData buildDarkTheme() {
               ? FontWeight.w800
               : FontWeight.w600,
           color: states.contains(WidgetState.selected)
-              ? AppColors.volt
+              ? accent.primary
               : AppColors.textLow,
         ),
       ),
     ),
-    bottomNavigationBarTheme: const BottomNavigationBarThemeData(
+    bottomNavigationBarTheme: BottomNavigationBarThemeData(
       backgroundColor: AppColors.surface1,
-      selectedItemColor: AppColors.volt,
+      selectedItemColor: accent.primary,
       unselectedItemColor: AppColors.textLow,
       type: BottomNavigationBarType.fixed,
       elevation: 0,
@@ -364,7 +405,7 @@ ThemeData buildDarkTheme() {
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(AppRadius.md),
-        borderSide: const BorderSide(color: AppColors.volt, width: 1.6),
+        borderSide: BorderSide(color: accent.primary, width: 1.6),
       ),
       errorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(AppRadius.md),
@@ -377,7 +418,7 @@ ThemeData buildDarkTheme() {
     ),
     filledButtonTheme: FilledButtonThemeData(
       style: FilledButton.styleFrom(
-        backgroundColor: AppColors.volt,
+        backgroundColor: accent.primary,
         foregroundColor: Colors.white,
         textStyle: text.labelLarge,
         padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 20),
@@ -388,7 +429,7 @@ ThemeData buildDarkTheme() {
     ),
     elevatedButtonTheme: ElevatedButtonThemeData(
       style: ElevatedButton.styleFrom(
-        backgroundColor: AppColors.volt,
+        backgroundColor: accent.primary,
         foregroundColor: Colors.white,
         elevation: 0,
         textStyle: text.labelLarge,
@@ -411,7 +452,7 @@ ThemeData buildDarkTheme() {
     ),
     textButtonTheme: TextButtonThemeData(
       style: TextButton.styleFrom(
-        foregroundColor: AppColors.volt,
+        foregroundColor: accent.primary,
         textStyle: text.labelLarge,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppRadius.sm),
@@ -459,7 +500,7 @@ ThemeData buildDarkTheme() {
     snackBarTheme: SnackBarThemeData(
       backgroundColor: AppColors.surface3,
       contentTextStyle: text.bodyLarge,
-      actionTextColor: AppColors.volt,
+      actionTextColor: accent.primary,
       behavior: SnackBarBehavior.floating,
       elevation: 4,
       shape: RoundedRectangleBorder(
@@ -479,7 +520,7 @@ ThemeData buildDarkTheme() {
       side: const BorderSide(color: AppColors.line, width: 1.6),
       fillColor: WidgetStateProperty.resolveWith(
         (states) => states.contains(WidgetState.selected)
-            ? AppColors.volt
+            ? accent.primary
             : Colors.transparent,
       ),
       checkColor: const WidgetStatePropertyAll(Colors.white),
@@ -492,7 +533,7 @@ ThemeData buildDarkTheme() {
       ),
       trackColor: WidgetStateProperty.resolveWith(
         (states) => states.contains(WidgetState.selected)
-            ? AppColors.volt
+            ? accent.primary
             : AppColors.surface3,
       ),
       trackOutlineColor: WidgetStateProperty.resolveWith(
@@ -501,13 +542,13 @@ ThemeData buildDarkTheme() {
             : AppColors.line,
       ),
     ),
-    progressIndicatorTheme: const ProgressIndicatorThemeData(
-      color: AppColors.volt,
+    progressIndicatorTheme: ProgressIndicatorThemeData(
+      color: accent.primary,
       linearTrackColor: AppColors.surface3,
       circularTrackColor: AppColors.surface3,
     ),
     floatingActionButtonTheme: FloatingActionButtonThemeData(
-      backgroundColor: AppColors.volt,
+      backgroundColor: accent.primary,
       foregroundColor: Colors.white,
       elevation: 4,
       shape: RoundedRectangleBorder(
@@ -533,13 +574,14 @@ ThemeData buildDarkTheme() {
 
 // ───────────────────────────── LIGHT THEME ─────────────────────────────
 
-ThemeData buildLightTheme() {
-  const scheme = ColorScheme(
+ThemeData buildLightTheme({Sex sex = Sex.unspecified}) {
+  final accent = _accentFor(sex);
+  final scheme = ColorScheme(
     brightness: Brightness.light,
-    primary: AppColors.voltOnPaper,
+    primary: accent.onPaper,
     onPrimary: Colors.white,
-    primaryContainer: Color(0xFFDBE7FF),
-    onPrimaryContainer: Color(0xFF11316B),
+    primaryContainer: const Color(0xFFDBE7FF),
+    onPrimaryContainer: const Color(0xFF11316B),
     secondary: Color(0xFF0E9F6E),
     onSecondary: Colors.white,
     secondaryContainer: Color(0xFFCDF3E4),
@@ -594,8 +636,8 @@ ThemeData buildLightTheme() {
         TargetPlatform.windows: FadeThroughPageTransitionsBuilder(),
       },
     ),
-    splashColor: AppColors.voltOnPaper.withValues(alpha: 0.08),
-    highlightColor: AppColors.voltOnPaper.withValues(alpha: 0.05),
+    splashColor: accent.onPaper.withValues(alpha: 0.08),
+    highlightColor: accent.onPaper.withValues(alpha: 0.05),
     appBarTheme: AppBarTheme(
       backgroundColor: AppColors.paper,
       foregroundColor: AppColors.inkOnPaper,
@@ -607,7 +649,7 @@ ThemeData buildLightTheme() {
     ),
     navigationBarTheme: NavigationBarThemeData(
       backgroundColor: Colors.white,
-      indicatorColor: AppColors.voltOnPaper.withValues(alpha: 0.12),
+      indicatorColor: accent.onPaper.withValues(alpha: 0.12),
       height: 68,
       elevation: 0,
       labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
@@ -615,7 +657,7 @@ ThemeData buildLightTheme() {
         (states) => IconThemeData(
           size: 24,
           color: states.contains(WidgetState.selected)
-              ? AppColors.voltOnPaper
+              ? accent.onPaper
               : const Color(0xFF8A93A8),
         ),
       ),
@@ -627,15 +669,15 @@ ThemeData buildLightTheme() {
               ? FontWeight.w800
               : FontWeight.w600,
           color: states.contains(WidgetState.selected)
-              ? AppColors.voltOnPaper
+              ? accent.onPaper
               : const Color(0xFF8A93A8),
         ),
       ),
     ),
-    bottomNavigationBarTheme: const BottomNavigationBarThemeData(
+    bottomNavigationBarTheme: BottomNavigationBarThemeData(
       backgroundColor: Colors.white,
-      selectedItemColor: AppColors.voltOnPaper,
-      unselectedItemColor: Color(0xFF8A93A8),
+      selectedItemColor: accent.onPaper,
+      unselectedItemColor: const Color(0xFF8A93A8),
       type: BottomNavigationBarType.fixed,
       elevation: 0,
     ),
@@ -669,7 +711,7 @@ ThemeData buildLightTheme() {
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(AppRadius.md),
-        borderSide: const BorderSide(color: AppColors.voltOnPaper, width: 1.6),
+        borderSide: BorderSide(color: accent.onPaper, width: 1.6),
       ),
       errorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(AppRadius.md),
@@ -682,7 +724,7 @@ ThemeData buildLightTheme() {
     ),
     filledButtonTheme: FilledButtonThemeData(
       style: FilledButton.styleFrom(
-        backgroundColor: AppColors.voltOnPaper,
+        backgroundColor: accent.onPaper,
         foregroundColor: Colors.white,
         textStyle: text.labelLarge,
         padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 20),
@@ -693,7 +735,7 @@ ThemeData buildLightTheme() {
     ),
     elevatedButtonTheme: ElevatedButtonThemeData(
       style: ElevatedButton.styleFrom(
-        backgroundColor: AppColors.voltOnPaper,
+        backgroundColor: accent.onPaper,
         foregroundColor: Colors.white,
         elevation: 0,
         textStyle: text.labelLarge,
@@ -716,7 +758,7 @@ ThemeData buildLightTheme() {
     ),
     textButtonTheme: TextButtonThemeData(
       style: TextButton.styleFrom(
-        foregroundColor: AppColors.voltOnPaper,
+        foregroundColor: accent.onPaper,
         textStyle: text.labelLarge,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppRadius.sm),
@@ -762,7 +804,7 @@ ThemeData buildLightTheme() {
     snackBarTheme: SnackBarThemeData(
       backgroundColor: AppColors.inkOnPaper,
       contentTextStyle: text.bodyLarge?.copyWith(color: Colors.white),
-      actionTextColor: AppColors.volt,
+      actionTextColor: accent.primary,
       behavior: SnackBarBehavior.floating,
       elevation: 4,
       shape: RoundedRectangleBorder(
@@ -781,7 +823,7 @@ ThemeData buildLightTheme() {
       side: const BorderSide(color: Color(0xFFC4CDE0), width: 1.6),
       fillColor: WidgetStateProperty.resolveWith(
         (states) => states.contains(WidgetState.selected)
-            ? AppColors.voltOnPaper
+            ? accent.onPaper
             : Colors.transparent,
       ),
       checkColor: const WidgetStatePropertyAll(Colors.white),
@@ -794,7 +836,7 @@ ThemeData buildLightTheme() {
       ),
       trackColor: WidgetStateProperty.resolveWith(
         (states) => states.contains(WidgetState.selected)
-            ? AppColors.voltOnPaper
+            ? accent.onPaper
             : const Color(0xFFE4E9F5),
       ),
       trackOutlineColor: WidgetStateProperty.resolveWith(
@@ -803,13 +845,13 @@ ThemeData buildLightTheme() {
             : const Color(0xFFC4CDE0),
       ),
     ),
-    progressIndicatorTheme: const ProgressIndicatorThemeData(
-      color: AppColors.voltOnPaper,
-      linearTrackColor: Color(0xFFE4E9F5),
-      circularTrackColor: Color(0xFFE4E9F5),
+    progressIndicatorTheme: ProgressIndicatorThemeData(
+      color: accent.onPaper,
+      linearTrackColor: const Color(0xFFE4E9F5),
+      circularTrackColor: const Color(0xFFE4E9F5),
     ),
     floatingActionButtonTheme: FloatingActionButtonThemeData(
-      backgroundColor: AppColors.voltOnPaper,
+      backgroundColor: accent.onPaper,
       foregroundColor: Colors.white,
       elevation: 4,
       shape: RoundedRectangleBorder(

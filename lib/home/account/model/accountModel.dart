@@ -44,4 +44,16 @@ class AccountModel {
           DateTime.tryParse(json['lastWorkoutDate'] as String? ?? ''),
     );
   }
+
+  /// Local cache round-trip only (not the wire format sent to the backend).
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'displayName': displayName,
+        'username': username,
+        'email': email,
+        'avatarBase64': avatarBase64,
+        'currentStreak': currentStreak,
+        'bestStreak': bestStreak,
+        'lastWorkoutDate': lastWorkoutDate?.toIso8601String(),
+      };
 }

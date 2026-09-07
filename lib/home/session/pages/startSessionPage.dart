@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:uuid/uuid.dart';
 import 'package:workout_tracker/common/formatters/duarationFormatter.dart';
 import 'package:workout_tracker/common/theme/app_theme.dart';
+import 'package:workout_tracker/common/widgets/myCustomSnackBar.dart';
 import 'package:workout_tracker/common/widgets/uiKit.dart';
 import 'package:workout_tracker/core/auth_token.dart';
 import 'package:workout_tracker/home/account/accountViewModel.dart';
@@ -11,7 +13,14 @@ import 'package:workout_tracker/home/history/ViewModel/historyViewModel.dart';
 import 'package:workout_tracker/home/session/active_session_manager.dart';
 import 'package:workout_tracker/home/session/sessionViewModel.dart';
 import 'package:workout_tracker/home/session/widgets/exerciseSessionTile.dart';
+import 'package:workout_tracker/home/session/widgets/reorder_exercises_sheet.dart';
+import 'package:workout_tracker/home/session/widgets/rest_timer_bar.dart';
+import 'package:workout_tracker/home/templates/models/workout_template.dart';
 import 'package:workout_tracker/home/templates/viewmodels/templatesViewModel.dart';
+
+/// What to do with the source template when a session's exercise list ended
+/// up different from it. See `_askTemplateAction`.
+enum _TemplateEndAction { saveAsNew, updateCurrent, doNothing }
 
 class StartSessionPage extends StatelessWidget {
   const StartSessionPage({super.key});
@@ -89,23 +98,76 @@ class _SessionBody extends StatelessWidget {
     );
   }
 
-  Future<bool?> _askSaveToTemplate(BuildContext context) {
-    return showDialog<bool>(
+  /// The exercise list ended up different from the template this session
+  /// started from (added/removed/reordered). Exactly three outcomes — see
+  /// `_endAndSaveSession` for what each does.
+  Future<_TemplateEndAction?> _askTemplateAction(
+    BuildContext context,
+    String templateName,
+  ) {
+    return showDialog<_TemplateEndAction>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Save exercise changes?'),
-        content: const Text(
-          'You added or removed exercises during this session.\n\n'
-          'Do you want to save these changes permanently to the template?',
+        title: const Text('Exercises changed'),
+        content: Text(
+          'Your exercises for this workout ended up different from '
+          '"$templateName". What should happen to the template?',
+        ),
+        actionsAlignment: MainAxisAlignment.start,
+        actionsOverflowDirection: VerticalDirection.down,
+        actions: [
+          _TemplateActionButton(
+            icon: Icons.bookmark_add_outlined,
+            label: 'Save as a new template',
+            subtitle: '"$templateName" stays exactly as it was',
+            onTap: () =>
+                Navigator.pop(ctx, _TemplateEndAction.saveAsNew),
+          ),
+          _TemplateActionButton(
+            icon: Icons.edit_note_rounded,
+            label: 'Update & save current template',
+            subtitle: 'Applies these changes to "$templateName" itself',
+            onTap: () =>
+                Navigator.pop(ctx, _TemplateEndAction.updateCurrent),
+          ),
+          _TemplateActionButton(
+            icon: Icons.check_circle_outline_rounded,
+            label: 'Do nothing',
+            subtitle: 'Just this workout — the template is unaffected',
+            onTap: () => Navigator.pop(ctx, _TemplateEndAction.doNothing),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Follow-up for "Save as a new template" — lets the user confirm/edit the
+  /// suggested name. Returns null if cancelled.
+  Future<String?> _askNewTemplateName(
+    BuildContext context,
+    String suggestedName,
+  ) {
+    final controller = TextEditingController(text: suggestedName);
+    return showDialog<String?>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Name the new template'),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          decoration: const InputDecoration(hintText: 'Template name'),
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Just this session'),
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
           ),
           FilledButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Save to template'),
+            onPressed: () {
+              final text = controller.text.trim();
+              Navigator.pop(ctx, text.isEmpty ? suggestedName : text);
+            },
+            child: const Text('Create'),
           ),
         ],
       ),
@@ -201,50 +263,90 @@ class _SessionBody extends StatelessWidget {
     final ok = await _confirmEndSession(context);
     if (!ok || !context.mounted) return;
 
-    // Snapshot everything we need BEFORE ending the session
-    final prEvents = session.prHits.values
-        .map((h) => h.toJson())
-        .toList(growable: false);
+    // The instant endSession() nulls the active session, StartSessionPage
+    // rebuilds to a spinner and THIS widget (_SessionBody) is unmounted — so
+    // its `context` dies. Capture everything that must outlive it *now*:
+    // the root navigator/messenger and the view-models. Using `context`
+    // after endSession() (the old code did) hit `!context.mounted` and
+    // silently returned, leaving the spinner up forever even though the save
+    // had already succeeded.
+    final navigator = Navigator.of(context);
+    final dialogContext = navigator.context; // alive after _SessionBody unmounts
+    final messenger = ScaffoldMessenger.of(context);
+    final historyVM = context.read<HistoryViewModel>();
+    final accountVM = context.read<AccountViewModel>();
+    final templatesVM = context.read<TemplatesViewModel>();
 
+    final prEvents =
+        session.prHits.values.map((h) => h.toJson()).toList(growable: false);
     final exercisesModified = manager.exercisesWereModified;
     final templateId = manager.templateId;
+    final templateName = manager.templateName ?? 'Template';
+    final templateIcon = manager.templateIcon;
     final currentExerciseIds = manager.exercises.map((e) => e.id).toList();
 
-    // End session — timer stops, manager._session becomes null
+    // End session — timer stops, manager._session becomes null.
     final entry = manager.endSession();
 
-    // Persist history
-    await context
-        .read<HistoryViewModel>()
-        .saveWithPrEvents(entry, prEvents: prEvents);
+    var saveFailed = false;
+    try {
+      // Persist to history (local Hive save is the source of truth; the
+      // backend push inside is best-effort and never throws here).
+      await historyVM.saveWithPrEvents(entry, prEvents: prEvents);
 
-    if (!context.mounted) return;
+      // Streak is server-owned; refresh so the badge reflects it. Not awaited.
+      if (AuthToken.I.isValid) accountVM.refresh();
 
-    // The backend bumps the streak when the workout is pushed; re-pull the
-    // account so the streak badge reflects the new value immediately.
-    if (AuthToken.I.isValid) {
-      context.read<AccountViewModel>().refresh();
-    }
-
-    // Prompt to update template if exercises were modified
-    if (exercisesModified && templateId != null) {
-      final saveToTemplate = await _askSaveToTemplate(context);
-      if (saveToTemplate == true && context.mounted) {
-        final vm = context.read<TemplatesViewModel>();
-        final template = vm.byId(templateId);
-        if (template != null) {
-          await vm.updateExercises(template, currentExerciseIds);
+      // Ask what to do with the template if the exercise list ended up
+      // different (added / removed / reordered). Uses the navigator's own
+      // (still-mounted) context, not this widget's dead one.
+      if (exercisesModified && templateId != null) {
+        final action = await _askTemplateAction(dialogContext, templateName);
+        switch (action) {
+          case _TemplateEndAction.updateCurrent:
+            final template = templatesVM.byId(templateId);
+            if (template != null) {
+              await templatesVM.updateExercises(template, currentExerciseIds);
+            }
+          case _TemplateEndAction.saveAsNew:
+            final newName = await _askNewTemplateName(
+              dialogContext,
+              '$templateName - Modified',
+            );
+            if (newName != null) {
+              final now = DateTime.now();
+              await templatesVM.addTemplate(
+                WorkoutTemplateModel(
+                  id: const Uuid().v4(),
+                  name: newName,
+                  iconPath: templateIcon ?? '',
+                  exerciseIds: currentExerciseIds,
+                  createdAt: now,
+                  updatedAt: now,
+                ),
+              );
+            }
+          case _TemplateEndAction.doNothing:
+          case null: // dismissed — treat as "do nothing"
+            break;
         }
       }
+    } catch (_) {
+      saveFailed = true;
+    } finally {
+      // ALWAYS leave the (now session-less) page — there is no path that can
+      // strand the user on the spinner.
+      manager.clearAfterEnd();
+      navigator.popUntil((route) => route.isFirst);
+      messenger.clearSnackBars();
+      Mycustomsnackbar.show(
+        dialogContext,
+        message: saveFailed
+            ? "Couldn't fully save your workout. Please check History."
+            : 'Workout saved to history',
+        type: saveFailed ? SnackbarType.warning : SnackbarType.success,
+      );
     }
-
-    manager.clearAfterEnd();
-
-    if (!context.mounted) return;
-    Navigator.of(context).popUntil((route) => route.isFirst);
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Workout saved to history')),
-    );
   }
 
   void _showAddExerciseSheet(BuildContext context) {
@@ -329,7 +431,18 @@ class _SessionBody extends StatelessWidget {
                 ),
               ),
             ),
-            // Add exercise button
+            // Reorder exercises (compact sheet — never drags the live cards)
+            if (exercises.length > 1)
+              IconButton(
+                tooltip: 'Reorder exercises',
+                icon: const Icon(Icons.swap_vert_rounded),
+                onPressed: () => ReorderExercisesSheet.show(
+                  context,
+                  exercises: exercises,
+                  onReorder: manager.reorderExercise,
+                ),
+              ),
+            // Add / remove exercises
             IconButton(
               tooltip: 'Add / remove exercises',
               icon: const Icon(Icons.playlist_add_rounded),
@@ -342,12 +455,16 @@ class _SessionBody extends StatelessWidget {
                 templateName: templateName,
                 onAddExercise: () => _showAddExerciseSheet(context),
               )
+            // A plain list — reordering happens in a dedicated compact sheet
+            // (the app-bar "Reorder" action). Dragging the live, expanded set
+            // cards directly is what produced the broken giant-gray-box drag.
             : ListView.builder(
                 padding: const EdgeInsets.fromLTRB(12, 12, 12, 110),
                 itemCount: exercises.length,
                 itemBuilder: (context, i) {
                   final ex = exercises[i];
                   return Padding(
+                    key: ValueKey(ex.id),
                     padding: const EdgeInsets.only(bottom: 10),
                     child: ExerciseSessionTile(
                       exercise: ex,
@@ -356,7 +473,11 @@ class _SessionBody extends StatelessWidget {
                   );
                 },
               ),
-        bottomNavigationBar: SafeArea(
+        bottomNavigationBar: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const RestTimerBar(),
+            SafeArea(
           top: false,
           child: Container(
             padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
@@ -427,6 +548,68 @@ class _SessionBody extends StatelessWidget {
                 ),
               ],
             ),
+          ),
+        ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// One row of the end-of-session template-action dialog. A plain ListTile
+/// (rather than AlertDialog's usual TextButton row) since these three
+/// options need room for a label + explanatory subtitle each.
+class _TemplateActionButton extends StatelessWidget {
+  const _TemplateActionButton({
+    required this.icon,
+    required this.label,
+    required this.subtitle,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String label;
+  final String subtitle;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 2),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(icon, size: 20, color: cs.primary),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      label,
+                      style: const TextStyle(fontWeight: FontWeight.w700),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      subtitle,
+                      style: TextStyle(
+                        color: cs.onSurfaceVariant,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
         ),
       ),

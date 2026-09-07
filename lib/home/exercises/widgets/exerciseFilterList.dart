@@ -2,6 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:workout_tracker/common/theme/app_theme.dart';
+import 'package:workout_tracker/common/theme/workout_icons.dart';
 import 'package:workout_tracker/common/widgets/uiKit.dart';
 import 'package:workout_tracker/home/exercises/models/exerciseModel.dart';
 import 'package:workout_tracker/home/exercises/models/categoryModel.dart';
@@ -73,7 +74,7 @@ class _ExerciseFilterListState extends State<ExerciseFilterList> {
               ...categories.map(
                 (cat) => _CategoryChip(
                   label: cat.displayName,
-                  iconAsset: cat.icon,
+                  iconAsset: cat.iconKey,
                   isSelected: _selectedCategory == cat,
                   onTap: () => setState(() => _selectedCategory = cat),
                 ),
@@ -214,11 +215,11 @@ class _CategoryChip extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               if (iconAsset != null) ...[
-                Image.asset(
+                WorkoutIconImage(
                   iconAsset!,
                   width: 18,
                   height: 18,
-                  errorBuilder: (_, _, _) => const SizedBox.shrink(),
+                  fallback: const SizedBox.shrink(),
                 ),
                 const SizedBox(width: 6),
               ] else ...[

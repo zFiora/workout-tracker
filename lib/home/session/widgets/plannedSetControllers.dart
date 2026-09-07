@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:workout_tracker/common/units/weight_unit.dart';
 import 'package:workout_tracker/home/session/models/sessionModels.dart';
 
 class PlannedSetControllers {
@@ -16,20 +17,32 @@ class PlannedSetControllers {
   TextEditingController repsCtrl(String rowKey) =>
       _rCtrls.putIfAbsent(rowKey, () => TextEditingController());
 
-  void initOnce({required String rowKey, required PlannedSet p}) {
+  // Weight is stored in kg; the text field shows it in the user's unit.
+  String _weightText(double? kg, WeightUnit unit) =>
+      kg == null ? '' : unit.format(kg);
+
+  void initOnce({
+    required String rowKey,
+    required PlannedSet p,
+    required WeightUnit unit,
+  }) {
     if (_initialized.contains(rowKey)) return;
 
     final w = weightCtrl(rowKey);
     final r = repsCtrl(rowKey);
 
-    w.text = p.weight == null ? '' : p.weight!.toString();
+    w.text = _weightText(p.weight, unit);
     r.text = p.reps == null ? '' : p.reps!.toString();
 
     _initialized.add(rowKey);
   }
 
-  void resetToModel({required String rowKey, required PlannedSet p}) {
-    weightCtrl(rowKey).text = p.weight == null ? '' : p.weight!.toString();
+  void resetToModel({
+    required String rowKey,
+    required PlannedSet p,
+    required WeightUnit unit,
+  }) {
+    weightCtrl(rowKey).text = _weightText(p.weight, unit);
     repsCtrl(rowKey).text = p.reps == null ? '' : p.reps!.toString();
   }
 

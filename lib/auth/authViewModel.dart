@@ -59,6 +59,25 @@ class AuthViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Returns null on success, or an error message (e.g. "Incorrect password.")
+  /// on failure.
+  Future<String?> deleteAccount(String password) async {
+    _busy = true;
+    _error = null;
+    notifyListeners();
+    try {
+      await _auth.deleteAccount(password);
+      return null;
+    } catch (e) {
+      final message = e.toString().replaceFirst('Exception: ', '');
+      _error = message;
+      return message;
+    } finally {
+      _busy = false;
+      notifyListeners();
+    }
+  }
+
   /// Returns null on success, or an error message on failure.
   Future<String?> changePassword({
     required String currentPassword,
@@ -72,6 +91,49 @@ class AuthViewModel extends ChangeNotifier {
         currentPassword: currentPassword,
         newPassword: newPassword,
       );
+      return null;
+    } catch (e) {
+      final message = e.toString().replaceFirst('Exception: ', '');
+      _error = message;
+      return message;
+    } finally {
+      _busy = false;
+      notifyListeners();
+    }
+  }
+
+  /// Always "succeeds" from the caller's point of view — the UI shows the
+  /// same generic "check your email" message whether or not the address is
+  /// registered, so this can't be used to enumerate accounts. A network
+  /// failure (no connection, server down) is the only thing surfaced back.
+  Future<String?> requestPasswordReset(String email) async {
+    _busy = true;
+    _error = null;
+    notifyListeners();
+    try {
+      await _auth.requestPasswordReset(email);
+      return null;
+    } catch (e) {
+      final message = e.toString().replaceFirst('Exception: ', '');
+      _error = message;
+      return message;
+    } finally {
+      _busy = false;
+      notifyListeners();
+    }
+  }
+
+  /// Returns null on success, or an error message (expired/used/invalid
+  /// token, weak password, ...) on failure.
+  Future<String?> confirmPasswordReset({
+    required String token,
+    required String newPassword,
+  }) async {
+    _busy = true;
+    _error = null;
+    notifyListeners();
+    try {
+      await _auth.confirmPasswordReset(token: token, newPassword: newPassword);
       return null;
     } catch (e) {
       final message = e.toString().replaceFirst('Exception: ', '');

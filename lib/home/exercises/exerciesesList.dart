@@ -1,10 +1,14 @@
 // ignore_for_file: file_names
 
+import 'package:workout_tracker/home/exercises/custom_exercises_repository.dart';
 import 'package:workout_tracker/home/exercises/models/categoryModel.dart';
 import 'package:workout_tracker/home/exercises/models/exerciseModel.dart';
 
 class ExercisesViewModel {
   const ExercisesViewModel();
+
+  /// Just the hardcoded catalog (no custom exercises).
+  static List<ExerciseModel> get builtIn => List.unmodifiable(_exercises);
   static final List<ExerciseModel> _exercises = [
     ExerciseModel(
       id: 1,
@@ -330,7 +334,7 @@ class ExercisesViewModel {
       category: WorkoutCategory.legs,
       workoutImage: 'assets/workouts/legs/hip_adduction.png',
     ),
-    
+
     ExerciseModel(
       id: 47,
       name: 'Dumbbell Shrugs',
@@ -380,6 +384,12 @@ class ExercisesViewModel {
       workoutImage: 'assets/workouts/chest/incline_machine_press.png',
     ),
     ExerciseModel(
+      id: 108,
+      name: 'Incline triceps pushdown',
+      category: WorkoutCategory.triceps,
+      workoutImage: 'assets/workouts/tri/overhead_tri_cable_atlantis.webp',
+    ),
+    ExerciseModel(
       id: 52,
       name: 'Hip Thrust',
       category: WorkoutCategory.legs,
@@ -393,5 +403,16 @@ class ExercisesViewModel {
     ),
   ];
 
-  static List<ExerciseModel> get all => List.unmodifiable(_exercises);
+  /// Built-in catalog + the user's custom exercises. Custom entries come from
+  /// [CustomExercisesRepository]'s in-memory cache, so this stays synchronous.
+  static List<ExerciseModel> get all =>
+      List.unmodifiable([..._exercises, ...CustomExercisesRepository.I.all]);
+
+  /// Safe lookup by id across built-ins and custom exercises.
+  static ExerciseModel? byId(int id) {
+    for (final e in _exercises) {
+      if (e.id == id) return e;
+    }
+    return CustomExercisesRepository.I.byId(id);
+  }
 }

@@ -12,6 +12,7 @@ import 'package:workout_tracker/home/account/accountViewModel.dart';
 import 'package:workout_tracker/home/friends/friendsService.dart';
 import 'package:workout_tracker/home/friends/friendsViewModel.dart';
 import 'package:workout_tracker/common/AppManager.dart';
+import 'package:workout_tracker/common/models/sex.dart';
 import 'package:workout_tracker/home/history/models/exNote.dart';
 import 'package:workout_tracker/home/measure/models/macro_profile.dart';
 import 'package:workout_tracker/home/measure/models/measurement_entry.dart';
@@ -22,8 +23,12 @@ import 'package:workout_tracker/home/templates/models/workout_template.dart';
 import 'package:workout_tracker/home/templates/viewmodels/templatesViewModel.dart';
 
 import 'package:workout_tracker/home/session/active_session_manager.dart';
+import 'package:workout_tracker/home/session/rest_timer_manager.dart';
 import 'package:workout_tracker/common/splash/splashLoading.dart';
 import 'package:workout_tracker/common/theme/app_theme.dart';
+import 'package:workout_tracker/core/services/deep_link_service.dart';
+import 'package:workout_tracker/home/exercises/custom_exercises_repository.dart';
+import 'package:workout_tracker/home/login/widgets/forgotPasswordPage.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -39,6 +44,7 @@ Future<void> main() async {
     ..registerAdapter(MeasurementEntryAdapter())
     ..registerAdapter(MeasureProfileAdapter())
     ..registerAdapter(MacroProfileAdapter())
+    ..registerAdapter(SexAdapter())
     ..registerAdapter(ExerciseNoteAdapter());
 
   await Hive.openBox<ExerciseNote>('exerciseNotesBox');
@@ -49,6 +55,10 @@ Future<void> main() async {
   await Hive.openBox<MacroProfile>('macrosProfileBox');
   await Hive.openBox('prEventsBox');
   await Hive.openBox<bool>('syncedSessionsBox');
+  await Hive.openBox<bool>('syncedMeasurementsBox');
+  await Hive.openBox('activeSessionBox');
+  await Hive.openBox<String>(CustomExercisesRepository.boxName);
+  CustomExercisesRepository.I.load();
 
   // Backfill a stable sync id onto any pre-sync history rows so they can be
   // pushed to the backend without duplicating.
@@ -60,6 +70,12 @@ Future<void> main() async {
   }
 
   await AuthToken.I.load();
+
+  // If the app was cold-started from a password-reset deep link, grab the
+  // token now (before the first frame) so we can route straight to the reset
+  // screen with no flash of the normal startup flow.
+  final deepLinks = DeepLinkService();
+  final initialResetToken = await deepLinks.getInitialResetToken();
 
   runApp(
     MultiProvider(
@@ -86,26 +102,74 @@ Future<void> main() async {
 
         ChangeNotifierProvider(create: (_) => TemplatesViewModel()),
         ChangeNotifierProvider(create: (_) => ActiveSessionManager()),
+        ChangeNotifierProvider(create: (_) => RestTimerManager()),
       ],
-      child: const MyApp(),
+      child: MyApp(
+        deepLinks: deepLinks,
+        initialResetToken: initialResetToken,
+      ),
     ),
   );
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+class MyApp extends StatefulWidget {
+  const MyApp({super.key, this.deepLinks, this.initialResetToken});
+
+  /// Reused so we keep a single [DeepLinkService] across cold-start and
+  /// warm-link handling. Optional so tests can build [MyApp] without the
+  /// platform plugin.
+  final DeepLinkService? deepLinks;
+
+  /// Reset token the app was launched with, or null.
+  final String? initialResetToken;
+
+  @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  final _navigatorKey = GlobalKey<NavigatorState>();
+  bool _resetRouteOpen = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // Warm links: the app is already running when the reset link is tapped.
+    widget.deepLinks?.listen(_openReset);
+  }
+
+  @override
+  void dispose() {
+    widget.deepLinks?.dispose();
+    super.dispose();
+  }
+
+  void _openReset(String token) {
+    final nav = _navigatorKey.currentState;
+    if (nav == null || _resetRouteOpen) return; // guard against double links
+    _resetRouteOpen = true;
+    nav
+        .push(
+          MaterialPageRoute(
+            builder: (_) => ResetPasswordScreen(token: token),
+          ),
+        )
+        .then((_) => _resetRouteOpen = false);
+  }
 
   @override
   Widget build(BuildContext context) {
     final themeMode = context.select<AppManager, ThemeMode>((m) => m.themeMode);
+    final sex = context.select<AppManager, Sex>((m) => m.sex);
 
     return MaterialApp(
       debugShowCheckedModeBanner: false,
+      navigatorKey: _navigatorKey,
       title: 'Gym Tracker',
       themeMode: themeMode,
-      theme: buildLightTheme(),
-      darkTheme: buildDarkTheme(),
-      home: const SplashPage(),
+      theme: buildLightTheme(sex: sex),
+      darkTheme: buildDarkTheme(sex: sex),
+      home: SplashPage(initialResetToken: widget.initialResetToken),
     );
   }
 }

@@ -9,7 +9,9 @@ import 'package:workout_tracker/home/account/widgets/accountPageBody.dart';
 import 'package:workout_tracker/home/friends/friendsViewModel.dart';
 import 'package:workout_tracker/common/AppManager.dart';
 import 'package:workout_tracker/common/splash/splashLoading.dart';
-import 'package:workout_tracker/core/auth_token.dart';
+import 'package:workout_tracker/common/validators/password_validator.dart';
+import 'package:workout_tracker/core/services/local_data_guard.dart';
+import 'package:workout_tracker/home/exercises/custom_exercises_repository.dart';
 
 class AccountPage extends StatefulWidget {
   const AccountPage({super.key});
@@ -59,6 +61,250 @@ class _AccountPageState extends State<AccountPage> {
     );
   }
 
+  /// Confirms, then signs out. A polished, deliberate flow for a
+  /// disruptive action — but the confirm is only friction, never a
+  /// dependency: the sign-out itself is always local (see [_signOut]).
+  Future<void> _confirmSignOut(BuildContext context) async {
+    final cs = Theme.of(context).colorScheme;
+    final ok = await showModalBottomSheet<bool>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (sheetCtx) => Container(
+        margin: const EdgeInsets.fromLTRB(12, 0, 12, 16),
+        padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
+        decoration: BoxDecoration(
+          color: cs.surface,
+          borderRadius: BorderRadius.circular(28),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              margin: const EdgeInsets.only(top: 4, bottom: 18),
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: cs.outline.withValues(alpha: 0.4),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            CircleAvatar(
+              radius: 26,
+              backgroundColor: cs.error.withValues(alpha: 0.12),
+              child: Icon(Icons.logout_rounded, color: cs.error),
+            ),
+            const SizedBox(height: 16),
+            Text('Sign out?',
+                style: Theme.of(context).textTheme.titleLarge),
+            const SizedBox(height: 6),
+            Text(
+              'Your workouts stay saved on this device. You can sign back in anytime.',
+              textAlign: TextAlign.center,
+              style: Theme.of(context)
+                  .textTheme
+                  .bodyMedium
+                  ?.copyWith(color: cs.onSurfaceVariant),
+            ),
+            const SizedBox(height: 22),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: () => Navigator.pop(sheetCtx, false),
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                    ),
+                    child: const Text('Cancel'),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: FilledButton(
+                    onPressed: () => Navigator.pop(sheetCtx, true),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: cs.error,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                    ),
+                    child: const Text('Sign out'),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+    if (ok == true && context.mounted) await _signOut(context);
+  }
+
+  /// Local-only sign-out. Deliberately makes no network call — a session
+  /// must always be endable even when the backend is completely
+  /// unreachable, so this only ever touches local auth/session state.
+  Future<void> _signOut(BuildContext context) async {
+    await context.read<AuthViewModel>().logout();
+    if (!context.mounted) return;
+    context.read<AccountViewModel>().clear();
+    context.read<FriendsViewModel>().clear();
+    context.read<AppManager>().setOffline();
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(builder: (_) => const SplashPage()),
+      (_) => false,
+    );
+  }
+
+  /// Permanent account deletion. Unlike sign-out this REQUIRES a successful
+  /// server call (DELETE /api/users/me) — a wrong password or offline attempt
+  /// must not pretend to have deleted the account. Only on success do we wipe
+  /// local caches and return to the splash.
+  Future<void> _confirmDeleteAccount(BuildContext context) async {
+    final passCtrl = TextEditingController();
+    String? error;
+    var obscure = true;
+
+    final deleted = await showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (sheetCtx) {
+        final cs = Theme.of(sheetCtx).colorScheme;
+        return StatefulBuilder(
+          builder: (sheetCtx, setSheet) {
+            final authVM = sheetCtx.watch<AuthViewModel>();
+            return Padding(
+              padding: EdgeInsets.only(
+                left: 24,
+                right: 24,
+                top: 8,
+                bottom: MediaQuery.of(sheetCtx).viewInsets.bottom + 24,
+              ),
+              child: Container(
+                padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
+                decoration: BoxDecoration(
+                  color: cs.surface,
+                  borderRadius: BorderRadius.circular(28),
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Center(
+                      child: Container(
+                        margin: const EdgeInsets.only(top: 4, bottom: 18),
+                        width: 40,
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: cs.outline.withValues(alpha: 0.4),
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                      ),
+                    ),
+                    Center(
+                      child: CircleAvatar(
+                        radius: 26,
+                        backgroundColor: cs.error.withValues(alpha: 0.12),
+                        child: Icon(Icons.delete_forever_rounded,
+                            color: cs.error),
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    Text('Delete account?',
+                        textAlign: TextAlign.center,
+                        style: Theme.of(sheetCtx).textTheme.titleLarge),
+                    const SizedBox(height: 6),
+                    Text(
+                      'This permanently deletes your account and all your '
+                      'workouts, templates, and measurements. This cannot be '
+                      'undone. Enter your password to confirm.',
+                      textAlign: TextAlign.center,
+                      style: Theme.of(sheetCtx)
+                          .textTheme
+                          .bodyMedium
+                          ?.copyWith(color: cs.onSurfaceVariant),
+                    ),
+                    const SizedBox(height: 18),
+                    TextField(
+                      controller: passCtrl,
+                      obscureText: obscure,
+                      decoration: InputDecoration(
+                        labelText: 'Password',
+                        prefixIcon: const Icon(Icons.lock_outline),
+                        errorText: error,
+                        suffixIcon: IconButton(
+                          icon: Icon(obscure
+                              ? Icons.visibility_outlined
+                              : Icons.visibility_off_outlined),
+                          onPressed: () => setSheet(() => obscure = !obscure),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    FilledButton(
+                      style: FilledButton.styleFrom(
+                        backgroundColor: cs.error,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                      ),
+                      onPressed: authVM.busy
+                          ? null
+                          : () async {
+                              if (passCtrl.text.isEmpty) {
+                                setSheet(() => error = 'Password is required');
+                                return;
+                              }
+                              setSheet(() => error = null);
+                              final msg = await sheetCtx
+                                  .read<AuthViewModel>()
+                                  .deleteAccount(passCtrl.text);
+                              if (!sheetCtx.mounted) return;
+                              if (msg == null) {
+                                Navigator.pop(sheetCtx, true);
+                              } else {
+                                setSheet(() => error = msg);
+                              }
+                            },
+                      child: authVM.busy
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            )
+                          : const Text('Delete my account'),
+                    ),
+                    const SizedBox(height: 8),
+                    TextButton(
+                      onPressed: authVM.busy
+                          ? null
+                          : () => Navigator.pop(sheetCtx, false),
+                      child: const Text('Cancel'),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+
+    passCtrl.dispose();
+    if (deleted != true || !context.mounted) return;
+
+    // Server-side account is gone and the token is already cleared. Wipe every
+    // local cache so nothing of the deleted account lingers on this device.
+    await LocalDataGuard.wipeAfterAccountDeletion();
+    CustomExercisesRepository.I.load();
+    if (!context.mounted) return;
+    context.read<AccountViewModel>().clear();
+    context.read<FriendsViewModel>().clear();
+    context.read<AppManager>().setOffline();
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(builder: (_) => const SplashPage()),
+      (_) => false,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final vm = context.watch<AccountViewModel>();
@@ -66,6 +312,16 @@ class _AccountPageState extends State<AccountPage> {
     if (vm.account == null) {
       if (vm.error != null) {
         return Scaffold(
+          appBar: AppBar(
+            title: const Text('Account'),
+            actions: [
+              IconButton(
+                tooltip: 'Sign out',
+                icon: const Icon(Icons.logout_rounded),
+                onPressed: () => _signOut(context),
+              ),
+            ],
+          ),
           body: Center(
             child: Padding(
               padding: const EdgeInsets.all(24),
@@ -91,13 +347,31 @@ class _AccountPageState extends State<AccountPage> {
                     icon: const Icon(Icons.refresh),
                     label: const Text('Retry'),
                   ),
+                  const SizedBox(height: 8),
+                  TextButton.icon(
+                    onPressed: () => _signOut(context),
+                    icon: const Icon(Icons.logout_rounded),
+                    label: const Text('Sign out'),
+                  ),
                 ],
               ),
             ),
           ),
         );
       }
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+      return Scaffold(
+        appBar: AppBar(
+          title: const Text('Account'),
+          actions: [
+            IconButton(
+              tooltip: 'Sign out',
+              icon: const Icon(Icons.logout_rounded),
+              onPressed: () => _signOut(context),
+            ),
+          ],
+        ),
+        body: const Center(child: CircularProgressIndicator()),
+      );
     }
 
     final a = vm.account!;
@@ -107,31 +381,56 @@ class _AccountPageState extends State<AccountPage> {
       backgroundColor: Theme.of(context).colorScheme.surface,
       body: RefreshIndicator(
         onRefresh: vm.refresh,
-        child: AccountPageBody(
-          name: a.displayName,
-          username: a.username,
-          email: a.email,
-          streakCurrent: a.currentStreak,
-          streakBest: a.bestStreak,
-          avatarBase64: a.avatarBase64,
-          isDarkMode: isDark,
-          onDarkModeChanged: (v) =>
-              context.read<AppManager>().toggleDarkMode(v),
-          onEditProfile: () => _openEditProfile(a),
-          onEditAvatar: _openEditAvatar,
-          onChangePassword: _openChangePassword,
-          onSignOut: () async {
-            await context.read<AuthViewModel>().logout();
-            await AuthToken.I.clear();
-            if (!context.mounted) return;
-            context.read<AccountViewModel>().clear();
-            context.read<FriendsViewModel>().clear();
-            context.read<AppManager>().setOffline();
-            Navigator.of(context).pushAndRemoveUntil(
-              MaterialPageRoute(builder: (_) => const SplashPage()),
-              (_) => false,
-            );
-          },
+        child: Column(
+          children: [
+            if (vm.isStale)
+              Container(
+                width: double.infinity,
+                color: Theme.of(context).colorScheme.tertiaryContainer,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.cloud_off_rounded,
+                      size: 16,
+                      color: Theme.of(context).colorScheme.onTertiaryContainer,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        "Showing your last saved profile — can't reach the server right now.",
+                        style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onTertiaryContainer,
+                            ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            Expanded(
+              child: AccountPageBody(
+                name: a.displayName,
+                username: a.username,
+                email: a.email,
+                streakCurrent: a.currentStreak,
+                streakBest: a.bestStreak,
+                avatarBase64: a.avatarBase64,
+                isDarkMode: isDark,
+                onDarkModeChanged: (v) =>
+                    context.read<AppManager>().toggleDarkMode(v),
+                onEditProfile: () => _openEditProfile(a),
+                onEditAvatar: _openEditAvatar,
+                onChangePassword: _openChangePassword,
+                onSignOut: () => _confirmSignOut(context),
+                onDeleteAccount: () => _confirmDeleteAccount(context),
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -295,11 +594,7 @@ class _ChangePasswordSheetState extends State<_ChangePasswordSheet> {
                   onPressed: () => setState(() => _obscureNew = !_obscureNew),
                 ),
               ),
-              validator: (v) {
-                if (v == null || v.isEmpty) return 'Required';
-                if (v.length < 8) return 'Min 8 characters';
-                return null;
-              },
+              validator: PasswordValidator.validate,
             ),
             const SizedBox(height: 14),
             TextFormField(
@@ -309,11 +604,8 @@ class _ChangePasswordSheetState extends State<_ChangePasswordSheet> {
                 labelText: 'Confirm New Password',
                 prefixIcon: Icon(Icons.lock_reset_outlined),
               ),
-              validator: (v) {
-                if (v == null || v.isEmpty) return 'Required';
-                if (v != _newCtrl.text) return 'Passwords do not match';
-                return null;
-              },
+              validator: (v) =>
+                  PasswordValidator.validateConfirmation(v, _newCtrl.text),
             ),
             const SizedBox(height: 28),
             SizedBox(

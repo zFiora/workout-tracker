@@ -16,13 +16,38 @@ class AccountViewModel extends ChangeNotifier {
   String? _error;
   String? get error => _error;
 
+  /// True when [account] is a locally-cached last-known profile that hasn't
+  /// been confirmed against the server yet this session (e.g. offline / the
+  /// server is unreachable). The UI shows a "not synced" hint rather than an
+  /// error screen in this case — cached data is still useful.
+  bool _isStale = false;
+  bool get isStale => _isStale;
+
+  /// Cache-first load: shows the last-known profile immediately (including
+  /// fully offline, on a cold start), then reconciles with the server.
+  /// A failed server fetch never clears already-shown cached data.
   Future<void> load() async {
+    if (_account == null) {
+      final cached = await repo.readCached();
+      if (cached != null) {
+        _account = cached;
+        _isStale = true;
+        notifyListeners();
+      }
+    }
+
     _setLoading(true);
     try {
       _account = await repo.fetchMe();
+      _isStale = false;
       _error = null;
     } catch (e) {
-      _error = e.toString().replaceFirst('Exception: ', '');
+      // Keep showing cached data (if any) instead of blowing it away.
+      if (_account == null) {
+        _error = e.toString().replaceFirst('Exception: ', '');
+      } else {
+        _isStale = true;
+      }
     } finally {
       _setLoading(false);
     }
@@ -38,6 +63,7 @@ class AccountViewModel extends ChangeNotifier {
         displayName: displayName,
         username: username,
       );
+      _isStale = false;
       _error = null;
     } catch (e) {
       _error = e.toString().replaceFirst('Exception: ', '');
@@ -50,6 +76,7 @@ class AccountViewModel extends ChangeNotifier {
     _setLoading(true);
     try {
       _account = await repo.uploadAvatar(file);
+      _isStale = false;
       _error = null;
     } catch (e) {
       _error = e.toString().replaceFirst('Exception: ', '');
@@ -70,6 +97,7 @@ class AccountViewModel extends ChangeNotifier {
   void clear() {
     _account = null;
     _error = null;
+    _isStale = false;
     _loading = false;
     notifyListeners();
   }

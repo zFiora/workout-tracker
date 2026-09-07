@@ -18,21 +18,27 @@ class MacroProfileAdapter extends TypeAdapter<MacroProfile> {
     };
     return MacroProfile(
       isMale: fields[0] as bool,
-      age: fields[1] as int,
+      ageFallback: fields[1] as int,
       activityFactor: fields[2] as double,
+      sexValue: fields[3] as Sex?,
+      dateOfBirthUtc: fields[4] as DateTime?,
     );
   }
 
   @override
   void write(BinaryWriter writer, MacroProfile obj) {
     writer
-      ..writeByte(3)
+      ..writeByte(5)
       ..writeByte(0)
       ..write(obj.isMale)
       ..writeByte(1)
-      ..write(obj.age)
+      ..write(obj.ageFallback)
       ..writeByte(2)
-      ..write(obj.activityFactor);
+      ..write(obj.activityFactor)
+      ..writeByte(3)
+      ..write(obj.sexValue)
+      ..writeByte(4)
+      ..write(obj.dateOfBirthUtc);
   }
 
   @override

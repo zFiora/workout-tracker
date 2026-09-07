@@ -46,6 +46,8 @@ dependencies:
   uuid: ^4.5.2
   intl: ^0.19.0
   fl_chart: ^0.66.0
+  app_links: ^6.4.1
+  path_provider: ^2.1.5
 
 dev_dependencies:
   flutter_test:
@@ -118,6 +120,7 @@ flutter:
     - assets/workouts/tri/single_tri_push_down.png
     - assets/workouts/tri/tricep_extention.png
     - assets/workouts/tri/tricep_push_down.png
+    - assets/workouts/tri/overhead_tri_cable_atlantis.webp
 
     - assets/workouts/bicep/barbell_curl.png
     - assets/workouts/bicep/bayesian_curl.png
@@ -158,7 +161,14 @@ flutter:
     - assets/workout_category/legs_emoji.png
     - assets/workout_category/forearms_emoji.png
     - assets/workout_category/muscular_forearms_emoji.png
-    
+
+    # Gender-specific muscle-group icons (resolved at render time by
+    # lib/common/theme/workout_icons.dart based on the user's selected sex).
+    # Without these, every male/female icon fails to load and falls back to a
+    # default glyph.
+    - assets/workout_category/male/
+    - assets/workout_category/female/
+
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

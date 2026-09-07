@@ -77,37 +77,25 @@ class TemplateActionsMenu extends StatelessWidget {
     );
   }
 
+  // Deleting is already gated behind two deliberate taps (open the menu,
+  // then Delete) — a third confirmation dialog on top is friction without
+  // much extra safety. An Undo snackbar (same pattern as History) covers the
+  // "oops" case better than a dialog would, without interrupting the flow.
   Future<void> _delete(BuildContext context, TemplatesViewModel vm) async {
-    final ok = await showDialog<bool>(
-      context: context,
-      builder: (dialogCtx) => AlertDialog(
-        title: const Text('Delete template?'),
-        content: Text(
-          '"${template.name}" will be removed. This cannot be undone.',
+    final deleted = template;
+    await vm.deleteTemplate(deleted);
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context)
+      ..clearSnackBars()
+      ..showSnackBar(
+        SnackBar(
+          content: Text('"${deleted.name}" deleted'),
+          action: SnackBarAction(
+            label: 'UNDO',
+            onPressed: () => vm.addTemplate(deleted),
+          ),
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogCtx, false),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(dialogCtx, true),
-            style: TextButton.styleFrom(
-              foregroundColor: Theme.of(context).colorScheme.error,
-            ),
-            child: const Text('Delete'),
-          ),
-        ],
-      ),
-    );
-
-    if (ok == true) {
-      await vm.deleteTemplate(template);
-      if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Template deleted')),
       );
-    }
   }
 
   @override
@@ -143,7 +131,7 @@ class TemplateActionsMenu extends StatelessWidget {
         ),
         const PopupMenuItem(
           value: _Action.editExercises,
-          child: _MenuRow(icon: Icons.edit_note_rounded, label: 'Edit exercises'),
+          child: _MenuRow(icon: Icons.edit_note_rounded, label: 'Edit template'),
         ),
         if (isOnline)
           const PopupMenuItem(

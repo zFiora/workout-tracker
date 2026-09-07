@@ -1,3 +1,31 @@
+/// Why an [ApiError] happened, distinguishing failure modes the UI should
+/// present differently — a stale connection reads very differently to a user
+/// than a validation error.
+enum NetworkReason {
+  /// Couldn't reach the server at all (DNS failure, connection refused, no
+  /// network). Covers both "no internet" and "server is down" — Dio can't
+  /// reliably tell those apart without an extra connectivity dependency, so
+  /// both are surfaced as "can't reach the server".
+  noConnection,
+
+  /// The request reached the server (or a proxy) but it didn't respond in
+  /// time.
+  timeout,
+
+  /// The server responded with a 5xx — it's up, but erroring.
+  serverError,
+
+  /// The token is missing/expired/invalid for a protected endpoint.
+  unauthorized,
+
+  /// The server responded with a 4xx that isn't an auth problem — bad
+  /// input, not found, conflict, etc.
+  requestFailed,
+
+  /// Anything else (unexpected exception, parse failure, ...).
+  unknown,
+}
+
 /// Sealed result type used by every repository method that touches the network.
 ///
 /// Usage:
@@ -18,14 +46,20 @@ final class ApiSuccess<T> extends ApiResult<T> {
 }
 
 final class ApiError<T> extends ApiResult<T> {
-  const ApiError(this.message, {this.statusCode, this.cause});
+  const ApiError(
+    this.message, {
+    this.statusCode,
+    this.cause,
+    this.reason = NetworkReason.unknown,
+  });
   final String message;
   final int? statusCode;
   final Object? cause;
+  final NetworkReason reason;
 
   bool get isUnauthorized => statusCode == 401;
   bool get isNotFound     => statusCode == 404;
-  bool get isOffline      => statusCode == null;
+  bool get isOffline      => reason == NetworkReason.noConnection;
 
   @override
   String toString() => 'ApiError[$statusCode]: $message';

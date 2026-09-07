@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:workout_tracker/common/AppManager.dart';
 import 'package:workout_tracker/common/formatters/numberFormatter.dart';
+import 'package:workout_tracker/common/units/weight_unit.dart';
 import 'package:workout_tracker/home/history/exDetail/Widgets/simpleCard.dart';
 import 'package:workout_tracker/home/history/exDetail/exDetailViewModel.dart';
 import 'package:workout_tracker/home/history/utils/strengthUtils.dart';
@@ -10,6 +13,7 @@ class LastSessionsCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final unit = context.select<AppManager, WeightUnit>((m) => m.weightUnit);
     final s = vm.last5;
 
     if (s.isEmpty) {
@@ -26,7 +30,7 @@ class LastSessionsCard extends StatelessWidget {
               title: Text(ymd(e.day)),
               subtitle: Text("Vol ${round1(e.sessionVolume)}"),
               trailing: Text(
-                "${round1(e.bestWeight)} kg",
+                unit.formatWithUnit(e.bestWeight),
                 style: Theme.of(context).textTheme.titleSmall,
               ),
             );

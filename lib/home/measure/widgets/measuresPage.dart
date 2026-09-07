@@ -3,12 +3,15 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:workout_tracker/common/AppManager.dart';
+import 'package:workout_tracker/common/units/weight_unit.dart';
 import 'package:workout_tracker/common/theme/app_theme.dart';
 import 'package:workout_tracker/common/widgets/myCustomSnackBar.dart';
 import 'package:workout_tracker/common/widgets/myCustomeScaffoldView.dart';
 import 'package:workout_tracker/common/widgets/uiKit.dart';
 import 'package:workout_tracker/home/measure/measures_viewmodel.dart';
 import 'package:workout_tracker/home/measure/models/macroResults.dart';
+import 'package:workout_tracker/home/measure/models/macro_profile.dart';
 import 'package:workout_tracker/home/measure/repositeries/macros_profile_repository.dart';
 import 'package:workout_tracker/home/measure/repositeries/measures_profile_repository.dart';
 import 'package:workout_tracker/home/measure/repositeries/measures_repository.dart';
@@ -50,6 +53,9 @@ class _MeasuresViewState extends State<_MeasuresView> {
   @override
   Widget build(BuildContext context) {
     final vm = context.watch<MeasuresViewModel>();
+    // Rebuild the whole page when the weight unit changes; helpers read the
+    // current value via context.read.
+    context.select<AppManager, WeightUnit>((m) => m.weightUnit);
     final df = DateFormat('EEE, dd MMM yyyy');
 
     return MyCustomeScaffoldView(
@@ -84,6 +90,7 @@ class _MeasuresViewState extends State<_MeasuresView> {
   Widget _summaryCard(BuildContext context, MeasuresViewModel vm) {
     final cs = Theme.of(context).colorScheme;
     final tt = Theme.of(context).textTheme;
+    final unit = context.read<AppManager>().weightUnit;
 
     final latest = vm.latestWeight;
     final d7 = vm.deltaDays(7);
@@ -101,9 +108,10 @@ class _MeasuresViewState extends State<_MeasuresView> {
       } else {
         icon = Icons.trending_down_rounded;
       }
+      // d is a kg delta; convert magnitude to the display unit.
       final label = d == null
           ? '$period —'
-          : '$period ${d >= 0 ? "+" : ""}${d.toStringAsFixed(1)} kg';
+          : '$period ${d >= 0 ? "+" : "-"}${unit.format(d.abs())} ${unit.label}';
       return StatPill(icon: icon, label: label, color: cs.primary);
     }
 
@@ -119,14 +127,14 @@ class _MeasuresViewState extends State<_MeasuresView> {
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Text(
-                latest == null ? '—' : latest.toStringAsFixed(1),
+                latest == null ? '—' : unit.format(latest),
                 style: tt.displayMedium?.copyWith(color: cs.onSurface),
               ),
               const SizedBox(width: 6),
               Padding(
                 padding: const EdgeInsets.only(bottom: 7),
                 child: Text(
-                  'kg',
+                  unit.label,
                   style: tt.titleMedium?.copyWith(color: cs.onSurfaceVariant),
                 ),
               ),
@@ -257,6 +265,7 @@ class _MeasuresViewState extends State<_MeasuresView> {
     MeasuresViewModel vm,
   ) {
     final cs = Theme.of(context).colorScheme;
+    final unit = context.read<AppManager>().weightUnit;
 
     return AppCard(
       padding: const EdgeInsets.all(16),
@@ -267,9 +276,9 @@ class _MeasuresViewState extends State<_MeasuresView> {
           TextField(
             controller: _weightController,
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
-            decoration: const InputDecoration(
-              labelText: 'Weight (kg)',
-              prefixIcon: Icon(Icons.monitor_weight_outlined, size: 20),
+            decoration: InputDecoration(
+              labelText: 'Weight (${unit.label})',
+              prefixIcon: const Icon(Icons.monitor_weight_outlined, size: 20),
             ),
           ),
           const SizedBox(height: 10),
@@ -321,7 +330,7 @@ class _MeasuresViewState extends State<_MeasuresView> {
               }
 
               await vm.addOrReplaceEntry(
-                weightKg: w,
+                weightKg: unit.toKg(w),
                 dateLocal: DateTime(
                   _selectedDate.year,
                   _selectedDate.month,
@@ -456,9 +465,10 @@ class _MeasuresViewState extends State<_MeasuresView> {
       ('Athlete (1.9)', 1.9),
     ];
 
-    int age = vm.macroProfile.age;
-    bool isMale = vm.macroProfile.isMale;
+    Sex sex = vm.macroProfile.sex;
+    DateTime? dob = vm.macroProfile.dateOfBirthUtc;
     double activity = vm.macroProfile.activityFactor;
+    final df = DateFormat('dd MMM yyyy');
 
     await showDialog<void>(
       context: context,
@@ -469,37 +479,60 @@ class _MeasuresViewState extends State<_MeasuresView> {
             builder: (ctx, setLocal) {
               return Column(
                 mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  DropdownButtonFormField<Sex>(
+                    value: sex,
+                    decoration: const InputDecoration(labelText: 'Sex'),
+                    items: const [
+                      DropdownMenuItem(
+                        value: Sex.unspecified,
+                        child: Text('Prefer not to say'),
+                      ),
+                      DropdownMenuItem(value: Sex.male, child: Text('Male')),
+                      DropdownMenuItem(
+                        value: Sex.female,
+                        child: Text('Female'),
+                      ),
+                    ],
+                    onChanged: (v) =>
+                        setLocal(() => sex = v ?? Sex.unspecified),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    'Date of birth',
+                    style: Theme.of(context).textTheme.labelMedium,
+                  ),
+                  const SizedBox(height: 6),
                   Row(
                     children: [
                       Expanded(
-                        child: DropdownButtonFormField<bool>(
-                          value: isMale,
-                          decoration: const InputDecoration(labelText: 'Sex'),
-                          items: const [
-                            DropdownMenuItem(value: true, child: Text('Male')),
-                            DropdownMenuItem(
-                              value: false,
-                              child: Text('Female'),
-                            ),
-                          ],
-                          onChanged: (v) => setLocal(() => isMale = v ?? true),
+                        child: Text(
+                          dob == null ? 'Not set' : df.format(dob!),
                         ),
                       ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: TextFormField(
-                          initialValue: age.toString(),
-                          keyboardType: TextInputType.number,
-                          decoration: const InputDecoration(labelText: 'Age'),
-                          onChanged: (v) {
-                            final parsed = int.tryParse(v.trim());
-                            if (parsed != null) setLocal(() => age = parsed);
-                          },
-                        ),
+                      TextButton(
+                        onPressed: () async {
+                          final picked = await showDatePicker(
+                            context: ctx,
+                            firstDate: DateTime(1900),
+                            lastDate: DateTime.now(),
+                            initialDate: dob ?? DateTime(1995, 1, 1),
+                          );
+                          if (picked != null) setLocal(() => dob = picked);
+                        },
+                        child: Text(dob == null ? 'Set' : 'Change'),
                       ),
                     ],
                   ),
+                  if (dob == null)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 4),
+                      child: Text(
+                        'Using a default age of ${vm.macroProfile.age} until set.',
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                    ),
                   const SizedBox(height: 12),
                   DropdownButtonFormField<double>(
                     value: activity,
@@ -528,8 +561,11 @@ class _MeasuresViewState extends State<_MeasuresView> {
             ),
             FilledButton(
               onPressed: () async {
-                await vm.setIsMale(isMale);
-                await vm.setAge(age);
+                await vm.setSex(sex);
+                final pickedDob = dob;
+                if (pickedDob != null) {
+                  await vm.setDateOfBirth(pickedDob);
+                }
                 await vm.setActivityFactor(activity);
                 if (context.mounted) Navigator.pop(ctx);
               },
@@ -544,6 +580,7 @@ class _MeasuresViewState extends State<_MeasuresView> {
   // ===== History =====
   Widget _historyCard(DateFormat df, MeasuresViewModel vm) {
     final entries = vm.entries.reversed.toList();
+    final unit = context.read<AppManager>().weightUnit;
 
     return AppCard(
       padding: const EdgeInsets.all(16),
@@ -567,7 +604,7 @@ class _MeasuresViewState extends State<_MeasuresView> {
                   color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
                 title: Text(
-                  '${e.weightKg.toStringAsFixed(1)} kg',
+                  unit.formatWithUnit(e.weightKg),
                   style: Theme.of(context).textTheme.titleSmall?.copyWith(
                         fontFamily: AppFonts.display,
                         fontSize: 15,

@@ -1,9 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:workout_tracker/common/AppManager.dart';
 import 'package:workout_tracker/common/theme/app_theme.dart';
+import 'package:workout_tracker/common/units/weight_unit.dart';
+import 'package:workout_tracker/common/widgets/myCustomSnackBar.dart';
 import 'package:provider/provider.dart';
 import 'package:workout_tracker/home/exercises/models/exerciseModel.dart';
 import 'package:workout_tracker/home/history/ViewModel/historyViewModel.dart';
 import 'package:workout_tracker/home/session/models/sessionModels.dart';
+import 'package:workout_tracker/home/session/rest_timer_manager.dart';
+import 'package:workout_tracker/home/session/services/progressive_overload_service.dart';
 import 'package:workout_tracker/home/session/services/sessionPlannedAutoloadService.dart';
 import 'package:workout_tracker/home/session/sessionViewModel.dart';
 import 'package:workout_tracker/home/session/widgets/plannedSetControllers.dart';
@@ -28,7 +33,13 @@ class _ExerciseSessionTileState extends State<ExerciseSessionTile> {
 
   final _controllers = PlannedSetControllers();
   final _autoLoadService = SessionPlanAutoloadService();
+  static const _progression = ProgressiveOverloadService();
   final Set<String> _editingKeys = {};
+
+  // Progressive-overload suggestion, computed once from last time's sets.
+  List<ProgressionTarget> _targets = const [];
+  List<PerformedSet> _lastWork = const [];
+  bool _progressionDismissed = false;
 
   List<PerformedSet> _fixWarmupOrder(List<PerformedSet> sets) {
     if (sets.isEmpty) return sets;
@@ -70,6 +81,15 @@ class _ExerciseSessionTileState extends State<ExerciseSessionTile> {
           lastSets: fixed,
         );
       }
+
+      // Cache a progression suggestion for the banner (offered, never forced).
+      final targets = _progression.suggestFrom(fixed);
+      if (targets.isNotEmpty && _progression.differsFrom(targets, fixed)) {
+        setState(() {
+          _targets = targets;
+          _lastWork = fixed.where((s) => s.type == SetType.work).toList();
+        });
+      }
     });
   }
 
@@ -82,6 +102,7 @@ class _ExerciseSessionTileState extends State<ExerciseSessionTile> {
   @override
   Widget build(BuildContext context) {
     final session = context.watch<WorkoutSessionViewModel>();
+    final unit = context.select<AppManager, WeightUnit>((m) => m.weightUnit);
     final log = session.logs[widget.exercise.id];
 
     final planned = log?.plannedSets ?? <PlannedSet>[];
@@ -112,6 +133,26 @@ class _ExerciseSessionTileState extends State<ExerciseSessionTile> {
           ),
           subtitle: _ProgressDots(planned: planned, doneCount: doneCount, cs: cs),
           children: [
+            // ── Progressive-overload suggestion (offered, not forced) ──
+            if (_targets.isNotEmpty &&
+                !_progressionDismissed &&
+                planned.any((p) => !p.done))
+              _ProgressionBanner(
+                targets: _targets,
+                lastWork: _lastWork,
+                unit: unit,
+                onApply: () {
+                  context.read<WorkoutSessionViewModel>().applyProgressionTargets(
+                        exerciseId: widget.exercise.id,
+                        targets: _targets
+                            .map((t) => (weightKg: t.weightKg, reps: t.reps))
+                            .toList(),
+                      );
+                  setState(() => _progressionDismissed = true);
+                },
+                onDismiss: () => setState(() => _progressionDismissed = true),
+              ),
+
             // ── Column headers ──────────────────────────────────
             if (planned.isNotEmpty) _ColumnHeader(cs: cs),
 
@@ -136,7 +177,7 @@ class _ExerciseSessionTileState extends State<ExerciseSessionTile> {
                   final p = planned[i];
                   final rowKey = _controllers.rowKey(widget.exercise.id, p);
 
-                  _controllers.initOnce(rowKey: rowKey, p: p);
+                  _controllers.initOnce(rowKey: rowKey, p: p, unit: unit);
 
                   final wCtrl = _controllers.weightCtrl(rowKey);
                   final rCtrl = _controllers.repsCtrl(rowKey);
@@ -147,29 +188,29 @@ class _ExerciseSessionTileState extends State<ExerciseSessionTile> {
                   );
 
                   void showInvalidSnack() {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Enter a valid weight and rep count'),
-                        duration: Duration(seconds: 2),
-                      ),
+                    Mycustomsnackbar.show(
+                      context,
+                      message: 'Enter a valid weight and rep count',
+                      type: SnackbarType.warning,
                     );
                   }
 
                   bool commitToModel() {
-                    final w = double.tryParse(
+                    final wDisplay = double.tryParse(
                       wCtrl.text.trim().replaceAll(',', '.'),
                     );
                     final r = int.tryParse(rCtrl.text.trim());
 
-                    if (w == null || r == null) {
+                    if (wDisplay == null || r == null) {
                       showInvalidSnack();
                       return false;
                     }
 
+                    // Text is in the user's unit; store canonical kg.
                     context.read<WorkoutSessionViewModel>().updatePlannedSet(
                       exerciseId: widget.exercise.id,
                       index: i,
-                      weight: w,
+                      weight: unit.toKg(wDisplay),
                       reps: r,
                     );
                     return true;
@@ -180,6 +221,7 @@ class _ExerciseSessionTileState extends State<ExerciseSessionTile> {
                     planned: planned,
                     index: i,
                     rowKey: rowKey,
+                    weightUnitLabel: unit.label,
                     weightController: wCtrl,
                     repsController: rCtrl,
                     isEditing: isEditing,
@@ -213,7 +255,8 @@ class _ExerciseSessionTileState extends State<ExerciseSessionTile> {
                                 index: i,
                               ),
                     onCancelEdit: () {
-                      _controllers.resetToModel(rowKey: rowKey, p: p);
+                      _controllers.resetToModel(
+                          rowKey: rowKey, p: p, unit: unit);
                       setState(() => _editingKeys.remove(rowKey));
                       FocusScope.of(context).unfocus();
                     },
@@ -231,6 +274,10 @@ class _ExerciseSessionTileState extends State<ExerciseSessionTile> {
                                   .read<HistoryViewModel>()
                                   .history,
                             );
+                        // Auto-start rest after a completed *work* set.
+                        if (p.type == SetType.work) {
+                          context.read<RestTimerManager>().start();
+                        }
                         return;
                       }
 
@@ -281,6 +328,87 @@ class _ExerciseSessionTileState extends State<ExerciseSessionTile> {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+
+/// Compact, dismissible progressive-overload suggestion shown above the set
+/// rows. Purely optional — "Apply" fills the planned targets, and the user can
+/// still edit anything afterwards.
+class _ProgressionBanner extends StatelessWidget {
+  const _ProgressionBanner({
+    required this.targets,
+    required this.lastWork,
+    required this.unit,
+    required this.onApply,
+    required this.onDismiss,
+  });
+
+  final List<ProgressionTarget> targets;
+  final List<PerformedSet> lastWork;
+  final WeightUnit unit;
+  final VoidCallback onApply;
+  final VoidCallback onDismiss;
+
+  String _summary() {
+    // Collapse identical consecutive targets: "102.5×8 ×2, 100×10".
+    final parts = <String>[];
+    for (final t in targets) {
+      parts.add('${unit.format(t.weightKg)}×${t.reps}');
+    }
+    return parts.join(' · ');
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.fromLTRB(12, 10, 8, 10),
+      decoration: BoxDecoration(
+        color: cs.primary.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: cs.primary.withValues(alpha: 0.3)),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.trending_up_rounded, size: 18, color: cs.primary),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Progression',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 0.4,
+                    color: cs.primary,
+                  ),
+                ),
+                Text(
+                  'Try ${_summary()}',
+                  style: TextStyle(fontSize: 12.5, color: cs.onSurface),
+                ),
+              ],
+            ),
+          ),
+          TextButton(
+            onPressed: onApply,
+            style: TextButton.styleFrom(
+              visualDensity: VisualDensity.compact,
+              padding: const EdgeInsets.symmetric(horizontal: 10),
+            ),
+            child: const Text('Apply'),
+          ),
+          InkResponse(
+            onTap: onDismiss,
+            radius: 18,
+            child: Icon(Icons.close_rounded, size: 16, color: cs.onSurfaceVariant),
+          ),
+        ],
+      ),
+    );
+  }
+}
 
 /// Column header row aligned with PlannedSetRow fields.
 class _ColumnHeader extends StatelessWidget {

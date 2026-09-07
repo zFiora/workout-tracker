@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:workout_tracker/common/theme/workout_icons.dart';
 
 class HistoryHeaderCard extends StatelessWidget {
   const HistoryHeaderCard({
@@ -43,10 +44,10 @@ class HistoryHeaderCard extends StatelessWidget {
               color: cs.secondaryContainer.withValues(alpha: 0.55),
             ),
             clipBehavior: Clip.antiAlias,
-            child: Image.asset(
+            child: WorkoutIconImage(
               iconPath,
               fit: BoxFit.cover,
-              errorBuilder: (_, __, ___) => Icon(
+              fallback: Icon(
                 Icons.fitness_center,
                 color: cs.onSecondaryContainer.withValues(alpha: 0.85),
               ),

@@ -1,24 +1,28 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:workout_tracker/common/theme/app_theme.dart';
 import 'package:workout_tracker/common/widgets/myCustomeScaffoldView.dart';
 import 'package:workout_tracker/common/widgets/uiKit.dart';
 import 'package:workout_tracker/home/exercises/exerciesesList.dart';
+import 'package:workout_tracker/common/theme/workout_icons.dart';
 import 'package:workout_tracker/home/exercises/models/categoryModel.dart';
 import 'package:workout_tracker/home/exercises/models/exerciseModel.dart';
 import 'package:workout_tracker/home/templates/models/workout_template.dart';
 import 'package:workout_tracker/home/templates/navigation/startSessionFlow.dart';
+import 'package:workout_tracker/home/templates/pages/editTemplatePage.dart';
+import 'package:workout_tracker/home/templates/viewmodels/templatesViewModel.dart';
 
 class ViewTemplatePage extends StatelessWidget {
   final WorkoutTemplateModel template;
 
   const ViewTemplatePage({super.key, required this.template});
 
-  List<ExerciseModel> _resolveExercises() {
+  List<ExerciseModel> _resolveExercises(WorkoutTemplateModel live) {
     final all = ExercisesViewModel.all;
     final mapById = {for (final e in all) e.id: e};
 
     return [
-      for (final id in template.exerciseIds)
+      for (final id in live.exerciseIds)
         if (mapById[id] != null) mapById[id]!,
     ];
   }
@@ -27,12 +31,38 @@ class ViewTemplatePage extends StatelessWidget {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final tt = Theme.of(context).textTheme;
-    final resolved = _resolveExercises();
+
+    // Templates are now editable from several places (this page, the list's
+    // card menu) — always show the current data rather than the snapshot
+    // this page was opened with, so an edit made elsewhere doesn't leave
+    // this screen showing stale exercises.
+    final vm = context.watch<TemplatesViewModel>();
+    final live = vm.byId(template.id) ?? template;
+
+    final resolved = _resolveExercises(live);
     final categories =
         resolved.map((e) => e.category.displayName).toSet().length;
 
     return MyCustomeScaffoldView(
       title: '',
+      customAppBar: AppBar(
+        title: const Text(''),
+        actions: [
+          IconButton(
+            tooltip: 'Edit template',
+            icon: const Icon(Icons.edit_note_rounded),
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => EditTemplatePage(
+                  template: live,
+                  allExercises: ExercisesViewModel.all,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
       body: Column(
         children: [
           const SizedBox(height: 4),
@@ -54,9 +84,9 @@ class ViewTemplatePage extends StatelessWidget {
                 ),
                 border: Border.all(color: cs.primary.withValues(alpha: 0.25)),
               ),
-              child: Image.asset(
-                template.iconPath,
-                errorBuilder: (_, _, _) => Icon(
+              child: WorkoutIconImage(
+                live.iconPath,
+                fallback: Icon(
                   Icons.fitness_center_rounded,
                   size: 48,
                   color: cs.primary,
@@ -69,7 +99,7 @@ class ViewTemplatePage extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 24),
             child: Text(
-              template.name,
+              live.name,
               textAlign: TextAlign.center,
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
@@ -137,9 +167,9 @@ class ViewTemplatePage extends StatelessWidget {
                   onPressed: () {
                     StartSessionFlow.push(
                       context: context,
-                      templateId: template.id,
-                      templateName: template.name,
-                      templateIcon: template.iconPath,
+                      templateId: live.id,
+                      templateName: live.name,
+                      templateIcon: live.iconPath,
                       exercises: resolved,
                     );
                   },
@@ -212,11 +242,11 @@ class _TemplateExerciseRow extends StatelessWidget {
                 const SizedBox(height: 3),
                 Row(
                   children: [
-                    Image.asset(
-                      exercise.category.icon,
+                    WorkoutIconImage(
+                      exercise.category.iconKey,
                       width: 14,
                       height: 14,
-                      errorBuilder: (_, _, _) => const SizedBox.shrink(),
+                      fallback: const SizedBox.shrink(),
                     ),
                     const SizedBox(width: 5),
                     Text(
