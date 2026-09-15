@@ -24,6 +24,7 @@ import 'package:workout_tracker/home/templates/viewmodels/templatesViewModel.dar
 
 import 'package:workout_tracker/home/session/active_session_manager.dart';
 import 'package:workout_tracker/home/session/rest_timer_manager.dart';
+import 'package:workout_tracker/home/session/rest_timer_notification_service.dart';
 import 'package:workout_tracker/common/splash/splashLoading.dart';
 import 'package:workout_tracker/common/theme/app_theme.dart';
 import 'package:workout_tracker/core/services/deep_link_service.dart';
@@ -102,7 +103,9 @@ Future<void> main() async {
 
         ChangeNotifierProvider(create: (_) => TemplatesViewModel()),
         ChangeNotifierProvider(create: (_) => ActiveSessionManager()),
-        ChangeNotifierProvider(create: (_) => RestTimerManager()),
+        ChangeNotifierProvider(
+          create: (_) => RestTimerManager(RestTimerNotificationService()),
+        ),
       ],
       child: MyApp(
         deepLinks: deepLinks,

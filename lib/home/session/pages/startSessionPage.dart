@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 import 'package:workout_tracker/common/formatters/duarationFormatter.dart';
 import 'package:workout_tracker/common/theme/app_theme.dart';
+import 'package:workout_tracker/common/tutorial/tutorial_runner.dart';
 import 'package:workout_tracker/common/widgets/myCustomSnackBar.dart';
 import 'package:workout_tracker/common/widgets/uiKit.dart';
 import 'package:workout_tracker/core/auth_token.dart';
@@ -46,9 +47,78 @@ class StartSessionPage extends StatelessWidget {
 
 // ─────────────────────────────────────────────────────────────────────────────
 
-class _SessionBody extends StatelessWidget {
+class _SessionBody extends StatefulWidget {
   const _SessionBody({required this.manager});
   final ActiveSessionManager manager;
+
+  @override
+  State<_SessionBody> createState() => _SessionBodyState();
+}
+
+class _SessionBodyState extends State<_SessionBody> {
+  // Existing method bodies below refer to `manager` — keep them working by
+  // exposing it as a getter rather than rewriting every call site.
+  ActiveSessionManager get manager => widget.manager;
+
+  // Coach-mark spotlight targets (see the workout tutorial).
+  final _firstTileKey = GlobalKey();
+  final _addExerciseKey = GlobalKey();
+  final _reorderKey = GlobalKey();
+  final _minimizeKey = GlobalKey();
+  final _endSaveKey = GlobalKey();
+
+  @override
+  void initState() {
+    super.initState();
+    TutorialRunner.schedule(
+      context,
+      id: Tutorials.workout,
+      steps: _tutorialSteps,
+    );
+  }
+
+  List<CoachMarkStep> _tutorialSteps() {
+    final multipleExercises = manager.exercises.length > 1;
+    return [
+      CoachMarkStep(
+        targetKey: _firstTileKey,
+        title: 'Log your sets',
+        description:
+            'Enter your weight and reps for each set, then tap the ✓ to log '
+            'it. A rest timer starts automatically after each working set — '
+            'you can adjust or skip it from the bar that appears.',
+      ),
+      if (multipleExercises)
+        CoachMarkStep(
+          targetKey: _reorderKey,
+          title: 'Reorder exercises',
+          description:
+              'Rearrange the order you train your exercises in without losing '
+              'any sets you\'ve already logged.',
+        ),
+      CoachMarkStep(
+        targetKey: _addExerciseKey,
+        title: 'Add or remove exercises',
+        description:
+            'Change your lineup mid-workout — add something new or drop an '
+            'exercise you\'re skipping today.',
+      ),
+      CoachMarkStep(
+        targetKey: _minimizeKey,
+        title: 'Keep it running',
+        description:
+            'Minimize the session to browse the rest of the app while your '
+            'workout and timer keep running in the background.',
+      ),
+      CoachMarkStep(
+        targetKey: _endSaveKey,
+        title: 'Finish & save',
+        description:
+            'When you\'re done, save the workout to your history. Personal '
+            'records are detected and celebrated automatically.',
+      ),
+    ];
+  }
 
   // ── dialogs / sheets ────────────────────────────────────────────────────
 
@@ -377,10 +447,13 @@ class _SessionBody extends StatelessWidget {
       child: Scaffold(
         appBar: AppBar(
           title: Text(templateName, maxLines: 1, overflow: TextOverflow.ellipsis),
-          leading: IconButton(
-            icon: const Icon(Icons.keyboard_arrow_down_rounded),
-            tooltip: 'Minimize',
-            onPressed: () => _showMinimizeSheet(context),
+          leading: KeyedSubtree(
+            key: _minimizeKey,
+            child: IconButton(
+              icon: const Icon(Icons.keyboard_arrow_down_rounded),
+              tooltip: 'Minimize',
+              onPressed: () => _showMinimizeSheet(context),
+            ),
           ),
           actions: [
             // Timer chip
@@ -433,20 +506,26 @@ class _SessionBody extends StatelessWidget {
             ),
             // Reorder exercises (compact sheet — never drags the live cards)
             if (exercises.length > 1)
-              IconButton(
-                tooltip: 'Reorder exercises',
-                icon: const Icon(Icons.swap_vert_rounded),
-                onPressed: () => ReorderExercisesSheet.show(
-                  context,
-                  exercises: exercises,
-                  onReorder: manager.reorderExercise,
+              KeyedSubtree(
+                key: _reorderKey,
+                child: IconButton(
+                  tooltip: 'Reorder exercises',
+                  icon: const Icon(Icons.swap_vert_rounded),
+                  onPressed: () => ReorderExercisesSheet.show(
+                    context,
+                    exercises: exercises,
+                    onReorder: manager.reorderExercise,
+                  ),
                 ),
               ),
             // Add / remove exercises
-            IconButton(
-              tooltip: 'Add / remove exercises',
-              icon: const Icon(Icons.playlist_add_rounded),
-              onPressed: () => _showAddExerciseSheet(context),
+            KeyedSubtree(
+              key: _addExerciseKey,
+              child: IconButton(
+                tooltip: 'Add / remove exercises',
+                icon: const Icon(Icons.playlist_add_rounded),
+                onPressed: () => _showAddExerciseSheet(context),
+              ),
             ),
           ],
         ),
@@ -463,13 +542,17 @@ class _SessionBody extends StatelessWidget {
                 itemCount: exercises.length,
                 itemBuilder: (context, i) {
                   final ex = exercises[i];
+                  final tile = ExerciseSessionTile(
+                    exercise: ex,
+                    templateId: templateId,
+                  );
                   return Padding(
                     key: ValueKey(ex.id),
                     padding: const EdgeInsets.only(bottom: 10),
-                    child: ExerciseSessionTile(
-                      exercise: ex,
-                      templateId: templateId,
-                    ),
+                    // Spotlight the first tile for the "log your sets" step.
+                    child: i == 0
+                        ? KeyedSubtree(key: _firstTileKey, child: tile)
+                        : tile,
                   );
                 },
               ),
@@ -530,20 +613,23 @@ class _SessionBody extends StatelessWidget {
                 ),
                 const SizedBox(width: 10),
                 Expanded(
-                  child: VoltButton(
-                    height: 52,
-                    danger: session.isRunning,
-                    icon: session.isRunning
-                        ? Icons.stop_rounded
-                        : Icons.play_arrow_rounded,
-                    label: session.isRunning ? 'End & Save' : 'Start Session',
-                    onPressed: () async {
-                      if (!session.isRunning) {
-                        session.start();
-                        return;
-                      }
-                      await _endAndSaveSession(context);
-                    },
+                  child: KeyedSubtree(
+                    key: _endSaveKey,
+                    child: VoltButton(
+                      height: 52,
+                      danger: session.isRunning,
+                      icon: session.isRunning
+                          ? Icons.stop_rounded
+                          : Icons.play_arrow_rounded,
+                      label: session.isRunning ? 'End & Save' : 'Start Session',
+                      onPressed: () async {
+                        if (!session.isRunning) {
+                          session.start();
+                          return;
+                        }
+                        await _endAndSaveSession(context);
+                      },
+                    ),
                   ),
                 ),
               ],

@@ -1,6 +1,10 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 <uses-permission android:name="android.permission.INTERNET" />
 <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+<!-- Runtime notification permission (Android 13+). Requested lazily the first
+     time a rest-timer notification would be shown, never on startup. On older
+     versions notifications are granted implicitly. -->
+<uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <application
         android:label="workout_tracker"

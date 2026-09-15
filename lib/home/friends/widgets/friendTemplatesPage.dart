@@ -77,7 +77,10 @@ class _FriendTemplatesPageState extends State<FriendTemplatesPage> {
           return TemplateCard(
             template: t,
             onOpen: () => Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => ViewTemplatePage(template: t)),
+              MaterialPageRoute(
+                builder: (_) =>
+                    ViewTemplatePage(template: t, isFriendTemplate: true),
+              ),
             ),
           );
         },

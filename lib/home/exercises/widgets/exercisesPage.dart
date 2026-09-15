@@ -1,6 +1,7 @@
 // ignore_for_file: file_names
 
 import 'package:flutter/material.dart';
+import 'package:workout_tracker/common/tutorial/tutorial_runner.dart';
 import 'package:workout_tracker/common/widgets/myCustomSearchField.dart';
 import 'package:workout_tracker/common/widgets/myCustomeScaffoldView.dart';
 import 'package:workout_tracker/common/widgets/uiKit.dart';
@@ -20,6 +21,41 @@ class ExercisesPage extends StatefulWidget {
 class _ExercisesPageState extends State<ExercisesPage> {
   String _query = '';
   String? _equipment; // null = all equipment
+
+  final _searchKey = GlobalKey();
+  final _filterKey = GlobalKey();
+  final _newExerciseKey = GlobalKey();
+
+  @override
+  void initState() {
+    super.initState();
+    TutorialRunner.schedule(
+      context,
+      id: Tutorials.exercises,
+      steps: () => [
+        CoachMarkStep(
+          targetKey: _searchKey,
+          title: 'Find an exercise',
+          description:
+              'Search the full catalog by name to quickly jump to any lift.',
+        ),
+        CoachMarkStep(
+          targetKey: _filterKey,
+          title: 'Filter by equipment',
+          description:
+              'Narrow the list to what\'s available — barbell, dumbbell, '
+              'machine, cable and more.',
+        ),
+        CoachMarkStep(
+          targetKey: _newExerciseKey,
+          title: 'Create your own',
+          description:
+              'Missing something? Add a custom exercise, complete with its own '
+              'photo, and it\'ll show up everywhere.',
+        ),
+      ],
+    );
+  }
 
   // Tapping an exercise opens its detail page (info, PRs, progress, history,
   // notes). The leaderboard lives as an action inside that page.
@@ -67,6 +103,7 @@ class _ExercisesPageState extends State<ExercisesPage> {
         child: Padding(
           padding: const EdgeInsets.fromLTRB(16, 6, 16, 12),
           child: VoltButton(
+            key: _newExerciseKey,
             label: 'New Exercise',
             icon: Icons.add_rounded,
             onPressed: _createExercise,
@@ -78,11 +115,13 @@ class _ExercisesPageState extends State<ExercisesPage> {
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
             child: MyCustomSearchField(
+              key: _searchKey,
               onChanged: (v) => setState(() => _query = v),
             ),
           ),
           // Equipment filter rail
           SizedBox(
+            key: _filterKey,
             height: 40,
             child: ListView(
               scrollDirection: Axis.horizontal,

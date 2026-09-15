@@ -5,6 +5,7 @@ import 'package:workout_tracker/common/units/weight_unit.dart';
 import 'package:workout_tracker/common/widgets/myCustomSnackBar.dart';
 import 'package:provider/provider.dart';
 import 'package:workout_tracker/home/exercises/models/exerciseModel.dart';
+import 'package:workout_tracker/home/exercises/widgets/exercise_image.dart';
 import 'package:workout_tracker/home/history/ViewModel/historyViewModel.dart';
 import 'package:workout_tracker/home/session/models/sessionModels.dart';
 import 'package:workout_tracker/home/session/rest_timer_manager.dart';
@@ -534,17 +535,6 @@ class _ExerciseThumb extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final path = ex.workoutImage.isNotEmpty ? ex.workoutImage : null;
-
-    Widget img;
-    if (path == null) {
-      img = const Icon(Icons.image_not_supported, size: 22);
-    } else if (path.startsWith('http')) {
-      img = Image.network(path, fit: BoxFit.cover);
-    } else {
-      img = Image.asset(path, fit: BoxFit.cover);
-    }
-
     return Stack(
       clipBehavior: Clip.none,
       children: [
@@ -553,7 +543,13 @@ class _ExerciseThumb extends StatelessWidget {
           height: 44,
           child: ClipRRect(
             borderRadius: BorderRadius.circular(10),
-            child: img,
+            // Handles bundled assets AND custom-exercise file-path photos.
+            child: ExerciseImage(
+              path: ex.workoutImage,
+              width: 44,
+              height: 44,
+              fit: BoxFit.cover,
+            ),
           ),
         ),
         if (allDone)

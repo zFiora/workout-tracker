@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:workout_tracker/common/units/weight_unit.dart';
 import 'package:workout_tracker/home/account/model/profileStats.dart';
 import 'package:workout_tracker/home/session/models/sessionModels.dart';
 
@@ -75,6 +76,35 @@ void main() {
     expect(s.totalTime, const Duration(minutes: 75));
     expect(s.totalVolumeKg, 2100);
     expect(s.exercisesTracked, 2); // ids {1, 2}
+  });
+
+  test('Total Weight Lifted converts with unit and is reversible (no drift)', () {
+    // Regression for the Account "Total Weight Lifted" bug: the metric is
+    // computed in canonical kg, and only the DISPLAY converts by unit.
+    final history = [
+      _entry(
+        template: 'push',
+        duration: const Duration(minutes: 40),
+        logs: [
+          ExerciseLog(
+            exerciseId: 1,
+            exerciseName: 'Bench',
+            exerciseIcon: '',
+            sets: [_set(100, 5), _set(100, 5)], // 1000 kg volume
+          ),
+        ],
+      ),
+    ];
+    final kgVolume = ProfileStats.from(history).totalVolumeKg;
+    expect(kgVolume, 1000);
+
+    // kg display = canonical value.
+    expect(WeightUnit.kg.fromKg(kgVolume), 1000);
+    // lb display differs (≈ 2204.6 lb) — proves the value actually changes.
+    expect(WeightUnit.lb.fromKg(kgVolume), closeTo(2204.62, 0.1));
+    // lb → kg returns exactly to the stored value (no cumulative drift).
+    expect(WeightUnit.lb.toKg(WeightUnit.lb.fromKg(kgVolume)),
+        closeTo(1000, 1e-9));
   });
 
   test('warmup / non-work sets are excluded from volume', () {

@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:workout_tracker/common/AppManager.dart';
 import 'package:workout_tracker/common/formatters/dateTimeFormatter.dart';
 import 'package:workout_tracker/common/theme/app_theme.dart';
+import 'package:workout_tracker/common/tutorial/tutorial_runner.dart';
 import 'package:workout_tracker/common/widgets/myCustomeScaffoldView.dart';
 import 'package:workout_tracker/common/widgets/myCustomSnackBar.dart';
 import 'package:workout_tracker/common/widgets/uiKit.dart';
@@ -23,9 +24,61 @@ import 'package:workout_tracker/home/templates/widgets/templateActionMenu.dart';
 import 'package:workout_tracker/home/templates/widgets/templateCard.dart';
 import 'package:workout_tracker/home/templates/pages/viewTemplatePage.dart';
 
-class TemplatesPage extends StatelessWidget {
+class TemplatesPage extends StatefulWidget {
   const TemplatesPage({super.key});
 
+  @override
+  State<TemplatesPage> createState() => _TemplatesPageState();
+}
+
+class _TemplatesPageState extends State<TemplatesPage> {
+  final _firstCardKey = GlobalKey();
+  final _actionsKey = GlobalKey();
+  final _newTemplateKey = GlobalKey();
+  final _topCardKey = GlobalKey();
+
+  @override
+  void initState() {
+    super.initState();
+    TutorialRunner.schedule(
+      context,
+      id: Tutorials.templates,
+      steps: _tutorialSteps,
+    );
+  }
+
+  List<CoachMarkStep> _tutorialSteps() => [
+        CoachMarkStep(
+          targetKey: _firstCardKey,
+          title: 'Your workout templates',
+          description:
+              'Tap a template to view its exercises, then Start to begin a '
+              'tracked session in one tap.',
+        ),
+        CoachMarkStep(
+          targetKey: _actionsKey,
+          title: 'Template actions',
+          description:
+              'Edit exercises, change the icon, share a template with a '
+              'friend, or delete it — all from this menu.',
+        ),
+        CoachMarkStep(
+          targetKey: _newTemplateKey,
+          title: 'Build a new template',
+          description:
+              'Create a reusable workout: pick an icon, name it and add your '
+              'exercises. It becomes a one-tap start every time.',
+        ),
+        // Conditional (needs history / an active session) → last so numbering
+        // stays contiguous when it isn't showing.
+        CoachMarkStep(
+          targetKey: _topCardKey,
+          title: 'Suggested next',
+          description:
+              'Based on your recent workouts, we surface what to train next '
+              '(or let you resume an in-progress session) right here.',
+        ),
+      ];
 
   Future<String?> _pickIcon(BuildContext ctx, {required String current}) {
     final cs = Theme.of(ctx).colorScheme;
@@ -352,7 +405,8 @@ class TemplatesPage extends StatelessWidget {
       title: 'Workouts',
       body: Column(
         children: [
-          if (topCard != null) topCard,
+          if (topCard != null)
+            KeyedSubtree(key: _topCardKey, child: topCard),
           Expanded(
             child: templates.isEmpty
                 ? EmptyState(
@@ -375,36 +429,45 @@ class TemplatesPage extends StatelessWidget {
                     itemCount: templates.length,
                     itemBuilder: (context, index) {
                       final template = templates[index];
+                      final card = TemplateCard(
+                        template: template,
+                        onOpen: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) =>
+                                ViewTemplatePage(template: template),
+                          ),
+                        ),
+                      );
+                      final actions = TemplateActionsMenu(
+                        template: template,
+                        pickIcon: (ctx) =>
+                            _pickIcon(ctx, current: template.iconPath),
+                        onShare: () => _shareTemplate(
+                          context,
+                          template.id,
+                          template.toJson(),
+                        ),
+                      );
                       return FadeRiseIn(
                         index: index,
                         child: Stack(
                           fit: StackFit.expand,
                           children: [
                             Positioned.fill(
-                              child: TemplateCard(
-                                template: template,
-                                onOpen: () => Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (_) =>
-                                        ViewTemplatePage(template: template),
-                                  ),
-                                ),
-                              ),
+                              // Spotlight the first card / its menu for the
+                              // templates tutorial.
+                              child: index == 0
+                                  ? KeyedSubtree(key: _firstCardKey, child: card)
+                                  : card,
                             ),
                             Positioned(
                               top: 8,
                               right: 8,
-                              child: TemplateActionsMenu(
-                                template: template,
-                                pickIcon: (ctx) =>
-                                    _pickIcon(ctx, current: template.iconPath),
-                                onShare: () => _shareTemplate(
-                                  context,
-                                  template.id,
-                                  template.toJson(),
-                                ),
-                              ),
+                              child: index == 0
+                                  ? KeyedSubtree(
+                                      key: _actionsKey, child: actions)
+                                  : actions,
                             ),
                           ],
                         ),
@@ -418,6 +481,7 @@ class TemplatesPage extends StatelessWidget {
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
                 child: VoltButton(
+                  key: _newTemplateKey,
                   label: 'New Template',
                   icon: Icons.add_rounded,
                   onPressed: openCreate,

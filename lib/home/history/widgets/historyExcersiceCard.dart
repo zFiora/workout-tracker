@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:workout_tracker/home/exercises/widgets/exercise_image.dart';
 
 class HistoryExerciseCard extends StatelessWidget {
   const HistoryExerciseCard({
@@ -62,10 +63,14 @@ class HistoryExerciseCard extends StatelessWidget {
                       color: cs.secondaryContainer.withValues(alpha: 0.6),
                     ),
                     clipBehavior: Clip.antiAlias,
-                    child: Image.asset(
-                      exerciseIcon,
+                    // Handles bundled assets AND custom-exercise file-path
+                    // snapshots; falls back gracefully if the file was deleted.
+                    child: ExerciseImage(
+                      path: exerciseIcon,
+                      width: 40,
+                      height: 40,
                       fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => Icon(
+                      fallback: Icon(
                         Icons.fitness_center,
                         size: 22,
                         color: cs.onSecondaryContainer.withValues(alpha: 0.85),

@@ -7,10 +7,12 @@ class AccountPageSwitchTile extends StatefulWidget {
     required this.title,
     required this.initialValue,
     required this.onChanged,
+    this.subtitle,
   });
 
   final IconData icon;
   final String title;
+  final String? subtitle;
   final bool initialValue;
   final ValueChanged<bool> onChanged;
 
@@ -37,6 +39,8 @@ class _AccountPageSwitchTileState extends State<AccountPageSwitchTile> {
           widget.onChanged(v);
         },
         title: Text(widget.title),
+        subtitle: widget.subtitle != null ? Text(widget.subtitle!) : null,
+        isThreeLine: widget.subtitle != null,
         secondary: CircleAvatar(
           radius: 18,
           // ignore: deprecated_member_use

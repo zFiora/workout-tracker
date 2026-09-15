@@ -1,4 +1,3 @@
-// lib/features/streak/streak_calculator.dart
 import 'dart:math';
 
 class StreakInfo {
@@ -15,63 +14,80 @@ class StreakInfo {
   });
 }
 
-/// Your rule: reset when TWO full days pass with no workout.
-/// That is: a gap of 3 or more calendar days between workout dates breaks the run.
+/// Reference implementation of the intended streak rule.
+///
+/// IMPORTANT: the streak shown in the app is **server-owned** (the client
+/// reads `currentStreak`/`bestStreak` from the backend). This calculator is a
+/// canonical, tested reference for the intended rule — the backend must
+/// implement the same behaviour. It is not currently on the live display path.
+///
+/// The rule:
+///   • A streak counts distinct **workout days** in the current run.
+///   • Each new calendar day with a completed workout adds 1 (multiple
+///     workouts on the same day count once — no double increment).
+///   • The run stays alive while **consecutive** workouts are **less than 48h**
+///     apart in elapsed time. A gap of **48h or more** breaks it, and the next
+///     workout starts a fresh run at 1.
+///   • The current streak is only "alive" if less than 48h have elapsed since
+///     the most recent workout relative to [now]; otherwise it's 0 (lost) while
+///     the best streak is preserved.
+///
+/// This is elapsed-time based, not pure calendar arithmetic: e.g. two workouts
+/// 47h59m apart continue the run even if a calendar day was skipped between
+/// them, whereas 48h01m apart breaks it.
 class StreakCalculator {
-  /// dates: finished-workout timestamps (any order, duplicates allowed)
-  /// now: usually DateTime.now()
+  /// A gap of this much or more between consecutive workouts breaks the run.
+  static const breakThreshold = Duration(hours: 48);
+
+  static DateTime _dayOf(DateTime d) => DateTime(d.year, d.month, d.day);
+
+  /// [dates]: completed-workout timestamps (any order, duplicates allowed).
+  /// [now]: reference "current time" (defaults to DateTime.now()).
   static StreakInfo compute(Iterable<DateTime> dates, {DateTime? now}) {
-    final today = (now ?? DateTime.now());
+    final ts = dates.toList()..sort(); // ascending by timestamp
+    if (ts.isEmpty) return const StreakInfo(current: 0, best: 0);
 
-    // 1) Reduce to unique calendar days, sorted ascending.
-    final uniqueDays = <DateTime>{};
-    for (final d in dates) {
-      uniqueDays.add(DateTime(d.year, d.month, d.day)); // strip time
-    }
-    final days = uniqueDays.toList()..sort();
+    final nowT = now ?? DateTime.now();
 
-    if (days.isEmpty) {
-      return const StreakInfo(current: 0, best: 0);
-    }
+    var bestCount = 0;
+    var runDayCount = 0;
+    DateTime? runLastDay; // last distinct calendar day counted in this run
+    DateTime? runStartDay; // first calendar day of the current run
+    DateTime? prevTs;
 
-    // 2) Best streak: longest run where gaps between consecutive days < 3.
-    var best = 0;
-    var run = 0;
-    for (var i = 1; i < days.length; i++) {
-      final gap = days[i].difference(days[i - 1]).inDays;
-      if (gap >= 3) {
-        run = 1; // reset run
+    for (final t in ts) {
+      if (prevTs == null) {
+        runDayCount = 1;
+        runLastDay = _dayOf(t);
+        runStartDay = _dayOf(t);
+      } else if (t.difference(prevTs) >= breakThreshold) {
+        // 48h+ since the previous workout → the old run ends here.
+        bestCount = max(bestCount, runDayCount);
+        runDayCount = 1;
+        runLastDay = _dayOf(t);
+        runStartDay = _dayOf(t);
       } else {
-        run += 1;
-        best = max(best, run);
+        // Same run: only count a genuinely new calendar day.
+        final d = _dayOf(t);
+        if (d != runLastDay) {
+          runDayCount += 1;
+          runLastDay = d;
+        }
       }
+      prevTs = t;
     }
+    bestCount = max(bestCount, runDayCount);
 
-    // 3) Current streak: must end close enough to today (gap < 3 from today).
-    final last = days.last;
-    final gapToToday = DateTime(today.year, today.month, today.day)
-        .difference(last)
-        .inDays; // 0=today workout, 1=yesterday, 2=the day before yesterday, 3+=reset
-
-    if (gapToToday >= 3) {
-      return StreakInfo(current: 0, best: best, lastWorkoutDate: last);
-    }
-
-    // Count tail run backwards while gaps < 3
-    var current = 1;
-    var runStart = last;
-    for (var i = days.length - 1; i > 0; i--) {
-      final gap = days[i].difference(days[i - 1]).inDays;
-      if (gap >= 3) break;
-      current += 1;
-      runStart = days[i - 1];
-    } 
+    final lastTs = ts.last;
+    // Current run is lost once 48h+ have elapsed since the last workout.
+    final alive = nowT.difference(lastTs) < breakThreshold;
+    final current = alive ? runDayCount : 0;
 
     return StreakInfo(
       current: current,
-      best: best,
-      lastWorkoutDate: last,
-      currentRunStartedOn: runStart,
+      best: bestCount,
+      lastWorkoutDate: _dayOf(lastTs),
+      currentRunStartedOn: alive ? runStartDay : null,
     );
   }
 }

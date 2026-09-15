@@ -3,8 +3,8 @@ import 'package:hive/hive.dart';
 import 'package:provider/provider.dart';
 import 'package:workout_tracker/common/theme/app_theme.dart';
 import 'package:workout_tracker/common/theme/workout_icons.dart';
+import 'package:workout_tracker/common/tutorial/tutorial_runner.dart';
 import 'package:workout_tracker/common/widgets/myCustomSnackBar.dart';
-import 'package:workout_tracker/home/exercises/custom_exercise_image_store.dart';
 import 'package:workout_tracker/home/exercises/custom_exercises_repository.dart';
 import 'package:workout_tracker/home/exercises/exerciesesList.dart';
 import 'package:workout_tracker/home/exercises/models/categoryModel.dart';
@@ -60,6 +60,44 @@ class _ExerciseDetailView extends StatefulWidget {
 }
 
 class _ExerciseDetailViewState extends State<_ExerciseDetailView> {
+  final _leaderboardKey = GlobalKey();
+  final _prKey = GlobalKey();
+  final _notesKey = GlobalKey();
+
+  @override
+  void initState() {
+    super.initState();
+    TutorialRunner.schedule(
+      context,
+      id: Tutorials.exerciseDetails,
+      steps: () => [
+        CoachMarkStep(
+          targetKey: _leaderboardKey,
+          title: 'Compare with friends',
+          description:
+              'Open the leaderboard to see how your best lift on this exercise '
+              'ranks against your friends.',
+        ),
+        CoachMarkStep(
+          targetKey: _notesKey,
+          title: 'Notes & tips',
+          description:
+              'Jot down cues, setups or reminders for this exercise — they '
+              'stay attached here for next time.',
+        ),
+        // Conditional: only exists once you have history for this exercise, so
+        // it's last to keep the "x of N" numbering contiguous when absent.
+        CoachMarkStep(
+          targetKey: _prKey,
+          title: 'Your PRs & progress',
+          description:
+              'Once you\'ve logged this exercise, your personal records, '
+              'estimated 1RM and progress charts appear here.',
+        ),
+      ],
+    );
+  }
+
   Future<void> _edit(ExerciseModel model) async {
     final updated = await Navigator.of(context).push<ExerciseModel>(
       MaterialPageRoute(
@@ -94,7 +132,9 @@ class _ExerciseDetailViewState extends State<_ExerciseDetailView> {
       ),
     );
     if (ok != true) return;
-    await ExerciseImageStore.deleteIfLocal(model.workoutImage);
+    // Intentionally do NOT delete the photo file: completed workouts snapshot
+    // this path and must still render the image after the exercise is removed
+    // from the catalog. (Orphaned files are negligible; history integrity wins.)
     await CustomExercisesRepository.I.delete(model.id);
     if (mounted) Navigator.of(context).pop(true);
   }
@@ -112,6 +152,7 @@ class _ExerciseDetailViewState extends State<_ExerciseDetailView> {
           _ExerciseHero(
             exerciseName: widget.exerciseName,
             model: model,
+            leaderboardKey: _leaderboardKey,
             onEdit: model != null && model.isCustom ? () => _edit(model) : null,
             onDelete:
                 model != null && model.isCustom ? () => _delete(model) : null,
@@ -129,7 +170,7 @@ class _ExerciseDetailViewState extends State<_ExerciseDetailView> {
                     title: 'Personal Records',
                   ),
                   const SizedBox(height: 8),
-                  HeaderStatsCard(vm: vm),
+                  KeyedSubtree(key: _prKey, child: HeaderStatsCard(vm: vm)),
                   const SizedBox(height: 10),
                   SummaryCards(vm: vm),
                   const SizedBox(height: 20),
@@ -149,7 +190,7 @@ class _ExerciseDetailViewState extends State<_ExerciseDetailView> {
                 ],
                 const SectionTitle(icon: Icons.note_alt, title: 'Notes & Tips'),
                 const SizedBox(height: 8),
-                NotesCard(vm: vm),
+                KeyedSubtree(key: _notesKey, child: NotesCard(vm: vm)),
               ]),
             ),
           ),
@@ -272,12 +313,14 @@ class _ExerciseHero extends StatelessWidget {
   const _ExerciseHero({
     required this.exerciseName,
     required this.model,
+    this.leaderboardKey,
     this.onEdit,
     this.onDelete,
   });
 
   final String exerciseName;
   final ExerciseModel? model;
+  final GlobalKey? leaderboardKey;
   final VoidCallback? onEdit;
   final VoidCallback? onDelete;
 
@@ -295,12 +338,15 @@ class _ExerciseHero extends StatelessWidget {
       foregroundColor: Colors.white,
       actions: [
         if (model != null)
-          IconButton(
-            tooltip: 'Leaderboard',
-            icon: const Icon(Icons.leaderboard_rounded),
-            onPressed: () => Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (_) => ExerciseLeaderboardPage(exercise: model!),
+          KeyedSubtree(
+            key: leaderboardKey,
+            child: IconButton(
+              tooltip: 'Leaderboard',
+              icon: const Icon(Icons.leaderboard_rounded),
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => ExerciseLeaderboardPage(exercise: model!),
+                ),
               ),
             ),
           ),

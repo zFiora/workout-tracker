@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:workout_tracker/common/AppManager.dart';
+import 'package:workout_tracker/common/tutorial/tutorial_runner.dart';
 import 'package:workout_tracker/common/units/weight_unit.dart';
 import 'package:workout_tracker/common/widgets/myCustomSnackBar.dart';
 import 'package:workout_tracker/home/session/rest_timer_manager.dart';
@@ -76,7 +77,7 @@ Future<void> _showUnitPicker(BuildContext context) async {
   );
 }
 
-class AccountPageBody extends StatelessWidget {
+class AccountPageBody extends StatefulWidget {
   const AccountPageBody({
     super.key,
     required this.name,
@@ -109,7 +110,64 @@ class AccountPageBody extends StatelessWidget {
   final ValueChanged<bool> onDarkModeChanged;
 
   @override
+  State<AccountPageBody> createState() => _AccountPageBodyState();
+}
+
+class _AccountPageBodyState extends State<AccountPageBody> {
+  final _leaderboardKey = GlobalKey();
+  final _friendsKey = GlobalKey();
+  final _addFriendsKey = GlobalKey();
+
+  @override
+  void initState() {
+    super.initState();
+    TutorialRunner.schedule(
+      context,
+      id: Tutorials.social,
+      steps: () => [
+        CoachMarkStep(
+          targetKey: _leaderboardKey,
+          title: 'Streak leaderboard',
+          description:
+              'See how your workout streak ranks against your friends\' and '
+              'keep each other accountable.',
+        ),
+        CoachMarkStep(
+          targetKey: _friendsKey,
+          title: 'Your friends',
+          description:
+              'View your friends, their streaks and their shared workout '
+              'templates.',
+        ),
+        CoachMarkStep(
+          targetKey: _addFriendsKey,
+          title: 'Add friends',
+          description:
+              'Search people by username to send a friend request and start '
+              'comparing progress.',
+        ),
+      ],
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
+    // Aliases so the existing markup below reads unchanged after the
+    // stateless→stateful conversion.
+    final name = widget.name;
+    final username = widget.username;
+    final email = widget.email;
+    final streakCurrent = widget.streakCurrent;
+    final streakBest = widget.streakBest;
+    final avatarBase64 = widget.avatarBase64;
+    final onEditProfile = widget.onEditProfile;
+    final onEditAvatar = widget.onEditAvatar;
+    final onChangePassword = widget.onChangePassword;
+    final onSignOut = widget.onSignOut;
+    final onDeleteAccount = widget.onDeleteAccount;
+    final isDarkMode = widget.isDarkMode;
+    final onDarkModeChanged = widget.onDarkModeChanged;
+
     return CustomScrollView(
       slivers: [
         SliverToBoxAdapter(
@@ -162,28 +220,37 @@ class AccountPageBody extends StatelessWidget {
           child: AccountPageSection(
             title: 'Social',
             children: [
-              AccountPageTile(
-                icon: Icons.emoji_events_outlined,
-                title: 'Leaderboard',
-                subtitle: 'Streak rankings with friends',
-                onTap: () => Navigator.of(context).push(
-                  MaterialPageRoute(builder: (_) => const LeaderboardPage()),
+              KeyedSubtree(
+                key: _leaderboardKey,
+                child: AccountPageTile(
+                  icon: Icons.emoji_events_outlined,
+                  title: 'Leaderboard',
+                  subtitle: 'Streak rankings with friends',
+                  onTap: () => Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const LeaderboardPage()),
+                  ),
                 ),
               ),
-              AccountPageTile(
-                icon: Icons.group_outlined,
-                title: 'Friends',
-                subtitle: 'Your friends & activity',
-                onTap: () => Navigator.of(context).push(
-                  MaterialPageRoute(builder: (_) => const FriendsListPage()),
+              KeyedSubtree(
+                key: _friendsKey,
+                child: AccountPageTile(
+                  icon: Icons.group_outlined,
+                  title: 'Friends',
+                  subtitle: 'Your friends & activity',
+                  onTap: () => Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const FriendsListPage()),
+                  ),
                 ),
               ),
-              AccountPageTile(
-                icon: Icons.person_add_alt_1_outlined,
-                title: 'Add Friends',
-                subtitle: 'Search by username',
-                onTap: () => Navigator.of(context).push(
-                  MaterialPageRoute(builder: (_) => const AddFriendPage()),
+              KeyedSubtree(
+                key: _addFriendsKey,
+                child: AccountPageTile(
+                  icon: Icons.person_add_alt_1_outlined,
+                  title: 'Add Friends',
+                  subtitle: 'Search by username',
+                  onTap: () => Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const AddFriendPage()),
+                  ),
                 ),
               ),
               AccountPageTile(
@@ -236,6 +303,23 @@ class AccountPageBody extends StatelessWidget {
                     title: 'Default rest',
                     subtitle: 'Auto-starts after each set · $label',
                     onTap: () => _showRestPicker(ctx),
+                  );
+                },
+              ),
+              Builder(
+                builder: (ctx) {
+                  final enabled = ctx.select<RestTimerManager, bool>(
+                    (m) => m.notificationsEnabled,
+                  );
+                  return AccountPageSwitchTile(
+                    icon: Icons.notifications_active_outlined,
+                    title: 'Rest Timer Notifications',
+                    subtitle:
+                        'Show the rest timer and completion notification while '
+                        'the app is in the background.',
+                    initialValue: enabled,
+                    onChanged: (v) =>
+                        ctx.read<RestTimerManager>().setNotificationsEnabled(v),
                   );
                 },
               ),

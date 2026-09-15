@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:workout_tracker/common/AppManager.dart';
 import 'package:workout_tracker/common/formatters/dateTimeFormatter.dart';
 import 'package:workout_tracker/common/theme/app_theme.dart';
+import 'package:workout_tracker/common/units/weight_unit.dart';
 import 'package:workout_tracker/home/account/model/profileStats.dart';
 import 'package:workout_tracker/home/history/ViewModel/historyViewModel.dart';
 
@@ -18,15 +20,17 @@ class ProfileStatsGrid extends StatelessWidget {
   final int currentStreak;
   final int bestStreak;
 
-  static String _compactVolume(double kg) {
-    if (kg >= 1000000) return '${(kg / 1000000).toStringAsFixed(1)}M';
-    if (kg >= 1000) return '${(kg / 1000).toStringAsFixed(1)}k';
-    return kg.toStringAsFixed(0);
+  // Compacts a magnitude (already in the display unit) — unit-agnostic.
+  static String _compact(double value) {
+    if (value >= 1000000) return '${(value / 1000000).toStringAsFixed(1)}M';
+    if (value >= 1000) return '${(value / 1000).toStringAsFixed(1)}k';
+    return value.toStringAsFixed(0);
   }
 
   @override
   Widget build(BuildContext context) {
     final history = context.watch<HistoryViewModel>().history;
+    final unit = context.select<AppManager, WeightUnit>((m) => m.weightUnit);
     final stats = ProfileStats.from(history);
 
     final tiles = <Widget>[
@@ -50,9 +54,11 @@ class ProfileStatsGrid extends StatelessWidget {
       ),
       _StatTile(
         icon: Icons.monitor_weight_outlined,
+        // Canonical kg → display unit at the boundary only; the stored value
+        // is never mutated, so kg↔lb is reversible with no drift.
         value: stats.totalVolumeKg <= 0
             ? '—'
-            : '${_compactVolume(stats.totalVolumeKg)} kg',
+            : '${_compact(unit.fromKg(stats.totalVolumeKg))} ${unit.label}',
         label: 'Volume lifted',
       ),
       _StatTile(

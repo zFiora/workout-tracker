@@ -1,14 +1,40 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:workout_tracker/common/theme/app_theme.dart';
+import 'package:workout_tracker/common/tutorial/tutorial_runner.dart';
 import 'package:workout_tracker/common/widgets/myCustomeScaffoldView.dart';
 import 'package:workout_tracker/common/widgets/uiKit.dart';
 import 'package:workout_tracker/home/history/ViewModel/historyViewModel.dart';
 import 'package:workout_tracker/home/history/pages/historySessionDetailedPage.dart';
 import 'package:workout_tracker/home/history/widgets/historyTile.dart';
 
-class HistoryPage extends StatelessWidget {
+class HistoryPage extends StatefulWidget {
   const HistoryPage({super.key});
+
+  @override
+  State<HistoryPage> createState() => _HistoryPageState();
+}
+
+class _HistoryPageState extends State<HistoryPage> {
+  final _firstTileKey = GlobalKey();
+
+  @override
+  void initState() {
+    super.initState();
+    TutorialRunner.schedule(
+      context,
+      id: Tutorials.history,
+      steps: () => [
+        CoachMarkStep(
+          targetKey: _firstTileKey,
+          title: 'Your workout history',
+          description:
+              'Tap any workout to see its full breakdown and stats. Swipe a '
+              'row left to delete it (with an undo).',
+        ),
+      ],
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -85,6 +111,7 @@ class HistoryPage extends StatelessWidget {
             child: FadeRiseIn(
               index: i,
               child: HistoryTile(
+                key: i == 0 ? _firstTileKey : null,
                 entry: entry,
                 onTap: () {
                   Navigator.push(

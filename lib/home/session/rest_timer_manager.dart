@@ -4,6 +4,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'rest_timer_notification_service.dart';
+
 /// Root-level rest timer between sets.
 ///
 /// The source of truth is a target **timestamp** ([_endsAt]) — remaining time
@@ -12,26 +14,35 @@ import 'package:shared_preferences/shared_preferences.dart';
 /// if the OS pauses it, resume recomputes correctly). A single instance +
 /// single internal [Timer] guarantees there's never more than one countdown.
 ///
-/// Deliberately has **no notification dependency** — the timer is fully
-/// reliable on its own; completion fires a haptic cue and a visible "done"
-/// state. (Local notifications can be layered on later without changing this.)
+/// An **optional** [RestTimerNotifier] mirrors the timer to an Android
+/// notification. It is purely presentation: the timer is fully functional with
+/// it null, and it never drives timer state. Remaining time shown in the
+/// notification is always recomputed from [_endsAt] (never decremented), so a
+/// delayed background update self-corrects. A separate ~15s ticker refreshes
+/// the notification, independent of the accurate 1s UI ticker.
 class RestTimerManager extends ChangeNotifier {
-  RestTimerManager() {
-    _loadDefault();
+  RestTimerManager([RestTimerNotifier? notifier]) : _notifier = notifier {
+    _loadPrefs();
   }
 
   static const _prefsKey = 'rest_default_seconds';
+  static const _notificationsPrefsKey = 'rest_timer_notifications_enabled';
+
+  final RestTimerNotifier? _notifier;
 
   Timer? _ticker;
+  Timer? _notifyTicker; // ~15s notification refresh; independent of _ticker
   DateTime? _endsAt; // set while running
   Duration? _pausedRemaining; // set while paused
   bool _finished = false;
   bool _disposed = false;
   Duration _total = const Duration(seconds: 120);
   int _defaultSeconds = 120;
+  bool _notificationsEnabled = true;
 
   int get defaultSeconds => _defaultSeconds;
   Duration get total => _total;
+  bool get notificationsEnabled => _notificationsEnabled;
 
   bool get isRunning => _endsAt != null;
   bool get isPaused => _pausedRemaining != null;
@@ -54,10 +65,13 @@ class RestTimerManager extends ChangeNotifier {
     return (done.inMilliseconds / _total.inMilliseconds).clamp(0.0, 1.0);
   }
 
-  Future<void> _loadDefault() async {
+  Future<void> _loadPrefs() async {
     final prefs = await SharedPreferences.getInstance();
     if (_disposed) return; // constructor's async load may resolve post-dispose
     _defaultSeconds = prefs.getInt(_prefsKey) ?? 120;
+    // Notifications are enabled by default for new AND existing users.
+    _notificationsEnabled = prefs.getBool(_notificationsPrefsKey) ?? true;
+    _notifier?.setEnabled(_notificationsEnabled);
     notifyListeners();
   }
 
@@ -66,6 +80,37 @@ class RestTimerManager extends ChangeNotifier {
     notifyListeners();
     final prefs = await SharedPreferences.getInstance();
     await prefs.setInt(_prefsKey, _defaultSeconds);
+  }
+
+  /// Toggles rest-timer notifications. Purely a presentation concern: it never
+  /// starts, stops, pauses, skips, re-times, or otherwise touches the timer.
+  ///
+  /// Turning OFF immediately removes any active notification and stops refresh
+  /// scheduling; the timer keeps running untouched. Turning ON while a rest is
+  /// active immediately mirrors the current remaining time (from [_endsAt]),
+  /// without restarting anything.
+  Future<void> setNotificationsEnabled(bool enabled) async {
+    if (_notificationsEnabled == enabled) return;
+    _notificationsEnabled = enabled;
+    notifyListeners();
+
+    await _notifier?.setEnabled(enabled);
+
+    if (enabled) {
+      if (_finished) {
+        await _notifier?.showComplete();
+      } else if (isRunning) {
+        _startNotifyLoop(); // pushes current remaining immediately
+      } else if (isPaused) {
+        await _notifier?.showRunning(remaining: remaining, paused: true);
+      }
+    } else {
+      // setEnabled(false) already cancelled the notification; stop refreshing.
+      _stopNotifyLoop();
+    }
+
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_notificationsPrefsKey, enabled);
   }
 
   /// Starts (or restarts) the timer. Any existing countdown is replaced, so
@@ -77,6 +122,7 @@ class RestTimerManager extends ChangeNotifier {
     _finished = false;
     _endsAt = DateTime.now().add(d);
     _ensureTicker();
+    _startNotifyLoop(); // replaces any old notification; pushes immediately
     notifyListeners();
   }
 
@@ -85,6 +131,10 @@ class RestTimerManager extends ChangeNotifier {
     _pausedRemaining = remaining;
     _endsAt = null;
     _stopTicker();
+    _stopNotifyLoop(); // no countdown while paused
+    if (_notificationsEnabled) {
+      _notifier?.showRunning(remaining: _pausedRemaining!, paused: true);
+    }
     notifyListeners();
   }
 
@@ -94,6 +144,7 @@ class RestTimerManager extends ChangeNotifier {
     _endsAt = DateTime.now().add(paused);
     _pausedRemaining = null;
     _ensureTicker();
+    _startNotifyLoop(); // resume 15s cycle + immediate refresh
     notifyListeners();
   }
 
@@ -103,6 +154,8 @@ class RestTimerManager extends ChangeNotifier {
     _pausedRemaining = null;
     _finished = false;
     _stopTicker();
+    _stopNotifyLoop();
+    _notifier?.cancel(); // remove the notification; no "Rest complete"
     notifyListeners();
   }
 
@@ -115,10 +168,14 @@ class RestTimerManager extends ChangeNotifier {
     if (isPaused) {
       _pausedRemaining = _pausedRemaining! + Duration(seconds: seconds);
       _total += Duration(seconds: seconds);
+      if (_notificationsEnabled) {
+        _notifier?.showRunning(remaining: _pausedRemaining!, paused: true);
+      }
       notifyListeners();
     } else if (isRunning) {
       _endsAt = _endsAt!.add(Duration(seconds: seconds));
       _total += Duration(seconds: seconds);
+      _pushRunningNotification(); // immediate — never wait up to 15s
       notifyListeners();
     }
   }
@@ -133,8 +190,12 @@ class RestTimerManager extends ChangeNotifier {
     }
     if (isPaused) {
       _pausedRemaining = next;
+      if (_notificationsEnabled) {
+        _notifier?.showRunning(remaining: next, paused: true);
+      }
     } else {
       _endsAt = DateTime.now().add(next);
+      _pushRunningNotification();
     }
     notifyListeners();
   }
@@ -154,12 +215,39 @@ class RestTimerManager extends ChangeNotifier {
     _ticker = null;
   }
 
+  // ── notification refresh loop (presentation only) ───────────────────────
+
+  void _startNotifyLoop() {
+    _stopNotifyLoop();
+    if (!_notificationsEnabled || _notifier == null) return;
+    _pushRunningNotification(); // immediate first paint — no 15s wait
+    _notifyTicker = Timer.periodic(const Duration(seconds: 15), (_) {
+      // The absolute end timestamp is the source of truth: if we've crossed
+      // zero, the 1s ticker fires _complete(); otherwise refresh the mirror.
+      if (isRunning) _pushRunningNotification();
+    });
+  }
+
+  void _stopNotifyLoop() {
+    _notifyTicker?.cancel();
+    _notifyTicker = null;
+  }
+
+  void _pushRunningNotification() {
+    if (!_notificationsEnabled) return;
+    _notifier?.showRunning(remaining: remaining, paused: false);
+  }
+
   void _complete() {
     _endsAt = null;
     _pausedRemaining = null;
     _finished = true;
     _stopTicker();
+    _stopNotifyLoop();
     HapticFeedback.mediumImpact();
+    if (_notificationsEnabled) {
+      _notifier?.showComplete();
+    }
     notifyListeners();
   }
 
@@ -167,6 +255,7 @@ class RestTimerManager extends ChangeNotifier {
   void dispose() {
     _disposed = true;
     _stopTicker();
+    _stopNotifyLoop();
     super.dispose();
   }
 }
