@@ -1,6 +1,8 @@
 import 'package:flutter/foundation.dart';
 import 'package:hive/hive.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:workout_tracker/home/history/services/history_reconcile_cursor_store.dart';
+import 'package:workout_tracker/home/history/services/pending_session_deletes_store.dart';
 
 /// Guards against one account's locally-cached data leaking into another
 /// account's session on a shared device.
@@ -71,6 +73,16 @@ class LocalDataGuard {
       }
       final prefs = await SharedPreferences.getInstance();
       await prefs.remove('account_cache');
+
+      // Account-scoped history sync state (reconciliation cursors + offline
+      // session-delete queues) lives in SharedPreferences, not Hive — drop it
+      // so a different account never inherits another's cursor/queue.
+      for (final k in prefs.getKeys().toList()) {
+        if (k.startsWith(HistoryReconcileCursorStore.keyPrefix) ||
+            k.startsWith(PendingSessionDeletesStore.keyPrefix)) {
+          await prefs.remove(k);
+        }
+      }
     } catch (e) {
       debugPrint('[LocalDataGuard] failed to clear local caches: $e');
     }
