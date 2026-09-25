@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:workout_tracker/common/models/sex.dart';
 
 /// ─────────────────────────────────────────────────────────────────────────
-///  GYM TRACKER DESIGN SYSTEM — "Midnight Steel / Volt Azure"
+///  ZLIFT DESIGN SYSTEM — "Midnight Steel / Volt Azure"
 ///
 ///  A single source of truth for color, type, shape and motion.
 ///  • Display + numerals: Space Grotesk (geometric, athletic)

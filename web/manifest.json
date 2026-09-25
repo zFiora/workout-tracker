@@ -1,6 +1,6 @@
 {
-    "name": "workout_tracker",
-    "short_name": "workout_tracker",
+    "name": "ZLift",
+    "short_name": "ZLift",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",

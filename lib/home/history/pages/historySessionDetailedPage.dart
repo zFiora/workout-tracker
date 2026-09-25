@@ -12,18 +12,30 @@ import 'package:workout_tracker/home/history/widgets/historyExcersiceCard.dart';
 import 'package:workout_tracker/home/history/widgets/historyHeaderCard.dart';
 import 'package:workout_tracker/home/history/widgets/historyInfoChip.dart';
 import 'package:workout_tracker/home/history/widgets/historySetRow.dart';
+import 'package:workout_tracker/home/history/widgets/history_recap_card.dart';
 import 'package:workout_tracker/home/session/models/sessionModels.dart';
+import 'package:workout_tracker/home/session/pages/workout_summary_page.dart';
+import 'package:workout_tracker/home/session/recap/progress_photo_store.dart';
+import 'package:workout_tracker/home/session/recap/workout_recap_store.dart';
 
 class HistorySessionDetailPage extends StatefulWidget {
   final WorkoutHistoryEntry entry;
   final dynamic historyKey;
   final HistoryService historyService;
 
+  /// Saved muscle summaries; injectable for tests.
+  final WorkoutRecapStore? recapStore;
+
+  /// Progress-photo files; injectable for tests.
+  final ProgressPhotoStore? photoStore;
+
   const HistorySessionDetailPage({
     super.key,
     required this.entry,
     required this.historyKey,
     required this.historyService,
+    this.recapStore,
+    this.photoStore,
   });
 
   @override
@@ -70,6 +82,9 @@ class _HistorySessionDetailPageState extends State<HistorySessionDetailPage> {
       animation: vm,
       builder: (context, _) {
         final prKeys = vm.prKeys;
+        // Re-read each build so a photo added/removed on the summary page
+        // shows up when coming back. Null for workouts saved before recaps.
+        final recap = (widget.recapStore ?? WorkoutRecapStore.I).get(entry.id);
 
         return MyCustomeScaffoldView(
           title: entry.templateName,
@@ -106,6 +121,28 @@ class _HistorySessionDetailPageState extends State<HistorySessionDetailPage> {
                 ],
               ),
               const SizedBox(height: 14),
+              if (recap != null) ...[
+                HistoryRecapCard(
+                  recap: recap,
+                  onOpen: () async {
+                    await Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => WorkoutSummaryPage(
+                          entry: entry,
+                          recap: recap,
+                          weightUnit: unit,
+                          mode: WorkoutSummaryMode.history,
+                          recapStore: widget.recapStore,
+                          photoStore: widget.photoStore,
+                        ),
+                      ),
+                    );
+                    if (mounted) setState(() {});
+                  },
+                ),
+                const SizedBox(height: 14),
+              ],
               ...entry.logs.map((log) {
                 final dynamic rawId = (log as dynamic).exerciseId;
                 final int? exId = rawId is int ? rawId : null;
@@ -133,8 +170,9 @@ class _HistorySessionDetailPageState extends State<HistorySessionDetailPage> {
                           ? 'WU ${i + 1}'
                           : 'Set ${i + 1}';
 
-                      final isPr =
-                          (exId == null) ? false : vm.isPr(exId, s.timestamp);
+                      final isPr = (exId == null)
+                          ? false
+                          : vm.isPr(exId, s.timestamp);
 
                       return Padding(
                         padding: const EdgeInsets.only(bottom: 10),
@@ -143,7 +181,8 @@ class _HistorySessionDetailPageState extends State<HistorySessionDetailPage> {
                           badgeText: _setTypeShort(s.type),
                           badgeBg: _badgeBg(cs, s.type),
                           badgeFg: _badgeFg(cs, s.type),
-                          mainText: '${unit.formatWithUnit(s.weight)} × ${s.reps}',
+                          mainText:
+                              '${unit.formatWithUnit(s.weight)} × ${s.reps}',
                           subText: fmtTime(s.timestamp),
                           showPr: isPr,
                         ),

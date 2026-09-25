@@ -211,6 +211,20 @@ class ApiClient {
     return _normalize(r.data) as Map<String, dynamic>;
   });
 
+  // Multipart POST — for creating resources that may include a file
+  // (e.g. a bug report with an optional screenshot).
+  Future<ApiResult<Map<String, dynamic>>> postMultipart(
+    String path,
+    FormData formData,
+  ) => guard(() async {
+    final r = await _dio.post(
+      path,
+      data: formData,
+      options: Options(headers: {'Authorization': 'Bearer ${AuthToken.I.token}'}),
+    );
+    return _normalize(r.data) as Map<String, dynamic>;
+  });
+
   // POST with no body — for token refresh
   Future<ApiResult<Map<String, dynamic>>> postEmpty(String path) =>
       guard(() async {

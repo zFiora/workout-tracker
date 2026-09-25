@@ -56,7 +56,7 @@ class AuthScaffold extends StatelessWidget {
   }
 }
 
-/// The app wordmark: a volt-tinted glyph tile + "Gym Tracker". Consistent
+/// The app wordmark: a volt-tinted glyph tile + "ZLift". Consistent
 /// across auth screens so the brand always anchors the top.
 class AuthBrandHeader extends StatelessWidget {
   const AuthBrandHeader({super.key});
@@ -77,7 +77,7 @@ class AuthBrandHeader extends StatelessWidget {
         ),
         const SizedBox(width: 12),
         Text(
-          'Gym Tracker',
+          'ZLift',
           style: Theme.of(context)
               .textTheme
               .titleLarge

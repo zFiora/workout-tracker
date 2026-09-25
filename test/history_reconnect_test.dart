@@ -148,6 +148,7 @@ void main() {
   late SyncedSessionsStore synced;
   late FakeApi api;
   late FakeReconnectNotifier notifier;
+  final reconnectRuns = <Future<void>>[];
   const cursorStore = HistoryReconcileCursorStore();
   const pending = PendingSessionDeletesStore();
 
@@ -159,6 +160,7 @@ void main() {
     synced = SyncedSessionsStore(box: syncedBox);
     api = FakeApi();
     notifier = FakeReconnectNotifier();
+    reconnectRuns.clear();
   });
 
   WorkoutHistoryReconciler buildReconciler() => WorkoutHistoryReconciler(
@@ -172,9 +174,15 @@ void main() {
       );
 
   // Mirrors HistoryViewModel's `_reconcile` wrapper wired into the binder.
+  // Records each pass the binder starts (in [reconnectRuns]) so a test can
+  // await that exact pass: reconcile() awaits real Hive disk writes
+  // (SyncedSessionsStore), which pumpEventQueue() alone does not reliably
+  // wait out.
   ReconnectSyncBinder bind(WorkoutHistoryReconciler r) =>
-      ReconnectSyncBinder(notifier, () async {
-        await r.reconcile();
+      ReconnectSyncBinder(notifier, () {
+        final run = r.reconcile();
+        reconnectRuns.add(run);
+        return run;
       });
 
   test('reconnect flushes a delete that was queued while offline', () async {
@@ -209,7 +217,13 @@ void main() {
     notifier.fireReconnect();
     await pumpEventQueue();
 
+    // The reconnect itself must have started exactly one new pass…
+    expect(reconnectRuns, hasLength(1));
+    // …and that pass, once finished, has applied the whole page.
+    await reconnectRuns.single;
+    expect(api.fetchCount, 2); // launch attempt + reconnect retry
     expect(repo.ids.toSet(), {'a', 'b'});
+    expect(synced.isSynced('a') && synced.isSynced('b'), isTrue);
   });
 
   test('reconnect while reconciliation is running does not run concurrently',

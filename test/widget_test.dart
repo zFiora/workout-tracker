@@ -51,7 +51,7 @@ void main() {
 
     // Before the (purely local, no-network) auth check resolves.
     await tester.pump();
-    expect(find.text('Gym Tracker'), findsOneWidget);
+    expect(find.text('ZLift'), findsOneWidget);
 
     // Let the splash's local auth check + entry animation finish.
     await tester.pump(const Duration(milliseconds: 1300));

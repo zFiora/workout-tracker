@@ -16,6 +16,9 @@ import 'package:workout_tracker/home/friends/widgets/addFriendPage.dart';
 import 'package:workout_tracker/home/friends/widgets/friendsListPage.dart';
 import 'package:workout_tracker/home/friends/widgets/manageFriendsPage.dart';
 import 'package:workout_tracker/home/social/pages/leaderboard_page.dart';
+import 'package:workout_tracker/home/support/services/device_context.dart';
+import 'package:workout_tracker/home/support/widgets/my_bug_reports_page.dart';
+import 'package:workout_tracker/home/support/widgets/report_bug_page.dart';
 
 /// Small, honest placeholder for a feature that isn't implemented yet — a
 /// silent no-op `onTap` looks broken (nothing visibly happens), which reads
@@ -327,6 +330,31 @@ class _AccountPageBodyState extends State<AccountPageBody> {
           ),
         ),
 
+        // SUPPORT
+        SliverToBoxAdapter(
+          child: AccountPageSection(
+            title: 'Support',
+            children: [
+              AccountPageTile(
+                icon: Icons.bug_report_outlined,
+                title: 'Report a Bug',
+                subtitle: 'Tell us what went wrong',
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => ReportBugPage()),
+                ),
+              ),
+              AccountPageTile(
+                icon: Icons.fact_check_outlined,
+                title: 'My Bug Reports',
+                subtitle: 'Track reports you\'ve submitted',
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => MyBugReportsPage()),
+                ),
+              ),
+            ],
+          ),
+        ),
+
         // DATA
         SliverToBoxAdapter(
           child: AccountPageSection(
@@ -360,15 +388,17 @@ class _AccountPageBodyState extends State<AccountPageBody> {
                   title: 'Delete account',
                   onTap: onDeleteAccount,
                 ),
-                const SizedBox(height: 24),
-                Center(
-                  child: Text(
-                    'v1.0.0',
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Theme.of(context).colorScheme.outline,
-                        ),
+                if (DeviceContext.appVersion != null) ...[
+                  const SizedBox(height: 24),
+                  Center(
+                    child: Text(
+                      'v${DeviceContext.appVersion}',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: Theme.of(context).colorScheme.outline,
+                          ),
+                    ),
                   ),
-                ),
+                ],
               ],
             ),
           ),

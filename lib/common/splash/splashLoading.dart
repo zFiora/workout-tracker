@@ -143,7 +143,7 @@ class _SplashPageState extends State<SplashPage>
                     ),
                     const SizedBox(width: 10),
                     Text(
-                      'Gym Tracker',
+                      'ZLift',
                       style: Theme.of(context).textTheme.headlineMedium
                           ?.copyWith(color: Colors.white, letterSpacing: 0.5),
                     ),

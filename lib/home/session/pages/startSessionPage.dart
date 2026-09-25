@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
+import 'package:workout_tracker/common/AppManager.dart';
 import 'package:workout_tracker/common/formatters/duarationFormatter.dart';
 import 'package:workout_tracker/common/theme/app_theme.dart';
 import 'package:workout_tracker/common/tutorial/tutorial_runner.dart';
@@ -12,6 +13,9 @@ import 'package:workout_tracker/home/exercises/exerciesesList.dart';
 import 'package:workout_tracker/home/exercises/models/categoryModel.dart';
 import 'package:workout_tracker/home/history/ViewModel/historyViewModel.dart';
 import 'package:workout_tracker/home/session/active_session_manager.dart';
+import 'package:workout_tracker/home/session/pages/workout_summary_page.dart';
+import 'package:workout_tracker/home/session/recap/workout_recap.dart';
+import 'package:workout_tracker/home/session/recap/workout_recap_service.dart';
 import 'package:workout_tracker/home/session/sessionViewModel.dart';
 import 'package:workout_tracker/home/session/widgets/exerciseSessionTile.dart';
 import 'package:workout_tracker/home/session/widgets/reorder_exercises_sheet.dart';
@@ -346,6 +350,7 @@ class _SessionBodyState extends State<_SessionBody> {
     final historyVM = context.read<HistoryViewModel>();
     final accountVM = context.read<AccountViewModel>();
     final templatesVM = context.read<TemplatesViewModel>();
+    final weightUnit = context.read<AppManager>().weightUnit;
 
     final prEvents =
         session.prHits.values.map((h) => h.toJson()).toList(growable: false);
@@ -359,10 +364,16 @@ class _SessionBodyState extends State<_SessionBody> {
     final entry = manager.endSession();
 
     var saveFailed = false;
+    WorkoutRecap? recap;
     try {
       // Persist to history (local Hive save is the source of truth; the
       // backend push inside is best-effort and never throws here).
       await historyVM.saveWithPrEvents(entry, prEvents: prEvents);
+
+      // Freeze this workout's muscle summary locally so History can show it
+      // later exactly as it was. Never throws, so it can't mark the save
+      // above as failed.
+      recap = await createRecapForSavedWorkout(entry, prCount: prEvents.length);
 
       // Streak is server-owned; refresh so the badge reflects it. Not awaited.
       if (AuthToken.I.isValid) accountVM.refresh();
@@ -416,6 +427,21 @@ class _SessionBodyState extends State<_SessionBody> {
             : 'Workout saved to history',
         type: saveFailed ? SnackbarType.warning : SnackbarType.success,
       );
+      // Post-workout recap — only once the save (and any template dialog) is
+      // done. Built purely from the saved entry; its own muscle calculation
+      // is failure-safe, so it can't affect the save above.
+      if (!saveFailed) {
+        navigator.push(
+          MaterialPageRoute(
+            builder: (_) => WorkoutSummaryPage(
+              entry: entry,
+              recap: recap,
+              prCount: prEvents.length,
+              weightUnit: weightUnit,
+            ),
+          ),
+        );
+      }
     }
   }
 

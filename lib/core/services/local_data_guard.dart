@@ -3,6 +3,8 @@ import 'package:hive/hive.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:workout_tracker/home/history/services/history_reconcile_cursor_store.dart';
 import 'package:workout_tracker/home/history/services/pending_session_deletes_store.dart';
+import 'package:workout_tracker/home/session/recap/progress_photo_store.dart';
+import 'package:workout_tracker/home/session/recap/workout_recap_store.dart';
 
 /// Guards against one account's locally-cached data leaking into another
 /// account's session on a shared device.
@@ -46,6 +48,7 @@ class LocalDataGuard {
     'exerciseNotesBox',
     'activeSessionBox',
     'customExercisesBox',
+    WorkoutRecapStore.boxName,
   ];
 
   /// Wipes all locally-cached account data after the user deletes their
@@ -71,6 +74,10 @@ class LocalDataGuard {
           await Hive.box(name).clear();
         }
       }
+      // Progress photos are files, not box entries — the recap box above only
+      // held their names, so remove the files themselves too.
+      await ProgressPhotoStore.I.deleteAll();
+
       final prefs = await SharedPreferences.getInstance();
       await prefs.remove('account_cache');
 

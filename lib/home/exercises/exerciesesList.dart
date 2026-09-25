@@ -384,7 +384,9 @@ class ExercisesViewModel {
       workoutImage: 'assets/workouts/chest/incline_machine_press.png',
     ),
     ExerciseModel(
-      id: 108,
+      // Was 108 until 2026-09-25, which collided with Hip Abduction (108 since
+      // 2026-02). Stored data containing 108 keeps meaning Hip Abduction.
+      id: 110,
       name: 'Incline triceps pushdown',
       category: WorkoutCategory.triceps,
       workoutImage: 'assets/workouts/tri/overhead_tri_cable_atlantis.webp',

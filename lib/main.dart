@@ -30,6 +30,8 @@ import 'package:workout_tracker/common/theme/app_theme.dart';
 import 'package:workout_tracker/core/services/deep_link_service.dart';
 import 'package:workout_tracker/home/exercises/custom_exercises_repository.dart';
 import 'package:workout_tracker/home/login/widgets/forgotPasswordPage.dart';
+import 'package:workout_tracker/home/session/recap/workout_recap_store.dart';
+import 'package:workout_tracker/home/support/services/device_context.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -60,6 +62,7 @@ Future<void> main() async {
   await Hive.openBox('activeSessionBox');
   await Hive.openBox<String>(CustomExercisesRepository.boxName);
   CustomExercisesRepository.I.load();
+  await Hive.openBox<String>(WorkoutRecapStore.boxName);
 
   // Backfill a stable sync id onto any pre-sync history rows so they can be
   // pushed to the backend without duplicating.
@@ -70,7 +73,20 @@ Future<void> main() async {
     }
   }
 
+  // Drop saved workout summaries (and their progress photos) whose workout was
+  // deleted in an earlier run. Done here, not on delete, so History's Undo
+  // keeps them. Best-effort: never blocks startup.
+  try {
+    await WorkoutRecapStore.I.pruneOrphans({
+      for (final e in historyBox.values)
+        if (e.id.isNotEmpty) e.id,
+    });
+  } catch (e) {
+    debugPrint('[main] recap prune failed: $e');
+  }
+
   await AuthToken.I.load();
+  await DeviceContext.init();
 
   // If the app was cold-started from a password-reset deep link, grab the
   // token now (before the first frame) so we can route straight to the reset
@@ -168,7 +184,7 @@ class _MyAppState extends State<MyApp> {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       navigatorKey: _navigatorKey,
-      title: 'Gym Tracker',
+      title: 'ZLift',
       themeMode: themeMode,
       theme: buildLightTheme(sex: sex),
       darkTheme: buildDarkTheme(sex: sex),
